@@ -1,0 +1,55 @@
+{
+  "name": "ProgressReport",
+  "type": "object",
+  "properties": {
+    "schedule_id": {
+      "type": "string"
+    },
+    "application_id": {
+      "type": "string"
+    },
+    "submitted_by": {
+      "type": "string"
+    },
+    "narrative": {
+      "type": "string"
+    },
+    "expenditure_ytd": {
+      "type": "number"
+    },
+    "match_ytd": {
+      "type": "number"
+    },
+    "objectives_met": {
+      "type": "string"
+    },
+    "challenges": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Submitted",
+        "UnderReview",
+        "Approved",
+        "Denied",
+        "RevisionRequested"
+      ]
+    },
+    "reviewer_id": {
+      "type": "string"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "schedule_id",
+    "application_id",
+    "status"
+  ]
+}

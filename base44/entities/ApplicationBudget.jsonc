@@ -1,0 +1,40 @@
+{
+  "name": "ApplicationBudget",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "budget_category": {
+      "type": "string",
+      "enum": [
+        "Personnel",
+        "Equipment",
+        "Training",
+        "Travel",
+        "Contractual",
+        "Planning",
+        "Other"
+      ]
+    },
+    "line_description": {
+      "type": "string"
+    },
+    "amount_requested": {
+      "type": "number"
+    },
+    "amount_match": {
+      "type": "number"
+    },
+    "is_allowable": {
+      "type": "boolean"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_id",
+    "budget_category"
+  ]
+}

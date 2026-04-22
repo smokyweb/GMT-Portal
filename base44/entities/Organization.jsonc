@@ -1,0 +1,46 @@
+{
+  "name": "Organization",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "County",
+        "Municipality",
+        "Nonprofit",
+        "Tribe"
+      ]
+    },
+    "ein": {
+      "type": "string"
+    },
+    "sam_uei": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "county": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "name",
+    "type"
+  ]
+}

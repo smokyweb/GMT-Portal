@@ -1,0 +1,101 @@
+{
+  "name": "FundingRequest",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "submitted_by": {
+      "type": "string"
+    },
+    "request_number": {
+      "type": "string"
+    },
+    "request_type": {
+      "type": "string",
+      "enum": [
+        "Reimbursement",
+        "Advance",
+        "Modification"
+      ]
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "amount_requested": {
+      "type": "number"
+    },
+    "amount_approved": {
+      "type": "number"
+    },
+    "match_documented": {
+      "type": "number"
+    },
+    "expenditure_rate": {
+      "type": "number"
+    },
+    "remaining_balance": {
+      "type": "number"
+    },
+    "modification_type": {
+      "type": "string",
+      "enum": [
+        "Budget Modification",
+        "Scope of Work Change",
+        "Period of Performance Extension",
+        "Key Personnel Change",
+        "Other"
+      ]
+    },
+    "modification_justification": {
+      "type": "string"
+    },
+    "scope_of_work_current": {
+      "type": "string"
+    },
+    "scope_of_work_proposed": {
+      "type": "string"
+    },
+    "budget_modification_notes": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Submitted",
+        "UnderReview",
+        "AdditionalInfoRequested",
+        "Approved",
+        "Denied"
+      ]
+    },
+    "reviewer_notes": {
+      "type": "string"
+    },
+    "modification_notes": {
+      "type": "string"
+    },
+    "program_code": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_id",
+    "request_type",
+    "status"
+  ]
+}

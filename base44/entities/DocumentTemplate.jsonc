@@ -1,0 +1,48 @@
+{
+  "name": "DocumentTemplate",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "doc_type": {
+      "type": "string",
+      "enum": [
+        "Grant Award Notice",
+        "Subrecipient Agreement",
+        "Quarterly Report Form",
+        "Final Report Form",
+        "Audit Request",
+        "Budget Modification Form",
+        "Close-Out Letter",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "template_body": {
+      "type": "string",
+      "description": "Text with {{placeholder}} variables"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of uploaded template file (PDF, Word, Excel)"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original filename of the uploaded template"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "doc_type"
+  ]
+}

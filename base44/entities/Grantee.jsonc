@@ -1,0 +1,71 @@
+{
+  "name": "Grantee",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "state_code": {
+      "type": "string"
+    },
+    "agency_name": {
+      "type": "string"
+    },
+    "contact_name": {
+      "type": "string"
+    },
+    "contact_email": {
+      "type": "string"
+    },
+    "contact_phone": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "zip": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string"
+    },
+    "secondary_color": {
+      "type": "string"
+    },
+    "portal_title": {
+      "type": "string"
+    },
+    "portal_subtitle": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "max_users": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "grant_programs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "name",
+    "state_code"
+  ]
+}

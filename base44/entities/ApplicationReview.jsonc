@@ -1,0 +1,37 @@
+{
+  "name": "ApplicationReview",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "reviewer_email": {
+      "type": "string"
+    },
+    "reviewer_name": {
+      "type": "string"
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "Approved",
+        "Denied",
+        "RevisionRequested",
+        "NoteAdded"
+      ]
+    },
+    "score": {
+      "type": "number"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "revision_request": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_id",
+    "action"
+  ]
+}

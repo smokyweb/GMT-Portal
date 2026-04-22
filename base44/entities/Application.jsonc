@@ -1,0 +1,95 @@
+{
+  "name": "Application",
+  "type": "object",
+  "properties": {
+    "nofo_id": {
+      "type": "string"
+    },
+    "nofo_title": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "submitted_by": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "project_title": {
+      "type": "string"
+    },
+    "project_narrative": {
+      "type": "string"
+    },
+    "work_plan": {
+      "type": "string"
+    },
+    "risk_assessment": {
+      "type": "string"
+    },
+    "requested_amount": {
+      "type": "number"
+    },
+    "awarded_amount": {
+      "type": "number"
+    },
+    "match_amount": {
+      "type": "number"
+    },
+    "total_expended": {
+      "type": "number"
+    },
+    "remaining_balance": {
+      "type": "number"
+    },
+    "expenditure_rate": {
+      "type": "number"
+    },
+    "performance_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "performance_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Submitted",
+        "PendingReview",
+        "UnderReview",
+        "RevisionRequested",
+        "Approved",
+        "Denied"
+      ]
+    },
+    "program_code": {
+      "type": "string"
+    },
+    "program_name": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "revision_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "nofo_id",
+    "organization_id",
+    "status"
+  ]
+}

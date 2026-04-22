@@ -1,0 +1,31 @@
+{
+  "name": "User",
+  "type": "object",
+  "properties": {
+    "role": {
+      "type": "string",
+      "enum": [
+        "admin",
+        "user",
+        "reviewer",
+        "isc_admin"
+      ]
+    },
+    "grantee_id": {
+      "type": "string",
+      "description": "FK to Grantee \u2014 links this user to their state grantee system"
+    },
+    "title": {
+      "type": "string"
+    },
+    "department": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "name": "Milestone",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "program_code": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "milestone_type": {
+      "type": "string",
+      "enum": [
+        "ProjectKickoff",
+        "MidTermReview",
+        "FinalReport",
+        "BudgetReview",
+        "SiteVisit",
+        "QuarterlyCheck",
+        "CloseOut",
+        "Custom"
+      ]
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "completed_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Upcoming",
+        "InProgress",
+        "Completed",
+        "Overdue",
+        "Waived"
+      ]
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "reminder_sent": {
+      "type": "boolean"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "application_id",
+    "title",
+    "due_date",
+    "status"
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "name": "FundingRequestLineItem",
+  "type": "object",
+  "properties": {
+    "funding_request_id": {
+      "type": "string"
+    },
+    "budget_category": {
+      "type": "string",
+      "enum": [
+        "Personnel",
+        "Equipment",
+        "Training",
+        "Travel",
+        "Contractual",
+        "Planning",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "is_allowable": {
+      "type": "boolean"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "funding_request_id",
+    "budget_category"
+  ]
+}

@@ -1,0 +1,61 @@
+{
+  "name": "SavedReport",
+  "type": "object",
+  "properties": {
+    "report_name": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "data_source": {
+      "type": "string"
+    },
+    "selected_fields": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "filters": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "filter_logic": {
+      "type": "string",
+      "enum": [
+        "AND",
+        "OR"
+      ],
+      "default": "AND"
+    },
+    "group_by": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "sort_rules": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "is_template": {
+      "type": "boolean"
+    },
+    "last_run_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_run_row_count": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "report_name",
+    "data_source"
+  ]
+}

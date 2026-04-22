@@ -1,0 +1,43 @@
+{
+  "name": "TemplateVersion",
+  "type": "object",
+  "properties": {
+    "template_id": {
+      "type": "string"
+    },
+    "template_name": {
+      "type": "string"
+    },
+    "version_number": {
+      "type": "number"
+    },
+    "name": {
+      "type": "string"
+    },
+    "doc_type": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "template_body": {
+      "type": "string"
+    },
+    "file_url": {
+      "type": "string"
+    },
+    "file_name": {
+      "type": "string"
+    },
+    "saved_by": {
+      "type": "string"
+    },
+    "change_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "template_id",
+    "version_number"
+  ]
+}

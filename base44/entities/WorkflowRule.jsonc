@@ -1,0 +1,72 @@
+{
+  "name": "WorkflowRule",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "trigger": {
+      "type": "string",
+      "enum": [
+        "Document Uploaded",
+        "Application Status Changed",
+        "Compliance Flag Created",
+        "Compliance Flag Resolved",
+        "Funding Request Submitted",
+        "Funding Request Approved",
+        "Report Due Date Passed",
+        "Milestone Due Date Passed",
+        "Application Submitted"
+      ]
+    },
+    "condition": {
+      "type": "string"
+    },
+    "action_type": {
+      "type": "string",
+      "enum": [
+        "Send Email Notification",
+        "Transition Application Status",
+        "Create Compliance Flag",
+        "Send Email to Admins",
+        "Send Email to Subrecipient"
+      ]
+    },
+    "action_detail": {
+      "type": "string"
+    },
+    "target_status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Submitted",
+        "PendingReview",
+        "UnderReview",
+        "RevisionRequested",
+        "Approved",
+        "Denied"
+      ]
+    },
+    "email_subject": {
+      "type": "string"
+    },
+    "email_body": {
+      "type": "string"
+    },
+    "entity": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean",
+      "default": true
+    },
+    "created_by_name": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "trigger",
+    "action_type"
+  ]
+}

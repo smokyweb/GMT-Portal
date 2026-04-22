@@ -1,0 +1,57 @@
+{
+  "name": "Message",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "thread_id": {
+      "type": "string",
+      "description": "null = root message; otherwise points to root message id"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "direct parent for nested replies"
+    },
+    "sender_email": {
+      "type": "string"
+    },
+    "sender_name": {
+      "type": "string"
+    },
+    "sender_role": {
+      "type": "string"
+    },
+    "body": {
+      "type": "string"
+    },
+    "topic": {
+      "type": "string",
+      "enum": [
+        "General",
+        "Budget",
+        "Compliance",
+        "Documentation",
+        "Timeline",
+        "Other"
+      ]
+    },
+    "is_read_by_admin": {
+      "type": "boolean"
+    },
+    "is_read_by_subrecipient": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "application_id",
+    "body",
+    "sender_email"
+  ]
+}

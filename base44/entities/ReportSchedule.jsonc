@@ -1,0 +1,53 @@
+{
+  "name": "ReportSchedule",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "program_code": {
+      "type": "string"
+    },
+    "report_type": {
+      "type": "string",
+      "enum": [
+        "Quarterly",
+        "Annual",
+        "Final"
+      ]
+    },
+    "period_start": {
+      "type": "string",
+      "format": "date"
+    },
+    "period_end": {
+      "type": "string",
+      "format": "date"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Submitted",
+        "Overdue",
+        "Approved",
+        "Denied"
+      ]
+    }
+  },
+  "required": [
+    "application_id",
+    "report_type",
+    "status"
+  ]
+}

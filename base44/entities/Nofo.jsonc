@@ -1,0 +1,83 @@
+{
+  "name": "Nofo",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "summary": {
+      "type": "string"
+    },
+    "program_id": {
+      "type": "string",
+      "description": "FK to GrantProgram"
+    },
+    "program_name": {
+      "type": "string"
+    },
+    "program_code": {
+      "type": "string"
+    },
+    "eligibility_criteria": {
+      "type": "string"
+    },
+    "allowable_costs": {
+      "type": "string"
+    },
+    "evaluation_criteria": {
+      "type": "string"
+    },
+    "total_funding_available": {
+      "type": "number"
+    },
+    "min_award": {
+      "type": "number"
+    },
+    "max_award": {
+      "type": "number"
+    },
+    "open_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "close_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "UnderReview",
+        "Published",
+        "Closed",
+        "Archived"
+      ]
+    },
+    "required_documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "mandatory": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "title",
+    "status"
+  ]
+}

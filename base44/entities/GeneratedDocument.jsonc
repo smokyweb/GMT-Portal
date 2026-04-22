@@ -1,0 +1,71 @@
+{
+  "name": "GeneratedDocument",
+  "type": "object",
+  "properties": {
+    "template_id": {
+      "type": "string"
+    },
+    "template_name": {
+      "type": "string"
+    },
+    "doc_type": {
+      "type": "string"
+    },
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "populated_body": {
+      "type": "string",
+      "description": "Template body with placeholders filled in"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "URL of the uploaded template file"
+    },
+    "file_name": {
+      "type": "string",
+      "description": "Original filename"
+    },
+    "sent_by": {
+      "type": "string"
+    },
+    "sent_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Sent",
+        "Reviewed",
+        "Signed",
+        "Rejected"
+      ],
+      "default": "Sent"
+    },
+    "subrecipient_notes": {
+      "type": "string"
+    },
+    "signed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signed_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "template_id",
+    "application_id",
+    "status"
+  ]
+}

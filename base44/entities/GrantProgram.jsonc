@@ -1,0 +1,38 @@
+{
+  "name": "GrantProgram",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "code": {
+      "type": "string",
+      "enum": [
+        "SHSP",
+        "UASI",
+        "EMPG",
+        "HSGP",
+        "NSGP",
+        "EOC",
+        "SLCGP",
+        "Other"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "federal_agency": {
+      "type": "string"
+    },
+    "cfda_number": {
+      "type": "string"
+    },
+    "is_active": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "name",
+    "code"
+  ]
+}
