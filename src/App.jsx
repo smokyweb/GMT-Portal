@@ -38,6 +38,7 @@ import AdminPanel from './pages/AdminPanel';
 import ISCDashboard from './pages/ISCDashboard';
 import UserProfile from './pages/UserProfile';
 import SubrecipientPortal from './pages/SubrecipientPortal';
+import Login from './pages/Login';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
@@ -111,7 +112,10 @@ function App() {
       <ThemeProvider>
         <QueryClientProvider client={queryClientInstance}>
           <Router>
-            <AuthenticatedApp />
+            <Routes>
+              <Route path="/login" element={<Login />} />
+              <Route path="/*" element={<AuthenticatedApp />} />
+            </Routes>
           </Router>
           <Toaster />
         </QueryClientProvider>
