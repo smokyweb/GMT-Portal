@@ -12,7 +12,9 @@
  *   base44.auth.redirectToLogin(returnUrl?)
  */
 
-const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+// Empty string = relative URLs (/api/auth/me) — correct for production Nginx setup.
+// Set VITE_API_URL=http://localhost:3045 for local dev.
+const API_BASE = import.meta.env.VITE_API_URL || '';
 
 // ── Token helpers ─────────────────────────────────────────────
 function getToken() {
