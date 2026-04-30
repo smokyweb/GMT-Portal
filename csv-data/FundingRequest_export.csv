@@ -1,0 +1,3 @@
+description,amount,is_allowable,funding_request_id,budget_category,reviewer_notes,id,created_date,updated_date,created_by_id,created_by,is_sample
+"salary","1400","true","69e788a1c9ad3a4ce08f1f53","Personnel","","69e788a1f49d91b3713143ef","2026-04-21T14:24:33.184000","2026-04-21T14:24:33.184000","69cd7613124bb9f9f18be5ab","lauren.martin29@gmail.com","false"
+"Salary","5000","true","69e685e4892e7dc63ff25047","Personnel","","69e685e4ea0726f9e1aec762","2026-04-20T20:00:36.284000","2026-04-20T20:00:36.284000","69cd7613124bb9f9f18be5ab","lauren.martin29@gmail.com","false"

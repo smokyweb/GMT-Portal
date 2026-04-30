@@ -1,0 +1,57 @@
+Add a backend with SQLite database, CSV data import, and user roles to this GMT Portal React app.
+
+## Stack to add
+- Node.js/Express backend in server/ directory (already exists, add to it)
+- better-sqlite3 for database
+- jsonwebtoken + bcryptjs for auth
+- Port 3001
+
+## 1. Database (server/db.js)
+Create SQLite database with these tables based on the CSV files in csv-data/:
+- users (id INTEGER PRIMARY KEY, email TEXT UNIQUE, name TEXT, role TEXT DEFAULT 'user', password_hash TEXT, created_at TEXT)
+- applications - columns from Application_export.csv
+- organizations - columns from Organization_export.csv
+- grantees - columns from Grantee_export.csv
+- grant_programs - columns from GrantProgram_export.csv
+- funding_requests - columns from FundingRequest_export.csv
+- documents - columns from Document_export.csv
+- audit_logs - columns from AuditLog_export.csv
+
+Read the CSV headers to get column names. Convert to snake_case SQL safe names.
+
+## 2. Seed script (server/seed.js)
+- Read each CSV from csv-data/
+- Insert all rows into the matching table
+- Create 3 default users:
+  - admin@gmtportal.com / Admin2026! (role: admin)
+  - manager@gmtportal.com / Manager2026! (role: manager)
+  - user@gmtportal.com / User2026! (role: user)
+
+## 3. Auth (server/auth.js)
+- POST /api/auth/login - { email, password } -> JWT token
+- GET /api/auth/me - returns { id, email, name, role }
+- requireRole middleware
+
+## 4. API routes (server/routes.js)
+- GET /api/applications - all authenticated users
+- POST /api/applications - manager, admin
+- DELETE /api/applications/:id - admin only
+- GET /api/users - admin only
+- PUT /api/users/:id/role - admin only
+
+## 5. Main server (server/index.js)
+Wire everything together, CORS enabled for localhost:5173
+
+## 6. Frontend role context (src/contexts/RoleContext.jsx)
+Simple context that:
+- Reads JWT from localStorage
+- Decodes it to get user role
+- Provides currentUser, hasRole(role), login(token), logout()
+
+## After building
+Run these commands:
+1. cd server && npm install better-sqlite3 jsonwebtoken bcryptjs cors express
+2. node seed.js
+3. git add -A && git commit -m "feat: SQLite database, CSV import, Admin/Manager/User roles" && git push origin main
+
+The GitHub remote is already set. Just push when done.
