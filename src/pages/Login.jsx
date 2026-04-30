@@ -73,6 +73,11 @@ export default function Login() {
           </form>
         </CardContent>
       </Card>
+      <div className="mt-4 text-center">
+        <a href="/clear-cache.html" className="text-xs text-slate-400 hover:text-slate-600 underline">
+          Having issues? Clear browser cache &amp; reload
+        </a>
+      </div>
     </div>
   );
 }

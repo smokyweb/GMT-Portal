@@ -178,6 +178,14 @@ export default function Layout() {
 
         {/* Bottom */}
         <div className="p-2 border-t border-white/10 space-y-1">
+          <a
+            href="/clear-cache.html"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/50 hover:bg-white/10 hover:text-white w-full transition ${collapsed ? 'justify-center' : ''}`}
+            title="Clear browser cache & reload"
+          >
+            <svg className="h-4 w-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            {!collapsed && <span className="text-xs">Clear Cache</span>}
+          </a>
           <button
             onClick={handleLogout}
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-white/70 hover:bg-white/10 hover:text-white w-full transition ${collapsed ? 'justify-center' : ''}`}
