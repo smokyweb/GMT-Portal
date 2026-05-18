@@ -72,7 +72,7 @@ function createEntityClient(entityName) {
       if (sort) params.set('sort', sort);
       if (limit) params.set('limit', String(limit));
       const qs = params.toString();
-      return api('GET', `${base}${qs ? '?' + qs : ''}`);
+      return api('GET', `${base}${qs ? '?' + qs : ''}`).catch(e => { console.warn('[GMT] list', entityName, e.message); return []; });
     },
 
     /** filter(conditions, sort?, limit?) */
@@ -81,7 +81,7 @@ function createEntityClient(entityName) {
         filter: conditions,
         sort,
         limit,
-      });
+      }).catch(e => { console.warn('[GMT] filter', entityName, e.message); return []; });
     },
 
     /** create(data) — returns the created record */
@@ -159,4 +159,14 @@ const auth = {
 };
 
 // ── Exported client ───────────────────────────────────────────
-export const base44 = { entities, auth };
+
+// -- Integrations stub ------------------------------------------------
+// Base44 pages call base44.integrations.Core.SendEmail() etc.
+// We stub these so they don't throw -- email/integrations are not active.
+const integrations = {
+  Core: {
+    SendEmail: async (opts) => { console.log('[GMT] Email stub (not sent):', opts); return {}; },
+    GeneratePDF: async (opts) => { console.log('[GMT] PDF stub:', opts); return {}; },
+  },
+};
+export const base44 = { entities, auth, integrations };

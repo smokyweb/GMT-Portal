@@ -30,10 +30,13 @@ export default function StateDashboard() {
       base44.entities.ComplianceFlag.filter({ is_resolved: false }),
       base44.entities.FundingRequest.list('-created_date', 50),
     ]).then(([a, o, f, fr]) => {
-      setApps(a);
-      setOrgs(o);
-      setFlags(f);
-      setFundingReqs(fr);
+      setApps(Array.isArray(a) ? a : []);
+      setOrgs(Array.isArray(o) ? o : []);
+      setFlags(Array.isArray(f) ? f : []);
+      setFundingReqs(Array.isArray(fr) ? fr : []);
+      setLoading(false);
+    }).catch(err => {
+      console.error('StateDashboard load error:', err);
       setLoading(false);
     });
   }, []);
