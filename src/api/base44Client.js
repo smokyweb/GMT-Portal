@@ -108,16 +108,25 @@ for (const name of ENTITY_NAMES) {
 }
 
 // ── Auth proxy ────────────────────────────────────────────────
+// Cache the current user so repeated me() calls within one session don't
+// cause flicker — the first real request populates the cache.
+let _cachedUser = null;
+function invalidateUserCache() { _cachedUser = null; }
+
 const auth = {
-  /** Returns the current user object (like base44.auth.me()) */
+  /** Returns the current user object (like base44.auth.me()). Cached per session. */
   async me() {
-    return api('GET', '/api/auth/me');
+    if (_cachedUser) return _cachedUser;
+    _cachedUser = await api('GET', '/api/auth/me');
+    return _cachedUser;
   },
 
   /** Login with email/password. Stores JWT and returns { user, token }. */
   async login(email, password) {
     const result = await api('POST', '/api/auth/login', { email, password });
     setToken(result.token);
+    // Pre-populate the user cache so subsequent me() calls return instantly
+    if (result.user) _cachedUser = result.user;
     return result;
   },
 
@@ -133,9 +142,10 @@ const auth = {
     return result;
   },
 
-  /** Logout — clear token and optionally redirect */
+  /** Logout — clear token, clear user cache, optionally redirect */
   logout(redirectUrl) {
     clearToken();
+    invalidateUserCache();
     if (redirectUrl) {
       window.location.href = redirectUrl;
     }

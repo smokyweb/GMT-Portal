@@ -1,6 +1,7 @@
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import {
   LayoutDashboard, FileText, ClipboardList, DollarSign, BarChart3,
   Shield, Settings, Users, FolderOpen, FileSearch, Send,
@@ -94,18 +95,15 @@ const subrecipientNavGroups = [
 ];
 
 export default function Layout() {
-  const [user, setUser] = useState(null);
+  const { user, logout } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { grantee } = useTheme();
 
   const sidebarBg = grantee?.secondary_color || '#0F1F3D';
   const activeBg = grantee?.primary_color || '#2563eb';
-
-  useEffect(() => {
-    base44.auth.me().then(setUser);
-  }, []);
 
   const role = user?.role || 'user';
   const rawGroups = isStateUser(role) ? stateNavGroups : subrecipientNavGroups;
@@ -114,7 +112,9 @@ export default function Layout() {
     .filter(g => (!g.adminOnly || isAdmin(role)) && g.items.length > 0);
 
   const handleLogout = () => {
-    base44.auth.logout();
+    logout(false); // clears auth state
+    localStorage.removeItem('gmt_token');
+    navigate('/login', { replace: true });
   };
 
   return (
