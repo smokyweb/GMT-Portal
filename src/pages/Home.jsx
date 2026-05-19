@@ -1,28 +1,13 @@
-import { useState, useEffect } from 'react';
-import { base44 } from '@/api/base44Client';
+import { useState } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import StateDashboard from './StateDashboard';
 import SubrecipientDashboard from './SubrecipientDashboard';
 import { isStateUser } from '../lib/helpers';
 
 export default function Home() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  // Use the user already loaded by AuthContext — no extra API call needed
+  const { user } = useAuth();
   const [viewAs, setViewAs] = useState(null); // 'state' | 'subrecipient'
-
-  useEffect(() => {
-    base44.auth.me().then(u => {
-      setUser(u);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
-      </div>
-    );
-  }
 
   const isState = isStateUser(user?.role);
   const showSubrecipient = !isState || viewAs === 'subrecipient';
