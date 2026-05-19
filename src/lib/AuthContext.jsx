@@ -26,6 +26,8 @@ export const AuthProvider = ({ children }) => {
       } else {
         setIsLoadingAuth(false);
         setIsAuthenticated(false);
+        // No token = not logged in, set auth_required so the app redirects to /login
+        setAuthError({ type: 'auth_required', message: 'Not logged in' });
       }
     } catch (error) {
       console.error('Unexpected error:', error);
