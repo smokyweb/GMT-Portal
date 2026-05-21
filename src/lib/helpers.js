@@ -16,11 +16,11 @@ export function formatDateShort(date) {
 }
 
 export function isStateUser(role) {
-  return role === 'admin' || role === 'reviewer';
+  return role === 'admin' || role === 'reviewer' || role === 'federal_admin' || role === 'federal_officer';
 }
 
 export function isAdmin(role) {
-  return role === 'admin';
+  return role === 'admin' || role === 'federal_admin';
 }
 
 export function isSubrecipient(role) {

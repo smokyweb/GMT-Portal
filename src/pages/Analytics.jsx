@@ -20,14 +20,15 @@ const STATUS_COLORS = ['#94a3b8', '#3b82f6', '#8b5cf6', '#f59e0b', '#f97316', '#
 const FISCAL_YEARS = ['All', 'FY2025', 'FY2024', 'FY2023'];
 
 export default function Analytics() {
-  const [applications, setApplications] = useState([]);
-  const [fundingRequests, setFundingRequests] = useState([]);
-  const [complianceFlags, setComplianceFlags] = useState([]);
-  const [organizations, setOrganizations] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [fyFilter, setFyFilter] = useState('All');
-  const [programFilter, setProgramFilter] = useState('All');
-  const [scanStatus, setScanStatus] = useState(null); // null | 'running' | { scanned, flagged }
+   const [applications, setApplications] = useState([]);
+   const [fundingRequests, setFundingRequests] = useState([]);
+   const [complianceFlags, setComplianceFlags] = useState([]);
+   const [organizations, setOrganizations] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [fyFilter, setFyFilter] = useState('All');
+   const [programFilter, setProgramFilter] = useState('All');
+   const [scanStatus, setScanStatus] = useState(null); // null | 'running' | { scanned, flagged }
+   const [user, setUser] = useState(null);
 
   const runScan = async (user) => {
     setScanStatus('running');
@@ -46,10 +47,22 @@ export default function Analytics() {
       base44.entities.ComplianceFlag.list('-created_date', 200),
       base44.entities.Organization.list(),
       base44.auth.me(),
-    ]).then(([apps, reqs, flags, orgs, me]) => {
-      setApplications(apps);
-      setFundingRequests(reqs);
-      setComplianceFlags(flags);
+    ]).then(async ([apps, reqs, flags, orgs, me]) => {
+      setUser(me);
+      // Apply scope filtering
+      let visibleApps = apps;
+      let visibleReqs = reqs;
+      let visibleFlags = flags;
+      if (me?.scope_state) {
+        const scopedOrgIds = new Set(orgs.filter(o => o.state === me.scope_state).map(o => o.id));
+        visibleApps = apps.filter(a => scopedOrgIds.has(a.organization_id));
+        visibleReqs = reqs.filter(r => scopedOrgIds.has(r.organization_id));
+        const scopedAppIds = new Set(visibleApps.map(a => a.id));
+        visibleFlags = flags.filter(f => scopedAppIds.has(f.application_id));
+      }
+      setApplications(visibleApps);
+      setFundingRequests(visibleReqs);
+      setComplianceFlags(visibleFlags);
       setOrganizations(orgs);
       setLoading(false);
       // Auto-run variance scan on load

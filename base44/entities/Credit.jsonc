@@ -1,0 +1,66 @@
+{
+  "name": "Credit",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string",
+      "description": "FK to Organization receiving the credit"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "number",
+      "description": "Original credit amount issued"
+    },
+    "amount_remaining": {
+      "type": "number",
+      "description": "Remaining balance available to apply"
+    },
+    "description": {
+      "type": "string",
+      "description": "Reason or note for why the credit was issued"
+    },
+    "issued_by": {
+      "type": "string",
+      "description": "Email of the state admin who issued the credit"
+    },
+    "credit_number": {
+      "type": "string",
+      "description": "Auto-generated reference number e.g. CRD-2025-001"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Active",
+        "PartiallyUsed",
+        "FullyRedeemed",
+        "Voided"
+      ],
+      "default": "Active"
+    },
+    "application_id": {
+      "type": "string",
+      "description": "Optional: associated grant application"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "program_code": {
+      "type": "string"
+    },
+    "expiration_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Optional expiration date for the credit"
+    },
+    "void_reason": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "amount",
+    "status"
+  ]
+}

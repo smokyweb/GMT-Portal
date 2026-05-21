@@ -36,19 +36,23 @@ export default function ISCDashboard() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const g = await base44.entities.Grantee.list('-created_date', 200);
-      setGrantees(g);
-      // Fetch org counts per grantee
-      const orgs = await base44.entities.Organization.list('-created_date', 500);
-      const apps = await base44.entities.Application.list('-created_date', 500);
-      const statMap = {};
-      g.forEach(gr => {
-        statMap[gr.id] = {
-          orgs: orgs.filter(o => o.grantee_id === gr.id).length,
-          apps: apps.filter(a => a.grantee_id === gr.id).length,
-        };
-      });
-      setStats(statMap);
+
+      // Only load data if user has access
+      if (u && ['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
+        const g = await base44.entities.Grantee.list('-created_date', 200);
+        setGrantees(g);
+        // Fetch org counts per grantee
+        const orgs = await base44.entities.Organization.list('-created_date', 500);
+        const apps = await base44.entities.Application.list('-created_date', 500);
+        const statMap = {};
+        g.forEach(gr => {
+          statMap[gr.id] = {
+            orgs: orgs.filter(o => o.grantee_id === gr.id).length,
+            apps: apps.filter(a => a.grantee_id === gr.id).length,
+          };
+        });
+        setStats(statMap);
+      }
       setLoading(false);
     });
   }, []);
@@ -98,6 +102,26 @@ export default function ISCDashboard() {
       <div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" />
     </div>
   );
+
+  // Check access permission
+  const hasAccess = user && ['isc_admin', 'federal_admin', 'federal_officer'].includes(user.role);
+  
+  if (!hasAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center h-96">
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
+            <Shield className="h-8 w-8 text-destructive" />
+          </div>
+          <div>
+            <h2 className="text-xl font-bold">Access Restricted</h2>
+            <p className="text-muted-foreground mt-1">You do not have permission to access the ISC Dashboard.</p>
+            <p className="text-sm text-muted-foreground mt-2">Only federal and ISC administrators can access this section.</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const activeCount = grantees.filter(g => g.is_active).length;
 

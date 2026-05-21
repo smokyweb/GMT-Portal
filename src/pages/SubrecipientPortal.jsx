@@ -16,6 +16,7 @@ import {
 import StatusBadge from '../components/StatusBadge';
 import ExpenditureBar from '../components/ExpenditureBar';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
+import PortalAnalyticsTab from '../components/PortalAnalyticsTab';
 
 // ── Allocation Detail Panel ────────────────────────────────────────────────
 function AllocationCard({ grant, onViewDetails }) {
@@ -399,10 +400,42 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
 
 // ── Allocation Detail Dialog ───────────────────────────────────────────────
 function AllocationDetailDialog({ grant, onClose }) {
+  const [lineItems, setLineItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  useEffect(() => {
+    if (!grant) return;
+    setLoadingItems(true);
+    // Fetch funding request line items linked to this application's funding requests
+    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date', 100)
+      .then(async (frs) => {
+        if (!frs.length) { setLineItems([]); setLoadingItems(false); return; }
+        const frIds = frs.map(f => f.id);
+        // Fetch all line items for these funding requests
+        const allItems = await Promise.all(
+          frIds.map(id => base44.entities.FundingRequestLineItem.filter({ funding_request_id: id }))
+        );
+        const flat = allItems.flat();
+        setLineItems(flat);
+        setLoadingItems(false);
+      });
+  }, [grant?.id]);
+
   if (!grant) return null;
+
+  // Summarize by budget category
+  const byCategory = lineItems.reduce((acc, li) => {
+    const cat = li.budget_category || 'Other';
+    if (!acc[cat]) acc[cat] = 0;
+    acc[cat] += Number(li.amount) || 0;
+    return acc;
+  }, {});
+
+  const totalLineItems = lineItems.reduce((s, li) => s + (Number(li.amount) || 0), 0);
+
   return (
     <Dialog open={!!grant} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{grant.project_title || 'Grant Allocation Details'}</DialogTitle>
           <div className="flex items-center gap-2 pt-1 flex-wrap">
@@ -420,7 +453,7 @@ function AllocationDetailDialog({ grant, onClose }) {
               {[
                 { label: 'Awarded Amount', value: formatCurrency(grant.awarded_amount), color: 'text-green-700' },
                 { label: 'Total Expended', value: formatCurrency(grant.total_expended), color: '' },
-                { label: 'Remaining Balance', value: formatCurrency(grant.remaining_balance || grant.awarded_amount), color: 'text-blue-700' },
+                { label: 'Remaining Balance', value: formatCurrency(grant.remaining_balance ?? grant.awarded_amount), color: 'text-blue-700' },
                 { label: 'Match Committed', value: formatCurrency(grant.match_amount), color: '' },
                 { label: 'Expenditure Rate', value: `${Math.round(grant.expenditure_rate || 0)}%`, color: '' },
               ].map(({ label, value, color }) => (
@@ -429,6 +462,9 @@ function AllocationDetailDialog({ grant, onClose }) {
                   <p className={`font-bold text-sm ${color}`}>{value || '—'}</p>
                 </div>
               ))}
+            </div>
+            <div className="mt-3">
+              <ExpenditureBar rate={grant.expenditure_rate || 0} />
             </div>
           </div>
 
@@ -447,6 +483,76 @@ function AllocationDetailDialog({ grant, onClose }) {
             </div>
           </div>
 
+          {/* Expenditure Line Items */}
+          <div>
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">Expenditure Details</p>
+            {loadingItems ? (
+              <div className="flex items-center justify-center p-6">
+                <div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" />
+              </div>
+            ) : lineItems.length === 0 ? (
+              <p className="text-sm text-muted-foreground bg-muted/30 rounded-lg p-4 text-center">No expenditure line items submitted yet.</p>
+            ) : (
+              <>
+                {/* Category summary */}
+                {Object.keys(byCategory).length > 1 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-3">
+                    {Object.entries(byCategory).map(([cat, total]) => (
+                      <div key={cat} className="bg-muted/40 rounded-lg p-2.5 flex items-center justify-between">
+                        <span className="text-xs font-medium">{cat}</span>
+                        <span className="text-xs font-bold">{formatCurrency(total)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Line item table */}
+                <div className="rounded-lg border overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-muted/50 border-b">
+                        <th className="text-left p-2.5 font-medium text-muted-foreground text-xs">Category</th>
+                        <th className="text-left p-2.5 font-medium text-muted-foreground text-xs">Description</th>
+                        <th className="text-left p-2.5 font-medium text-muted-foreground text-xs">Item</th>
+                        <th className="text-right p-2.5 font-medium text-muted-foreground text-xs">Qty</th>
+                        <th className="text-right p-2.5 font-medium text-muted-foreground text-xs">Unit Cost</th>
+                        <th className="text-right p-2.5 font-medium text-muted-foreground text-xs">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lineItems.map((li, idx) => (
+                        <tr key={li.id || idx} className="border-b last:border-0 hover:bg-muted/20">
+                          <td className="p-2.5">
+                            <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{li.budget_category}</span>
+                          </td>
+                          <td className="p-2.5 text-xs max-w-[140px]">
+                            <p className="font-medium truncate">{li.expenditure_name || li.description || '—'}</p>
+                            {li.ael_number && <p className="text-muted-foreground">AEL: {li.ael_number}</p>}
+                          </td>
+                          <td className="p-2.5 text-xs text-muted-foreground">
+                            {li.item_manufacturer && <span>{li.item_manufacturer}</span>}
+                            {li.item_manufacturer && li.item_model && <span> · </span>}
+                            {li.item_model && <span>{li.item_model}</span>}
+                            {!li.item_manufacturer && !li.item_model && '—'}
+                          </td>
+                          <td className="p-2.5 text-xs text-right">{li.quantity || '—'}</td>
+                          <td className="p-2.5 text-xs text-right">{li.unit_cost ? formatCurrency(li.unit_cost) : '—'}</td>
+                          <td className="p-2.5 text-xs text-right font-semibold">{formatCurrency(li.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                    <tfoot>
+                      <tr className="bg-muted/50 border-t font-bold">
+                        <td colSpan={5} className="p-2.5 text-xs text-right">Total Expended (Submitted)</td>
+                        <td className="p-2.5 text-xs text-right">{formatCurrency(totalLineItems)}</td>
+                      </tr>
+                    </tfoot>
+                  </table>
+                </div>
+              </>
+            )}
+          </div>
+
           {/* Project Narrative */}
           {grant.project_narrative && (
             <div>
@@ -462,8 +568,6 @@ function AllocationDetailDialog({ grant, onClose }) {
               <p className="text-sm text-orange-800">{grant.revision_notes}</p>
             </div>
           )}
-
-          <ExpenditureBar rate={grant.expenditure_rate || 0} />
         </div>
       </DialogContent>
     </Dialog>
@@ -476,6 +580,7 @@ export default function SubrecipientPortal() {
   const [apps, setApps] = useState([]);
   const [schedules, setSchedules] = useState([]);
   const [flags, setFlags] = useState([]);
+  const [fundingRequests, setFundingRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedGrant, setSelectedGrant] = useState(null);
   const [selectedSchedule, setSelectedSchedule] = useState(null);
@@ -485,15 +590,17 @@ export default function SubrecipientPortal() {
     const u = await base44.auth.me();
     setUser(u);
     if (!u.organization_id) { setLoading(false); return; }
-    const [a, allSchedules, allFlags] = await Promise.all([
+    const [a, allSchedules, allFlags, allFRs] = await Promise.all([
       base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.ReportSchedule.list('-due_date', 100),
       base44.entities.ComplianceFlag.list('-created_date', 50),
+      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200),
     ]);
     setApps(a);
     const appIds = new Set(a.map(x => x.id));
     setSchedules(allSchedules.filter(s => appIds.has(s.application_id)));
     setFlags(allFlags.filter(f => appIds.has(f.application_id) && !f.is_resolved));
+    setFundingRequests(allFRs);
     setLoading(false);
   };
 
@@ -576,7 +683,7 @@ export default function SubrecipientPortal() {
 
       {/* Main Tabs */}
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList className="grid grid-cols-3 w-full max-w-md">
+        <TabsList className="grid grid-cols-4 w-full max-w-xl">
           <TabsTrigger value="allocations" className="flex items-center gap-1.5">
             <DollarSign className="h-3.5 w-3.5" /> Allocations
           </TabsTrigger>
@@ -588,6 +695,9 @@ export default function SubrecipientPortal() {
           </TabsTrigger>
           <TabsTrigger value="documents" className="flex items-center gap-1.5">
             <Upload className="h-3.5 w-3.5" /> Documents
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1.5">
+            <TrendingUp className="h-3.5 w-3.5" /> Analytics
           </TabsTrigger>
         </TabsList>
 
@@ -716,6 +826,11 @@ export default function SubrecipientPortal() {
         {/* ── DOCUMENTS TAB ── */}
         <TabsContent value="documents" className="mt-4">
           <DocumentUploadSection apps={allGrants} user={user} onUploaded={loadData} />
+        </TabsContent>
+
+        {/* ── ANALYTICS TAB ── */}
+        <TabsContent value="analytics" className="mt-4">
+          <PortalAnalyticsTab apps={apps} fundingRequests={fundingRequests} />
         </TabsContent>
       </Tabs>
 

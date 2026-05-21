@@ -1,12 +1,24 @@
 import { useState, useEffect } from 'react';
 import { Bell } from 'lucide-react';
 import { base44 } from '@/api/base44Client';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { toast } from 'sonner';
 import moment from 'moment';
 
+const NOTIFICATION_ROUTES = {
+  message: '/messages',
+  compliance_flag: '/compliance',
+  report_submitted: '/reports',
+  application_status: '/applications',
+  funding_request: '/funding-requests',
+  milestone: '/milestones',
+};
+
 export default function NotificationBell({ userEmail }) {
+  const navigate = useNavigate();
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
 
@@ -24,6 +36,14 @@ export default function NotificationBell({ userEmail }) {
       await base44.entities.Notification.update(n.id, { is_read: true });
     }
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+  };
+
+  const handleNotificationClick = (notification) => {
+    const route = NOTIFICATION_ROUTES[notification.type] || '/';
+    base44.entities.Notification.update(notification.id, { is_read: true });
+    setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
+    setOpen(false);
+    navigate(route);
   };
 
   return (
@@ -52,11 +72,15 @@ export default function NotificationBell({ userEmail }) {
             <p className="text-sm text-muted-foreground p-4 text-center">No notifications</p>
           ) : (
             notifications.map(n => (
-              <div key={n.id} className={`px-4 py-3 border-b last:border-0 cursor-pointer hover:bg-muted/50 transition ${!n.is_read ? 'bg-primary/5' : ''}`}>
+              <button
+                key={n.id}
+                onClick={() => handleNotificationClick(n)}
+                className={`w-full text-left px-4 py-3 border-b last:border-0 hover:bg-muted/50 transition ${!n.is_read ? 'bg-primary/5' : ''}`}
+              >
                 <p className="text-sm font-medium">{n.title}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
                 <p className="text-[10px] text-muted-foreground mt-1">{moment(n.created_date).fromNow()}</p>
-              </div>
+              </button>
             ))
           )}
         </ScrollArea>

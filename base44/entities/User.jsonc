@@ -5,27 +5,46 @@
     "role": {
       "type": "string",
       "enum": [
-        "admin",
         "user",
         "reviewer",
+        "admin",
+        "federal_officer",
+        "federal_admin",
         "isc_admin"
-      ]
+      ],
+      "default": "user"
     },
-    "grantee_id": {
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "scope_state": {
       "type": "string",
-      "description": "FK to Grantee \u2014 links this user to their state grantee system"
-    },
-    "title": {
-      "type": "string"
-    },
-    "department": {
-      "type": "string"
+      "description": "State code for state-scoped admins/reviewers"
     },
     "phone": {
       "type": "string"
     },
-    "organization_id": {
-      "type": "string"
+    "active_status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "inactive"
+      ],
+      "default": "active",
+      "description": "User account status"
+    },
+    "last_login": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last login"
+    },
+    "last_activity": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of last activity"
     }
   }
 }

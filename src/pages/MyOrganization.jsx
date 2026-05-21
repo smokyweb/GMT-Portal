@@ -4,11 +4,15 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Building2, Check } from 'lucide-react';
+import OrgUserManagement from '../components/OrgUserManagement';
+import OrgAlertsPanel from '../components/OrgAlertsPanel';
 
 export default function MyOrganization() {
   const [user, setUser] = useState(null);
   const [org, setOrg] = useState(null);
+  const [apps, setApps] = useState([]);
   const [form, setForm] = useState({
     name: '', type: 'Municipality', ein: '', sam_uei: '', address: '', city: '', state: '', zip: '', county: '',
   });
@@ -20,11 +24,12 @@ export default function MyOrganization() {
     base44.auth.me().then(async (u) => {
       setUser(u);
       if (u.organization_id) {
-        const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
-        if (orgs.length > 0) {
-          setOrg(orgs[0]);
-          setForm(orgs[0]);
-        }
+        const [orgs, myApps] = await Promise.all([
+          base44.entities.Organization.filter({ id: u.organization_id }),
+          base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
+        ]);
+        if (orgs.length > 0) { setOrg(orgs[0]); setForm(orgs[0]); }
+        setApps(myApps);
       }
       setLoading(false);
     });
@@ -47,47 +52,64 @@ export default function MyOrganization() {
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="max-w-4xl space-y-6">
       <div className="flex items-center gap-3">
         <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
           <Building2 className="h-6 w-6 text-primary" />
         </div>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Organization Profile</h1>
-          <p className="text-muted-foreground text-sm">{org ? 'Update your organization details' : 'Set up your organization to get started'}</p>
+          <h1 className="text-2xl font-bold tracking-tight">My Organization</h1>
+          <p className="text-muted-foreground text-sm">{org ? org.name : 'Set up your organization to get started'}</p>
         </div>
       </div>
 
-      <div className="bg-card rounded-xl border p-6 space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="col-span-2">
-            <Label>Organization Name</Label>
-            <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="City of Springfield" />
-          </div>
-          <div>
-            <Label>Organization Type</Label>
-            <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {['County', 'Municipality', 'Nonprofit', 'Tribe'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-              </SelectContent>
-            </Select>
-          </div>
-          <div><Label>EIN</Label><Input value={form.ein} onChange={e => setForm(f => ({ ...f, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
-          <div><Label>SAM UEI</Label><Input value={form.sam_uei} onChange={e => setForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
-          <div><Label>County</Label><Input value={form.county} onChange={e => setForm(f => ({ ...f, county: e.target.value }))} /></div>
-          <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
-          <div><Label>City</Label><Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
-          <div><Label>State</Label><Input value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} placeholder="IL" /></div>
-          <div><Label>ZIP Code</Label><Input value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} /></div>
-        </div>
+      <Tabs defaultValue="profile">
+        <TabsList>
+          <TabsTrigger value="profile">Profile</TabsTrigger>
+          <TabsTrigger value="team">Team Members</TabsTrigger>
+          <TabsTrigger value="alerts">Alerts & Notifications</TabsTrigger>
+        </TabsList>
 
-        <div className="flex justify-end">
-          <Button onClick={handleSave} disabled={saving || !form.name}>
-            {saved ? <><Check className="h-4 w-4 mr-1" /> Saved</> : saving ? 'Saving...' : org ? 'Update Profile' : 'Create Profile'}
-          </Button>
-        </div>
-      </div>
+        <TabsContent value="profile" className="mt-4">
+          <div className="bg-card rounded-xl border p-6 space-y-4 max-w-2xl">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label>Organization Name</Label>
+                <Input value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="City of Springfield" />
+              </div>
+              <div>
+                <Label>Organization Type</Label>
+                <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['County', 'Municipality', 'Nonprofit', 'Tribe'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div><Label>EIN</Label><Input value={form.ein} onChange={e => setForm(f => ({ ...f, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
+              <div><Label>SAM UEI</Label><Input value={form.sam_uei} onChange={e => setForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
+              <div><Label>County</Label><Input value={form.county} onChange={e => setForm(f => ({ ...f, county: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+              <div><Label>City</Label><Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
+              <div><Label>State</Label><Input value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} placeholder="IL" /></div>
+              <div><Label>ZIP Code</Label><Input value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} /></div>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={handleSave} disabled={saving || !form.name}>
+                {saved ? <><Check className="h-4 w-4 mr-1" /> Saved</> : saving ? 'Saving...' : org ? 'Update Profile' : 'Create Profile'}
+              </Button>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="team" className="mt-4">
+          {user && org ? <OrgUserManagement user={user} org={org} /> : <p className="text-sm text-muted-foreground">Set up your organization profile first.</p>}
+        </TabsContent>
+
+        <TabsContent value="alerts" className="mt-4">
+          {user ? <OrgAlertsPanel user={user} apps={apps} /> : null}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

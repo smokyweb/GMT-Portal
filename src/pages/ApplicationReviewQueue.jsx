@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Eye, Search } from 'lucide-react';
+import { Eye, Search, FileText, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,6 +11,15 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import StatusBadge from '../components/StatusBadge';
 import ApplicationAuditTab from '../components/ApplicationAuditTab';
+import ApplicationPdfExport from '../components/ApplicationPdfExport';
+import AuditPackageExport from '../components/AuditPackageExport';
+import AppLockedBanner from '../components/AppLockedBanner';
+import { isAppLocked } from '../hooks/useAppLock';
+import ComplianceChecklist from '../components/ComplianceChecklist';
+import ContextualThread from '../components/ContextualThread';
+import BudgetAmendmentReview from '../components/BudgetAmendmentReview';
+import ReviewScoreCard from '../components/ReviewScoreCard';
+import RfiPanel from '../components/RfiPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 import moment from 'moment';
 
@@ -22,34 +31,79 @@ export default function ApplicationReviewQueue() {
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProgram, setFilterProgram] = useState('all');
+  const [filterOrg, setFilterOrg] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [reviewScore, setReviewScore] = useState('');
   const [reviewNotes, setReviewNotes] = useState('');
+  const [scoreCardValues, setScoreCardValues] = useState({});
+  const [nofos, setNofos] = useState([]);
+  const [appTasks, setAppTasks] = useState([]);
   const [revisionRequest, setRevisionRequest] = useState('');
   const [awardAmount, setAwardAmount] = useState('');
+  const [viewApp, setViewApp] = useState(null);
+  const [dateStart, setDateStart] = useState('');
+  const [dateEnd, setDateEnd] = useState('');
+  const [dateMode, setDateMode] = useState('none'); // 'none', 'fiscal', 'custom'
+  const [fiscalYear, setFiscalYear] = useState(new Date().getFullYear().toString());
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
-    const [a, u] = await Promise.all([
+    const [allApps, u, n] = await Promise.all([
       base44.entities.Application.list('-created_date', 100),
       base44.auth.me(),
+      base44.entities.Nofo.list('-created_date', 200),
     ]);
-    setApps(a);
+    // Data isolation by role
+    let visibleApps = allApps;
+    let visibleNofos = n;
+    if (u && !['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
+      if (u.role === 'admin' && u.scope_state) {
+        // State admin: see applications from orgs in their state
+        const orgs = await base44.entities.Organization.filter({ state: u.scope_state });
+        const orgIds = new Set(orgs.map(o => o.id));
+        visibleApps = allApps.filter(a => orgIds.has(a.organization_id));
+        // Also filter NOFOs to those available to their state
+        visibleNofos = n.filter(nofo =>
+          !nofo.scope_states || nofo.scope_states.length === 0 || nofo.scope_states.includes(u.scope_state)
+        );
+      } else if (u.role === 'user' && u.organization_id) {
+        // Subrecipient: see only their organization's applications
+        visibleApps = allApps.filter(a => a.organization_id === u.organization_id);
+      }
+    }
+    setApps(visibleApps);
     setUser(u);
+    setNofos(visibleNofos);
     setLoading(false);
   };
 
   const openReview = async (app) => {
-    const b = await base44.entities.ApplicationBudget.filter({ application_id: app.id });
+    const [b, t] = await Promise.all([
+      base44.entities.ApplicationBudget.filter({ application_id: app.id }),
+      base44.entities.Task.filter({ application_id: app.id }, '-created_date', 50),
+    ]);
     setBudgets(b);
+    setAppTasks(t);
     setSelected(app);
     setReviewScore(app.score || '');
     setReviewNotes('');
     setRevisionRequest('');
     setAwardAmount(app.requested_amount || '');
+    setScoreCardValues({});
+  };
+
+  const handleClose = async () => {
+    if (!window.confirm(`Close application ${selected.application_number}? This will lock it as read-only.`)) return;
+    await base44.entities.Application.update(selected.id, {
+      status: 'Closed',
+      closed_at: new Date().toISOString(),
+    });
+    await logAudit(base44, user, 'Closed', 'Application', selected.id, `Closed application ${selected.application_number}`);
+    setSelected(null);
+    loadData();
   };
 
   const handleApprove = async () => {
@@ -160,11 +214,30 @@ export default function ApplicationReviewQueue() {
     setBudgets(prev => prev.map(b => b.id === budgetItem.id ? { ...b, is_allowable: !b.is_allowable } : b));
   };
 
+  const getEffectiveDateRange = () => {
+    if (dateMode === 'fiscal') {
+      const fy = parseInt(fiscalYear);
+      return { start: `${fy}-10-01`, end: `${fy + 1}-09-30` };
+    } else if (dateMode === 'custom') {
+      return { start: dateStart, end: dateEnd };
+    }
+    return { start: null, end: null };
+  };
+
+  const { start: rangeStart, end: rangeEnd } = getEffectiveDateRange();
+
   const filtered = apps.filter(a => {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
     if (filterProgram !== 'all' && a.program_code !== filterProgram) return false;
-    if (searchTerm && !a.organization_name?.toLowerCase().includes(searchTerm.toLowerCase())
-      && !a.application_number?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    if (filterOrg !== 'all' && a.organization_name !== filterOrg) return false;
+    if (rangeStart && a.submitted_at && new Date(a.submitted_at) < new Date(rangeStart)) return false;
+    if (rangeEnd && a.submitted_at && new Date(a.submitted_at) > new Date(rangeEnd)) return false;
+    if (searchTerm) {
+      const q = searchTerm.toLowerCase();
+      if (!a.organization_name?.toLowerCase().includes(q)
+        && !a.application_number?.toLowerCase().includes(q)
+        && !a.grant_number?.toLowerCase().includes(q)) return false;
+    }
     return true;
   });
 
@@ -174,14 +247,17 @@ export default function ApplicationReviewQueue() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold tracking-tight">Application Review Queue</h1>
-        <p className="text-muted-foreground text-sm mt-1">Review and process grant applications</p>
+        <p className="text-muted-foreground text-sm mt-1">
+          Review and process grant applications
+          {user?.scope_state && <span className="ml-2 px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{user.scope_state}</span>}
+        </p>
       </div>
 
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search by org or app #..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input className="pl-9" placeholder="Search by org, app #, or grant #..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
@@ -203,7 +279,41 @@ export default function ApplicationReviewQueue() {
             ))}
           </SelectContent>
         </Select>
-      </div>
+        <Select value={filterOrg} onValueChange={setFilterOrg}>
+          <SelectTrigger className="w-[180px]"><SelectValue placeholder="All Organizations" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Organizations</SelectItem>
+            {[...new Set(apps.map(a => a.organization_name).filter(Boolean))].sort().map(o => (
+              <SelectItem key={o} value={o}>{o}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={dateMode} onValueChange={v => { setDateMode(v); setDateStart(''); setDateEnd(''); }}>
+          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">All Dates</SelectItem>
+            <SelectItem value="fiscal">Fiscal Year</SelectItem>
+            <SelectItem value="custom">Custom Range</SelectItem>
+          </SelectContent>
+        </Select>
+        {dateMode === 'fiscal' && (
+          <Select value={fiscalYear} onValueChange={setFiscalYear}>
+            <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              {Array.from({ length: 5 }, (_, i) => {
+                const year = new Date().getFullYear() - i;
+                return <SelectItem key={year} value={year.toString()}>{`FY ${year}-${year + 1}`}</SelectItem>;
+              })}
+            </SelectContent>
+          </Select>
+        )}
+        {dateMode === 'custom' && (
+          <>
+            <Input type="date" placeholder="Start Date" value={dateStart} onChange={e => setDateStart(e.target.value)} className="w-[140px]" title="Start date" />
+            <Input type="date" placeholder="End Date" value={dateEnd} onChange={e => setDateEnd(e.target.value)} className="w-[140px]" title="End date" />
+          </>
+        )}
+        </div>
 
       {/* Table */}
       <div className="bg-card rounded-xl border overflow-hidden">
@@ -212,6 +322,7 @@ export default function ApplicationReviewQueue() {
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 font-medium text-muted-foreground">App #</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Grant #</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
@@ -225,6 +336,7 @@ export default function ApplicationReviewQueue() {
               {filtered.map(app => (
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30 transition">
                   <td className="p-3 font-mono text-xs">{app.application_number || '—'}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{app.grant_number || '—'}</td>
                   <td className="p-3 font-medium">{app.organization_name || '—'}</td>
                   <td className="p-3 max-w-[200px] truncate">{app.project_title || '—'}</td>
                   <td className="p-3">
@@ -233,7 +345,10 @@ export default function ApplicationReviewQueue() {
                   <td className="p-3 text-right font-medium">{formatCurrency(app.requested_amount)}</td>
                   <td className="p-3"><StatusBadge status={app.status} /></td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(app.submitted_at)}</td>
-                  <td className="p-3">
+                  <td className="p-3 flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => setViewApp(app)}>
+                      <FileText className="h-3.5 w-3.5 mr-1" /> View
+                    </Button>
                     <Button variant="ghost" size="sm" onClick={() => openReview(app)}>
                       <Eye className="h-3.5 w-3.5 mr-1" /> Review
                     </Button>
@@ -241,25 +356,77 @@ export default function ApplicationReviewQueue() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No applications found</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No applications found</td></tr>
               )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* View Dialog (read-only) */}
+      <Dialog open={!!viewApp} onOpenChange={() => setViewApp(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Application {viewApp?.application_number}</DialogTitle>
+              <StatusBadge status={viewApp?.status} />
+            </div>
+          </DialogHeader>
+          {viewApp && (
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{viewApp.organization_name}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewApp.program_code} — {viewApp.program_name}</p></div>
+                {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Grant Number</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
+                <div><Label className="text-muted-foreground text-xs">Requested Amount</Label><p className="font-bold text-lg">{formatCurrency(viewApp.requested_amount)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Match Commitment</Label><p className="font-medium">{formatCurrency(viewApp.match_amount)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Performance Period</Label><p className="font-medium">{formatDateShort(viewApp.performance_start)} – {formatDateShort(viewApp.performance_end)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Submitted</Label><p className="font-medium">{formatDateShort(viewApp.submitted_at)}</p></div>
+              </div>
+              <div><Label className="text-muted-foreground text-xs">Project Title</Label><p className="font-medium">{viewApp.project_title}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Project Narrative</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.project_narrative || 'Not provided'}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Work Plan</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.work_plan || 'Not provided'}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Risk Assessment</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.risk_assessment || 'Not provided'}</p></div>
+              {viewApp.revision_notes && (
+                <div><Label className="text-muted-foreground text-xs">Revision Notes</Label><p className="whitespace-pre-wrap bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg">{viewApp.revision_notes}</p></div>
+              )}
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Review Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Review Application {selected?.application_number}</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Review Application {selected?.application_number}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <AuditPackageExport application={selected} />
+                <ApplicationPdfExport app={selected} budgets={budgets} />
+              </div>
+            </div>
           </DialogHeader>
-          {selected && (
+          {selected && (() => {
+            const nofo = nofos.find(n => n.id === selected.nofo_id);
+            const scoringEnabled = !!nofo?.scoring_enabled;
+            const openRfis = appTasks.filter(t => t.type === 'RFI' && !['Resolved', 'Cancelled'].includes(t.status));
+            const hasBlockingRfis = openRfis.length > 0;
+            const locked = isAppLocked(selected);
+            return (
+            <>
+            <AppLockedBanner status={selected?.status} />
             <Tabs defaultValue="summary">
-              <TabsList className="mb-4">
+              <TabsList className="mb-4 flex-wrap">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
+                {scoringEnabled && <TabsTrigger value="scoring">Scoring</TabsTrigger>}
                 <TabsTrigger value="budget">Budget</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
+                <TabsTrigger value="rfi">
+                  RFIs {openRfis.length > 0 && <span className="ml-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{openRfis.length}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="amendments">Amendments</TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="audit">Audit Log</TabsTrigger>
               </TabsList>
 
@@ -273,6 +440,12 @@ export default function ApplicationReviewQueue() {
                     <Label className="text-muted-foreground text-xs">Program</Label>
                     <p className="font-medium">{selected.program_code} — {selected.program_name}</p>
                   </div>
+                  {selected.grant_number && (
+                    <div className="col-span-2">
+                      <Label className="text-muted-foreground text-xs">Grant Number</Label>
+                      <p className="font-medium font-mono">{selected.grant_number}</p>
+                    </div>
+                  )}
                   <div>
                     <Label className="text-muted-foreground text-xs">Requested Amount</Label>
                     <p className="font-bold text-lg">{formatCurrency(selected.requested_amount)}</p>
@@ -306,7 +479,63 @@ export default function ApplicationReviewQueue() {
                   <Label className="text-muted-foreground text-xs">Risk Assessment</Label>
                   <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.risk_assessment || 'Not provided'}</p>
                 </div>
+
+                {/* EHP Status */}
+                {selected.ehp_status && selected.ehp_status !== 'NotRequired' && (
+                  <div className="p-3 rounded-lg border border-amber-200 bg-amber-50">
+                    <p className="text-xs font-semibold text-amber-800">EHP Review Required</p>
+                    <p className="text-xs text-amber-700 mt-0.5">Status: {selected.ehp_status} {selected.ehp_notes && `— ${selected.ehp_notes}`}</p>
+                  </div>
+                )}
+
+                {/* Program-specific highlights */}
+                {selected.ij_title && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Investment Justification</Label>
+                    <p className="font-medium text-sm">{selected.ij_title}</p>
+                    <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.ij_description || 'Not provided'}</p>
+                  </div>
+                )}
+                {selected.thira_spr_alignment && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">THIRA/SPR Alignment</Label>
+                    <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.thira_spr_alignment}</p>
+                  </div>
+                )}
+                {selected.nsgp_vulnerability_assessment && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Vulnerability Assessment</Label>
+                    <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.nsgp_vulnerability_assessment}</p>
+                  </div>
+                )}
+                {selected.slcgp_cybersecurity_plan && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Cybersecurity Plan</Label>
+                    <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.slcgp_cybersecurity_plan}</p>
+                  </div>
+                )}
+                {selected.procurement_method && selected.procurement_method !== 'NotApplicable' && (
+                  <div>
+                    <Label className="text-muted-foreground text-xs">Procurement Method</Label>
+                    <p className="text-sm font-medium">{selected.procurement_method}
+                      {selected.procurement_amount ? ` — ${formatCurrency(selected.procurement_amount)}` : ''}
+                    </p>
+                    {selected.procurement_justification && (
+                      <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap bg-muted/50 p-2 rounded-lg">{selected.procurement_justification}</p>
+                    )}
+                  </div>
+                )}
               </TabsContent>
+
+              {scoringEnabled && (
+                <TabsContent value="scoring">
+                  <ReviewScoreCard
+                    programCode={selected?.program_code}
+                    scores={scoreCardValues}
+                    onChange={setScoreCardValues}
+                  />
+                </TabsContent>
+              )}
 
               <TabsContent value="budget">
                 <table className="w-full text-sm">
@@ -348,8 +577,38 @@ export default function ApplicationReviewQueue() {
                 </table>
               </TabsContent>
 
+              <TabsContent value="rfi">
+                <RfiPanel
+                  applicationId={selected.id}
+                  applicationNumber={selected.application_number}
+                  organizationName={selected.organization_name}
+                  user={user}
+                  isAdmin={true}
+                />
+              </TabsContent>
+
               <TabsContent value="documents">
-                <p className="text-sm text-muted-foreground p-4">Document review will show uploaded files against NOFO requirements.</p>
+                <ComplianceChecklist
+                  applicationId={selected.id}
+                  applicationNumber={selected.application_number}
+                  organizationName={selected.organization_name}
+                  user={user}
+                  canUpload={false}
+                />
+              </TabsContent>
+
+              <TabsContent value="amendments">
+                <BudgetAmendmentReview applicationId={selected?.id} isAdmin={true} />
+              </TabsContent>
+
+              <TabsContent value="messages">
+                <ContextualThread
+                  applicationId={selected.id}
+                  applicationNumber={selected.application_number}
+                  organizationName={selected.organization_name}
+                  programCode={selected.program_code}
+                  user={user}
+                />
               </TabsContent>
 
               <TabsContent value="audit">
@@ -358,33 +617,53 @@ export default function ApplicationReviewQueue() {
 
               {/* Review Actions */}
               <div className="mt-6 border-t pt-4 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Score (0–100)</Label>
-                    <Input type="number" min={0} max={100} value={reviewScore} onChange={e => setReviewScore(e.target.value)} />
-                  </div>
-                  <div>
-                    <Label>Award Amount ($)</Label>
-                    <Input type="number" value={awardAmount} onChange={e => setAwardAmount(e.target.value)} />
-                  </div>
-                </div>
-                <div>
-                  <Label>Internal Notes</Label>
-                  <Textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} rows={2} />
-                </div>
-                <div>
-                  <Label>Revision Request (sent to subrecipient)</Label>
-                  <Textarea value={revisionRequest} onChange={e => setRevisionRequest(e.target.value)} rows={2} placeholder="Describe changes needed..." />
-                </div>
+                {!locked && (
+                  <>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Score (0–100)</Label>
+                        <Input type="number" min={0} max={100} value={reviewScore} onChange={e => setReviewScore(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label>Award Amount ($)</Label>
+                        <Input type="number" value={awardAmount} onChange={e => setAwardAmount(e.target.value)} />
+                      </div>
+                    </div>
+                    <div>
+                      <Label>Internal Notes</Label>
+                      <Textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} rows={2} />
+                    </div>
+                    <div>
+                      <Label>Revision Request (sent to subrecipient)</Label>
+                      <Textarea value={revisionRequest} onChange={e => setRevisionRequest(e.target.value)} rows={2} placeholder="Describe changes needed..." />
+                    </div>
+                    {hasBlockingRfis && (
+                      <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700 font-medium">
+                        ⚠ Approval blocked: {openRfis.length} open RFI{openRfis.length !== 1 ? 's' : ''} must be resolved before approving.
+                      </div>
+                    )}
+                  </>
+                )}
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
-                  <Button variant="destructive" onClick={handleDeny}>Deny</Button>
-                  <Button variant="secondary" onClick={handleRevision} disabled={!revisionRequest}>Request Revision</Button>
-                  <Button onClick={handleApprove}>Approve</Button>
+                  {!locked && (
+                    <>
+                      <Button variant="destructive" onClick={handleDeny}>Deny</Button>
+                      <Button variant="secondary" onClick={handleRevision} disabled={!revisionRequest}>Request Revision</Button>
+                      {selected?.status === 'Approved' && (
+                        <Button variant="outline" className="border-slate-400 text-slate-700" onClick={handleClose}>
+                          <Lock className="h-3.5 w-3.5 mr-1" /> Close & Lock
+                        </Button>
+                      )}
+                      <Button onClick={handleApprove} disabled={hasBlockingRfis} title={hasBlockingRfis ? 'Resolve all open RFIs first' : ''}>Approve</Button>
+                    </>
+                  )}
                 </div>
               </div>
             </Tabs>
-          )}
+            </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

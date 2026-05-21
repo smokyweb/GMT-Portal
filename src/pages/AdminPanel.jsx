@@ -5,11 +5,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Users, ClipboardList, ShieldCheck, UserPlus, RefreshCw, CheckCircle, Trash2, KeyRound, Pencil, MoreHorizontal } from 'lucide-react';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Users, ShieldCheck, UserPlus, RefreshCw, CheckCircle, Trash2, KeyRound, Pencil, MoreHorizontal, ArrowUp, ArrowDown, Edit3, Eye, Circle, Lock, Unlock, Clock } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import StatusBadge from '../components/StatusBadge';
+import RoleBadge from '../components/RoleBadge';
+import BulkUserUpload from '../components/BulkUserUpload';
 import { formatCurrency, formatDateShort } from '../lib/helpers';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ROLE_LABELS } from '../lib/permissions';
 
 export default function AdminPanel() {
   const [user, setUser] = useState(null);
@@ -17,15 +20,20 @@ export default function AdminPanel() {
   const [applications, setApplications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const [organizations, setOrganizations] = useState([]);
+  const [grantees, setGrantees] = useState([]);
+
   // Invite
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('user');
+  const [inviteOrgId, setInviteOrgId] = useState('');
+  const [inviteScopeState, setInviteScopeState] = useState('');
   const [inviting, setInviting] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState(false);
 
   // Edit user dialog
   const [editUser, setEditUser] = useState(null);
-  const [editRole, setEditRole] = useState('user');
+  const [editFields, setEditFields] = useState({ role: 'user', organization_id: '', scope_state: '', phone: '', active_status: 'active' });
   const [editSaving, setEditSaving] = useState(false);
 
   // Password reset
@@ -37,18 +45,29 @@ export default function AdminPanel() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  const [appFilter, setAppFilter] = useState('all');
+  // Bulk actions
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  const [bulkAction, setBulkAction] = useState(null);
+  const [bulkValue, setBulkValue] = useState('');
+  const [bulkProcessing, setBulkProcessing] = useState(false);
+
   const [searchUsers, setSearchUsers] = useState('');
+  const [roleFilter, setRoleFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortColumn, setSortColumn] = useState('name');
+  const [sortDirection, setSortDirection] = useState('asc');
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const [userList, appList] = await Promise.all([
+      const [userList, orgList, granteeList] = await Promise.all([
         base44.entities.User.list('-created_date', 200),
-        base44.entities.Application.list('-created_date', 200),
+        base44.entities.Organization.filter({ is_active: true }),
+        base44.entities.Grantee.list('-created_date', 200),
       ]);
       setUsers(userList);
-      setApplications(appList);
+      setOrganizations(orgList);
+      setGrantees(granteeList);
       setLoading(false);
     });
   }, []);
@@ -57,18 +76,72 @@ export default function AdminPanel() {
     if (!inviteEmail) return;
     setInviting(true);
     await base44.users.inviteUser(inviteEmail, inviteRole);
+    // Poll briefly for the user record to appear, then set org/scope_state
+    if (inviteOrgId || inviteScopeState) {
+      const org = organizations.find(o => o.id === inviteOrgId);
+      let attempts = 0;
+      while (attempts < 5) {
+        await new Promise(r => setTimeout(r, 1000));
+        const userList = await base44.entities.User.list('-created_date', 200);
+        const newUser = userList.find(u => u.email === inviteEmail);
+        if (newUser) {
+          const updates = {};
+          if (inviteOrgId) { updates.organization_id = inviteOrgId; updates.organization_name = org?.name; }
+          if (inviteScopeState) updates.scope_state = inviteScopeState;
+          await base44.entities.User.update(newUser.id, updates);
+          setUsers(userList.map(u => u.id === newUser.id ? { ...u, ...updates } : u));
+          break;
+        }
+        attempts++;
+      }
+    }
     setInviting(false);
     setInviteSuccess(true);
     setInviteEmail('');
+    setInviteOrgId('');
+    setInviteScopeState('');
     setTimeout(() => setInviteSuccess(false), 3000);
   };
 
-  const handleEditRole = async () => {
+  const handleEditUser = async () => {
     setEditSaving(true);
-    await base44.entities.User.update(editUser.id, { role: editRole });
-    setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, role: editRole } : u));
+    const org = organizations.find(o => o.id === editFields.organization_id);
+    const updates = {
+      role: editFields.role,
+      phone: editFields.phone,
+      active_status: editFields.active_status,
+      organization_id: editFields.organization_id || null,
+      organization_name: org?.name || null,
+      scope_state: editFields.scope_state || null,
+    };
+    await base44.entities.User.update(editUser.id, updates);
+    setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...updates } : u));
     setEditSaving(false);
     setEditUser(null);
+  };
+
+  const handleBulkAction = async () => {
+    if (selectedUsers.size === 0 || !bulkAction) return;
+    setBulkProcessing(true);
+    const userIds = Array.from(selectedUsers);
+    
+    for (const userId of userIds) {
+      const targetUser = users.find(u => u.id === userId);
+      if (!targetUser) continue;
+
+      if (bulkAction === 'status') {
+        await base44.entities.User.update(userId, { active_status: bulkValue });
+      } else if (bulkAction === 'role') {
+        await base44.entities.User.update(userId, { role: bulkValue });
+      }
+    }
+
+    const updatedUsers = await base44.entities.User.list('-created_date', 200);
+    setUsers(updatedUsers);
+    setSelectedUsers(new Set());
+    setBulkAction(null);
+    setBulkValue('');
+    setBulkProcessing(false);
   };
 
   const handlePasswordReset = async () => {
@@ -91,45 +164,47 @@ export default function AdminPanel() {
     setDeleteTarget(null);
   };
 
-  const handleStatusChange = async (app, status) => {
-    await base44.entities.Application.update(app.id, { status });
-    setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status } : a));
-    const emailMap = {
-      Approved: {
-        subject: `Application Approved – ${app.application_number}`,
-        body: `Dear ${app.organization_name},\n\nYour grant application (${app.application_number}) has been APPROVED.\n\nPlease log in to the GMT Portal to view the details and next steps.\n\nGrant Management Team`,
-      },
-      Denied: {
-        subject: `Application Not Approved – ${app.application_number}`,
-        body: `Dear ${app.organization_name},\n\nYour grant application (${app.application_number}) has not been approved at this time.\n\nPlease log in to the GMT Portal for more information.\n\nGrant Management Team`,
-      },
-      RevisionRequested: {
-        subject: `Revision Requested – ${app.application_number}`,
-        body: `Dear ${app.organization_name},\n\nRevisions are required for your grant application (${app.application_number}).\n\nPlease log in to the GMT Portal to review the feedback and update your application.\n\nGrant Management Team`,
-      },
-    };
-    if (emailMap[status] && app.submitted_by) {
-      await base44.integrations.Core.SendEmail({ to: app.submitted_by, ...emailMap[status] });
+
+
+  const handleSort = (column) => {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('asc');
     }
   };
 
-  const filteredApps = applications.filter(a =>
-    appFilter === 'all' ? true : a.status === appFilter
-  );
-
-  const filteredUsers = users.filter(u =>
-    !searchUsers || u.full_name?.toLowerCase().includes(searchUsers.toLowerCase()) || u.email?.toLowerCase().includes(searchUsers.toLowerCase())
-  );
+  const filteredUsers = users.filter(u => {
+    const matchesSearch = !searchUsers || u.full_name?.toLowerCase().includes(searchUsers.toLowerCase()) || u.email?.toLowerCase().includes(searchUsers.toLowerCase());
+    const matchesRole = roleFilter === 'all' || u.role === roleFilter;
+    const matchesStatus = statusFilter === 'all' || u.active_status === statusFilter;
+    return matchesSearch && matchesRole && matchesStatus;
+  }).sort((a, b) => {
+    let aVal, bVal;
+    if (sortColumn === 'name') {
+      aVal = (a.full_name || '').toLowerCase();
+      bVal = (b.full_name || '').toLowerCase();
+    } else if (sortColumn === 'role') {
+      aVal = a.role || '';
+      bVal = b.role || '';
+    } else if (sortColumn === 'joined') {
+      aVal = new Date(a.created_date) || new Date(0);
+      bVal = new Date(b.created_date) || new Date(0);
+    } else if (sortColumn === 'activity') {
+      aVal = new Date(a.last_activity || a.created_date) || new Date(0);
+      bVal = new Date(b.last_activity || b.created_date) || new Date(0);
+    }
+    const cmp = aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+    return sortDirection === 'asc' ? cmp : -cmp;
+  });
 
   const stats = {
     totalUsers: users.length,
     adminUsers: users.filter(u => u.role === 'admin').length,
-    totalApps: applications.length,
-    pendingApps: applications.filter(a => a.status === 'Submitted' || a.status === 'UnderReview').length,
   };
 
-  const roleLabel = (role) => role === 'admin' ? 'State Admin' : role === 'reviewer' ? 'Reviewer' : 'Subrecipient';
-  const roleBadge = (role) => role === 'admin' ? 'bg-purple-50 text-purple-700' : role === 'reviewer' ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600';
+  // no local label/badge needed — using RoleBadge component
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -141,16 +216,14 @@ export default function AdminPanel() {
     <div className="space-y-6 max-w-6xl">
       <div>
         <h1 className="text-2xl font-bold">Admin Panel</h1>
-        <p className="text-muted-foreground text-sm mt-1">Manage users, roles, and applications.</p>
+        <p className="text-muted-foreground text-sm mt-1">Manage users and roles.</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 gap-4">
         {[
           { label: 'Total Users', value: stats.totalUsers, icon: Users, color: 'bg-blue-50 text-blue-600' },
           { label: 'Admin Users', value: stats.adminUsers, icon: ShieldCheck, color: 'bg-purple-50 text-purple-600' },
-          { label: 'Total Applications', value: stats.totalApps, icon: ClipboardList, color: 'bg-green-50 text-green-600' },
-          { label: 'Pending Review', value: stats.pendingApps, icon: RefreshCw, color: 'bg-amber-50 text-amber-600' },
         ].map(({ label, value, icon: Icon, color }) => (
           <div key={label} className="bg-card border rounded-xl p-4 flex items-center gap-3">
             <div className={`h-10 w-10 rounded-lg flex items-center justify-center flex-shrink-0 ${color}`}>
@@ -164,17 +237,13 @@ export default function AdminPanel() {
         ))}
       </div>
 
-      <Tabs defaultValue="users">
-        <TabsList>
-          <TabsTrigger value="users">Users</TabsTrigger>
-          <TabsTrigger value="applications">Applications</TabsTrigger>
-        </TabsList>
-
-        {/* USERS TAB */}
-        <TabsContent value="users" className="space-y-4 mt-4">
+      <div className="space-y-4 mt-4">
           {/* Invite user */}
-          <div className="bg-card border rounded-xl p-4">
-            <h2 className="text-sm font-semibold mb-3 flex items-center gap-2"><UserPlus className="h-4 w-4" /> Invite New User</h2>
+           <div className="bg-card border rounded-xl p-4">
+             <div className="flex items-center justify-between mb-3">
+               <h2 className="text-sm font-semibold flex items-center gap-2"><UserPlus className="h-4 w-4" /> Invite New User</h2>
+               <BulkUserUpload onSuccess={() => window.location.reload()} />
+             </div>
             <div className="flex flex-wrap gap-3 items-end">
               <div className="flex-1 min-w-48">
                 <Label className="text-xs">Email Address</Label>
@@ -197,6 +266,36 @@ export default function AdminPanel() {
                   </SelectContent>
                 </Select>
               </div>
+              {/* State scope — shown for state-level roles */}
+              {['admin', 'reviewer'].includes(inviteRole) && (
+                <div className="w-44">
+                  <Label className="text-xs">State Scope</Label>
+                  <Select value={inviteScopeState} onValueChange={setInviteScopeState}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select state…" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {grantees.filter(g => g.is_active).map(g => (
+                        <SelectItem key={g.id} value={g.state_code}>{g.state_code} — {g.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {/* Org — shown for subrecipient users */}
+              {inviteRole === 'user' && (
+                <div className="w-52">
+                  <Label className="text-xs">Organization (optional)</Label>
+                  <Select value={inviteOrgId} onValueChange={setInviteOrgId}>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={null}>None</SelectItem>
+                      {organizations.map(o => (
+                        <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="mb-0.5">
                 {inviting ? 'Sending…' : 'Send Invite'}
               </Button>
@@ -210,36 +309,142 @@ export default function AdminPanel() {
 
           {/* User table */}
           <div className="bg-card border rounded-xl overflow-hidden">
-            <div className="p-3 border-b">
-              <Input
-                placeholder="Search by name or email…"
-                value={searchUsers}
-                onChange={e => setSearchUsers(e.target.value)}
-                className="max-w-xs"
-              />
+            <div className="p-3 border-b space-y-3">
+              <div className="flex flex-wrap gap-3 items-center">
+                <Input
+                  placeholder="Search by name or email…"
+                  value={searchUsers}
+                  onChange={e => setSearchUsers(e.target.value)}
+                  className="max-w-xs"
+                />
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Roles</SelectItem>
+                    <SelectItem value="user">Subrecipient</SelectItem>
+                    <SelectItem value="reviewer">State Reviewer</SelectItem>
+                    <SelectItem value="admin">State Admin</SelectItem>
+                    <SelectItem value="federal_officer">Federal Officer</SelectItem>
+                    <SelectItem value="federal_admin">Federal Admin</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Status</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
+                  </SelectContent>
+                </Select>
+                <div className="ml-auto px-3 py-1.5 bg-primary/10 text-primary text-sm font-semibold rounded-full">
+                  {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+              {selectedUsers.size > 0 && (
+                <div className="flex gap-2 items-center p-2 bg-primary/5 rounded border border-primary/20">
+                  <span className="text-xs font-medium text-primary">{selectedUsers.size} selected</span>
+                  <Select value={bulkAction || ''} onValueChange={setBulkAction}>
+                    <SelectTrigger className="w-32 h-7"><SelectValue placeholder="Bulk action" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="status">Change Status</SelectItem>
+                      <SelectItem value="role">Change Role</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {bulkAction === 'status' && (
+                    <Select value={bulkValue} onValueChange={setBulkValue}>
+                      <SelectTrigger className="w-32 h-7"><SelectValue placeholder="Status" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="inactive">Inactive</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {bulkAction === 'role' && (
+                    <Select value={bulkValue} onValueChange={setBulkValue}>
+                      <SelectTrigger className="w-40 h-7"><SelectValue placeholder="Role" /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user">Subrecipient</SelectItem>
+                        <SelectItem value="reviewer">Reviewer</SelectItem>
+                        <SelectItem value="admin">Admin</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {bulkValue && (
+                    <Button size="sm" className="h-7" onClick={handleBulkAction} disabled={bulkProcessing}>
+                      {bulkProcessing ? 'Processing…' : 'Apply'}
+                    </Button>
+                  )}
+                  <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => { setSelectedUsers(new Set()); setBulkAction(null); setBulkValue(''); }}>
+                    Cancel
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/40">
-                    <th className="text-left p-3 font-medium text-muted-foreground">Name</th>
+                    <th className="w-6 p-3"><Checkbox checked={filteredUsers.length > 0 && selectedUsers.size === filteredUsers.length} onChange={e => setSelectedUsers(e.target.checked ? new Set(filteredUsers.map(u => u.id)) : new Set())} /></th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">
+                      <button onClick={() => handleSort('name')} className="flex items-center gap-1 hover:text-foreground transition">
+                        Name
+                        {sortColumn === 'name' && (sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)}
+                      </button>
+                    </th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Email</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Role</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Joined</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">
+                      <button onClick={() => handleSort('role')} className="flex items-center gap-1 hover:text-foreground transition">
+                        Role
+                        {sortColumn === 'role' && (sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)}
+                      </button>
+                    </th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">State / Org</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">
+                      <button onClick={() => handleSort('activity')} className="flex items-center gap-1 hover:text-foreground transition text-xs">
+                        <Clock className="h-3.5 w-3.5" /> Activity
+                        {sortColumn === 'activity' && (sortDirection === 'asc' ? <ArrowUp className="h-3.5 w-3.5" /> : <ArrowDown className="h-3.5 w-3.5" />)}
+                      </button>
+                    </th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                     <th className="p-3 font-medium text-muted-foreground">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map(u => (
-                    <tr key={u.id} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="p-3 font-medium">{u.full_name || '—'}</td>
-                      <td className="p-3 text-muted-foreground">{u.email}</td>
-                      <td className="p-3">
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${roleBadge(u.role)}`}>
-                          {roleLabel(u.role)}
-                        </span>
+                    <tr key={u.id} className={`border-b last:border-0 hover:bg-muted/20 ${u.active_status === 'inactive' ? 'opacity-60' : ''}`}>
+                      <td className="p-3"><Checkbox checked={selectedUsers.has(u.id)} onChange={e => { const newSet = new Set(selectedUsers); e.target.checked ? newSet.add(u.id) : newSet.delete(u.id); setSelectedUsers(newSet); }} /></td>
+                      <td className="p-3 font-medium">
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7">
+                            <AvatarFallback className="text-xs font-semibold bg-primary/10 text-primary">
+                              {u.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || u.email?.[0].toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          <span>{u.full_name || '—'}</span>
+                        </div>
                       </td>
-                      <td className="p-3 text-muted-foreground text-xs">{formatDateShort(u.created_date)}</td>
+                      <td className="p-3 text-muted-foreground">{u.email}</td>
+                      <td className="p-3"><RoleBadge role={u.role} /></td>
+                      <td className="p-3 text-xs text-muted-foreground">
+                        {u.scope_state && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono font-bold mr-1">{u.scope_state}</span>
+                        )}
+                        {u.organization_name || (!u.scope_state && '—')}
+                      </td>
+                      <td className="p-3 text-xs text-muted-foreground">{formatDateShort(u.last_activity || u.created_date)}</td>
+                      <td className="p-3 flex items-center gap-1.5">
+                        {u.active_status === 'active' ? (
+                          <>
+                            <Circle className="h-2 w-2 fill-green-500 text-green-500" />
+                            <span className="text-xs text-green-600 font-medium">Active</span>
+                          </>
+                        ) : (
+                          <>
+                            <Circle className="h-2 w-2 fill-slate-400 text-slate-400" />
+                            <span className="text-xs text-slate-600 font-medium">Inactive</span>
+                          </>
+                        )}
+                      </td>
                       <td className="p-3">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -247,12 +452,13 @@ export default function AdminPanel() {
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => { setEditUser(u); setEditRole(u.role || 'user'); }}>
-                              <Pencil className="h-3.5 w-3.5 mr-2" /> Change Role
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem onClick={() => { setEditUser(u); setEditFields({ role: u.role || 'user', organization_id: u.organization_id || '', scope_state: u.scope_state || '', phone: u.phone || '', active_status: u.active_status || 'active' }); }}>
+                              <Edit3 className="h-3.5 w-3.5 mr-2" /> Edit
                             </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setResetTarget(u)}>
-                              <KeyRound className="h-3.5 w-3.5 mr-2" /> Send Password Reset
+                            <DropdownMenuItem onClick={() => { setEditUser(u); setEditFields({ role: u.role || 'user', organization_id: u.organization_id || '', scope_state: u.scope_state || '', phone: u.phone || '', active_status: u.active_status === 'active' ? 'inactive' : 'active' }); }}>
+                              {u.active_status === 'active' ? <Lock className="h-3.5 w-3.5 mr-2" /> : <Unlock className="h-3.5 w-3.5 mr-2" />}
+                              {u.active_status === 'active' ? 'Deactivate' : 'Activate'}
                             </DropdownMenuItem>
                             {u.id !== user?.id && (
                               <DropdownMenuItem className="text-red-600 focus:text-red-600" onClick={() => setDeleteTarget(u)}>
@@ -265,100 +471,91 @@ export default function AdminPanel() {
                     </tr>
                   ))}
                   {filteredUsers.length === 0 && (
-                    <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No users found</td></tr>
+                    <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No users found</td></tr>
                   )}
                 </tbody>
               </table>
             </div>
           </div>
-        </TabsContent>
-
-        {/* APPLICATIONS TAB */}
-        <TabsContent value="applications" className="space-y-4 mt-4">
-          <div className="flex items-center gap-3">
-            <Select value={appFilter} onValueChange={setAppFilter}>
-              <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="Draft">Draft</SelectItem>
-                <SelectItem value="Submitted">Submitted</SelectItem>
-                <SelectItem value="UnderReview">Under Review</SelectItem>
-                <SelectItem value="Approved">Approved</SelectItem>
-                <SelectItem value="Denied">Denied</SelectItem>
-                <SelectItem value="RevisionRequested">Revision Requested</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-muted-foreground">{filteredApps.length} applications</span>
           </div>
 
-          <div className="bg-card border rounded-xl overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/40">
-                    <th className="text-left p-3 font-medium text-muted-foreground">App #</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
-                    <th className="text-right p-3 font-medium text-muted-foreground">Requested</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Submitted</th>
-                    <th className="p-3 font-medium text-muted-foreground">Change Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredApps.map(app => (
-                    <tr key={app.id} className="border-b last:border-0 hover:bg-muted/20">
-                      <td className="p-3 font-mono text-xs">{app.application_number || 'Draft'}</td>
-                      <td className="p-3 font-medium">{app.organization_name || '—'}</td>
-                      <td className="p-3"><span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{app.program_code || '—'}</span></td>
-                      <td className="p-3 text-right">{formatCurrency(app.requested_amount)}</td>
-                      <td className="p-3"><StatusBadge status={app.status} /></td>
-                      <td className="p-3 text-xs text-muted-foreground">{formatDateShort(app.submitted_at)}</td>
-                      <td className="p-3">
-                        <Select value={app.status} onValueChange={v => handleStatusChange(app, v)}>
-                          <SelectTrigger className="h-7 text-xs w-40"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {['Draft','Submitted','PendingReview','UnderReview','RevisionRequested','Approved','Denied'].map(s => (
-                              <SelectItem key={s} value={s}>{s}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
-                    </tr>
-                  ))}
-                  {filteredApps.length === 0 && (
-                    <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No applications found</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </TabsContent>
-      </Tabs>
-
-      {/* Change Role Dialog */}
+      {/* Edit User Dialog */}
       <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-        <DialogContent className="max-w-sm">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Change Role</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 py-2">
-            <p className="text-sm text-muted-foreground">{editUser?.full_name || editUser?.email}</p>
+          <div className="space-y-4 py-2">
             <div>
-              <Label>New Role</Label>
-              <Select value={editRole} onValueChange={setEditRole}>
+              <p className="text-sm font-medium">{editUser?.full_name || '—'}</p>
+              <p className="text-xs text-muted-foreground">{editUser?.email}</p>
+            </div>
+            <div>
+              <Label>Role</Label>
+              <Select value={editFields.role} onValueChange={v => setEditFields(f => ({ ...f, role: v, scope_state: '', organization_id: '' }))}>
                 <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="user">Subrecipient</SelectItem>
-                  <SelectItem value="reviewer">Reviewer</SelectItem>
+                  <SelectItem value="reviewer">State Reviewer</SelectItem>
                   <SelectItem value="admin">State Admin</SelectItem>
+                  <SelectItem value="federal_officer">Federal Officer</SelectItem>
+                  <SelectItem value="federal_admin">Federal Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-          </div>
-          <DialogFooter>
+            {/* State scope for state-level roles */}
+            {['admin', 'reviewer'].includes(editFields.role) && (
+              <div>
+                <Label>State Scope <span className="text-muted-foreground text-xs font-normal">(limits visibility to this state)</span></Label>
+                <Select value={editFields.scope_state} onValueChange={v => setEditFields(f => ({ ...f, scope_state: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select state…" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>No restriction (federal-level access)</SelectItem>
+                    {grantees.filter(g => g.is_active).map(g => (
+                      <SelectItem key={g.id} value={g.state_code}>{g.state_code} — {g.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            {/* Organization for subrecipient users */}
+            {editFields.role === 'user' && (
+              <div>
+                <Label>Organization</Label>
+                <Select value={editFields.organization_id} onValueChange={v => setEditFields(f => ({ ...f, organization_id: v }))}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={null}>None</SelectItem>
+                    {organizations.map(o => (
+                      <SelectItem key={o.id} value={o.id}>{o.name} {o.state ? `(${o.state})` : ''}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div>
+              <Label>Phone Number</Label>
+              <Input
+                className="mt-1"
+                placeholder="e.g. (555) 123-4567"
+                value={editFields.phone}
+                onChange={e => setEditFields(f => ({ ...f, phone: e.target.value }))}
+              />
+            </div>
+            <div>
+              <Label>Account Status</Label>
+              <Select value={editFields.active_status} onValueChange={v => setEditFields(f => ({ ...f, active_status: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            </div>
+            <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button onClick={handleEditRole} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save'}</Button>
+            <Button onClick={handleEditUser} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save Changes'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

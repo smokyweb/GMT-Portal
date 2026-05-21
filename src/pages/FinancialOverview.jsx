@@ -6,7 +6,9 @@ import {
 } from 'recharts';
 import { TrendingUp, TrendingDown, AlertTriangle, DollarSign, Activity } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatCurrency } from '../lib/helpers';
+import FinancialReporting from './FinancialReporting';
 
 const PROGRAM_COLORS = ['#3b82f6','#22c55e','#f59e0b','#a855f7','#ef4444','#06b6d4','#f97316','#84cc16'];
 
@@ -31,13 +33,28 @@ function KPICard({ label, value, sub, accent }) {
 }
 
 export default function FinancialOverview() {
-  const [apps, setApps] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filterProgram, setFilterProgram] = useState('all');
+   const [apps, setApps] = useState([]);
+   const [loading, setLoading] = useState(true);
+   const [filterProgram, setFilterProgram] = useState('all');
+   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500)
-      .then(data => { setApps(data); setLoading(false); });
+    const loadData = async () => {
+      const [approvedApps, me] = await Promise.all([
+        base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500),
+        base44.auth.me(),
+      ]);
+      setUser(me);
+      let visible = approvedApps;
+      if (me?.scope_state) {
+        const orgs = await base44.entities.Organization.list();
+        const stateOrgIds = new Set(orgs.filter(o => o.state === me.scope_state).map(o => o.id));
+        visible = approvedApps.filter(a => stateOrgIds.has(a.organization_id));
+      }
+      setApps(visible);
+      setLoading(false);
+    };
+    loadData();
   }, []);
 
   const filtered = useMemo(() =>
@@ -111,11 +128,24 @@ export default function FinancialOverview() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Financial Overview</h1>
-          <p className="text-muted-foreground text-sm mt-1">Budget allocations vs. actual expenditures across approved grants</p>
-        </div>
+      <div>
+        <h1 className="text-2xl font-bold">Financials</h1>
+        <p className="text-muted-foreground text-sm mt-1">Budget allocations, expenditures, and payment tracking</p>
+      </div>
+
+      <Tabs defaultValue="overview">
+        <TabsList>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="payment-tracking">Payment Tracking</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="payment-tracking" className="mt-4">
+          <FinancialReporting />
+        </TabsContent>
+
+        <TabsContent value="overview" className="mt-4">
+      <div className="space-y-6">
+      <div className="flex items-center justify-end">
         <Select value={filterProgram} onValueChange={setFilterProgram}>
           <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Programs" /></SelectTrigger>
           <SelectContent>
@@ -252,6 +282,9 @@ export default function FinancialOverview() {
           </table>
         </div>
       </div>
+      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }

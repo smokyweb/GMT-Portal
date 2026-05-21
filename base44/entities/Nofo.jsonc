@@ -5,6 +5,10 @@
     "title": {
       "type": "string"
     },
+    "grant_number": {
+      "type": "string",
+      "description": "Official grant/award number (e.g. EMS-2025-SS-00001)"
+    },
     "summary": {
       "type": "string"
     },
@@ -54,6 +58,11 @@
         "Archived"
       ]
     },
+    "scoring_enabled": {
+      "type": "boolean",
+      "description": "Whether reviewers can score applications submitted under this NOFO",
+      "default": false
+    },
     "required_documents": {
       "type": "array",
       "items": {
@@ -67,6 +76,34 @@
           }
         }
       }
+    },
+    "required_template_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "DocumentTemplate IDs required for applications under this NOFO"
+    },
+    "eligible_org_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Organization types eligible to apply. Empty = all types eligible."
+    },
+    "override_org_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Organization IDs granted admin override access regardless of type."
+    },
+    "scope_states": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "State abbreviations this NOFO is available to (e.g. ['NE', 'IL']). Empty = available to all states."
     },
     "reviewed_by": {
       "type": "string"

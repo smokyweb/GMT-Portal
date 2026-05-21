@@ -26,15 +26,31 @@ export default function Messages() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
+      const isFederalOrISC = ['federal_admin', 'federal_officer', 'isc_admin'].includes(u?.role);
       const isState = isStateUser(u?.role);
 
-      let appList, msgList;
-      if (isState) {
+      let appList, msgList, orgIds;
+      
+      if (isFederalOrISC) {
+        // Federal/ISC: see all
         [appList, msgList] = await Promise.all([
           base44.entities.Application.list('-created_date', 200),
           base44.entities.Message.list('-created_date', 500),
         ]);
+      } else if (isState) {
+        // State admin: see only orgs in their scope_state
+        const orgs = await base44.entities.Organization.list('-created_date', 500);
+        orgIds = orgs.filter(o => o.state === u?.scope_state).map(o => o.id);
+        
+        [appList, msgList] = await Promise.all([
+          base44.entities.Application.list('-created_date', 200),
+          base44.entities.Message.list('-created_date', 500),
+        ]);
+        
+        appList = appList.filter(a => orgIds.includes(a.organization_id));
+        msgList = msgList.filter(m => orgIds.includes(m.organization_id));
       } else {
+        // Subrecipient: see only their org
         const orgId = u?.organization_id;
         if (!orgId) { setLoading(false); return; }
         [appList, msgList] = await Promise.all([
@@ -78,7 +94,18 @@ export default function Messages() {
     a.application_number?.toLowerCase().includes(search.toLowerCase()) ||
     a.organization_name?.toLowerCase().includes(search.toLowerCase()) ||
     a.project_title?.toLowerCase().includes(search.toLowerCase())
-  );
+  ).sort((a, b) => {
+    const latestA = messages
+      .filter(m => m.application_id === a.id)
+      .sort((x, y) => new Date(y.created_date) - new Date(x.created_date))[0];
+    const latestB = messages
+      .filter(m => m.application_id === b.id)
+      .sort((x, y) => new Date(y.created_date) - new Date(x.created_date))[0];
+    if (!latestA && !latestB) return 0;
+    if (!latestA) return 1;
+    if (!latestB) return -1;
+    return new Date(latestB.created_date) - new Date(latestA.created_date);
+  });
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -126,11 +153,15 @@ export default function Messages() {
                 key={app.id}
                 onClick={() => setSelectedApp(app)}
                 className={`w-full text-left px-3 py-3 border-b transition hover:bg-muted/40
-                  ${isSelected ? 'bg-primary/5 border-l-2 border-l-primary' : ''}`}
+                  ${isSelected ? 'bg-primary/5 border-l-2 border-l-primary' : ''}
+                  ${unread > 0 ? 'bg-blue-50/40' : ''}`}
               >
                 <div className="flex items-start justify-between gap-1">
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold font-mono truncate">{app.application_number || 'Draft'}</p>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2">
+                      {unread > 0 && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
+                      <p className={`text-xs font-mono truncate ${unread > 0 ? 'font-bold' : 'font-semibold'}`}>{app.application_number || 'Draft'}</p>
+                    </div>
                     <p className="text-xs text-muted-foreground truncate">{app.organization_name || app.project_title || '—'}</p>
                     {latest && (
                       <p className="text-[10px] text-muted-foreground mt-1 truncate">{latest.body}</p>
@@ -139,7 +170,7 @@ export default function Messages() {
                   <div className="flex flex-col items-end gap-1 flex-shrink-0">
                     {latest && <span className="text-[10px] text-muted-foreground">{moment(latest.created_date).fromNow()}</span>}
                     {unread > 0 && (
-                      <span className="h-4 w-4 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">
+                      <span className="h-5 px-2 rounded-full bg-primary text-white text-[10px] flex items-center justify-center font-bold">
                         {unread}
                       </span>
                     )}

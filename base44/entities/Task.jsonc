@@ -1,0 +1,84 @@
+{
+  "name": "Task",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "RFI",
+        "Action",
+        "Review"
+      ],
+      "default": "RFI"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "assigned_to": {
+      "type": "string",
+      "description": "Email of the assigned subrecipient user"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "due_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Open",
+        "InProgress",
+        "PendingAdminReview",
+        "Resolved",
+        "Cancelled"
+      ],
+      "default": "Open"
+    },
+    "resolution_notes": {
+      "type": "string"
+    },
+    "resolved_by": {
+      "type": "string"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "document_id": {
+      "type": "string",
+      "description": "Optional: linked document"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
+      ],
+      "default": "Medium"
+    }
+  },
+  "required": [
+    "application_id",
+    "title",
+    "status"
+  ]
+}

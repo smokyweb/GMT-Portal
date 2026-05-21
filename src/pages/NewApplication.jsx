@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Check, ChevronLeft, ChevronRight, Upload, Trash2 } from 'lucide-react';
-import StatusBadge from '../components/StatusBadge';
+import { Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { formatCurrency, logAudit, createNotification } from '../lib/helpers';
+import BudgetBuilder from '../components/BudgetBuilder';
+import ProgramSpecificFields from '../components/ProgramSpecificFields';
+import EHPScreening from '../components/EHPScreening';
+import DocumentsStep from '../components/ApplicationDocumentsStep';
 
-const BUDGET_CATEGORIES = ['Personnel', 'Equipment', 'Training', 'Travel', 'Contractual', 'Planning', 'Other'];
-const STEPS = ['Organization', 'Project Details', 'Budget', 'Documents', 'Review & Submit'];
+const STEPS = ['Organization', 'Project Details', 'Program Details', 'EHP Screening', 'Budget', 'Documents', 'Review & Submit'];
 
 export default function NewApplication() {
   const navigate = useNavigate();
@@ -31,6 +33,16 @@ export default function NewApplication() {
   const [form, setForm] = useState({
     project_title: '', project_narrative: '', work_plan: '', risk_assessment: '',
     requested_amount: 0, match_amount: 0, performance_start: '', performance_end: '',
+    // Program-specific fields
+    ij_title: '', ij_description: '', ij_core_capability: '', ij_funding_priority: '',
+    thira_spr_alignment: '', npa_minimum_met: false, npa_allocation_amount: 0,
+    empg_match_source: '', empg_match_description: '', empg_work_plan_objectives: '',
+    slcgp_cybersecurity_plan: '', slcgp_project_worksheet: '', slcgp_rural_allocation: 0, slcgp_rural_allocation_notes: '',
+    nsgp_vulnerability_assessment: '', nsgp_mission_statement: '', nsgp_target_hardening_description: '',
+    eoc_construction_timeline: '', eoc_site_control_status: '', eoc_site_control_notes: '', eoc_procurement_plan: '',
+    procurement_method: '', procurement_justification: '', procurement_amount: 0,
+    // EHP fields
+    ehp_required: false, ehp_screening_answers: {}, ehp_status: 'NotRequired', ehp_notes: '',
   });
 
   const [orgForm, setOrgForm] = useState({
@@ -57,15 +69,40 @@ export default function NewApplication() {
       const apps = await base44.entities.Application.filter({ id: appId });
       if (apps.length > 0) {
         setApp(apps[0]);
+        const a0 = apps[0];
         setForm({
-          project_title: apps[0].project_title || '',
-          project_narrative: apps[0].project_narrative || '',
-          work_plan: apps[0].work_plan || '',
-          risk_assessment: apps[0].risk_assessment || '',
-          requested_amount: apps[0].requested_amount || 0,
-          match_amount: apps[0].match_amount || 0,
-          performance_start: apps[0].performance_start || '',
-          performance_end: apps[0].performance_end || '',
+          project_title: a0.project_title || '',
+          project_narrative: a0.project_narrative || '',
+          work_plan: a0.work_plan || '',
+          risk_assessment: a0.risk_assessment || '',
+          requested_amount: a0.requested_amount || 0,
+          match_amount: a0.match_amount || 0,
+          performance_start: a0.performance_start || '',
+          performance_end: a0.performance_end || '',
+          ij_title: a0.ij_title || '', ij_description: a0.ij_description || '',
+          ij_core_capability: a0.ij_core_capability || '', ij_funding_priority: a0.ij_funding_priority || '',
+          thira_spr_alignment: a0.thira_spr_alignment || '', npa_minimum_met: a0.npa_minimum_met || false,
+          npa_allocation_amount: a0.npa_allocation_amount || 0,
+          empg_match_source: a0.empg_match_source || '', empg_match_description: a0.empg_match_description || '',
+          empg_work_plan_objectives: a0.empg_work_plan_objectives || '',
+          slcgp_cybersecurity_plan: a0.slcgp_cybersecurity_plan || '',
+          slcgp_project_worksheet: a0.slcgp_project_worksheet || '',
+          slcgp_rural_allocation: a0.slcgp_rural_allocation || 0,
+          slcgp_rural_allocation_notes: a0.slcgp_rural_allocation_notes || '',
+          nsgp_vulnerability_assessment: a0.nsgp_vulnerability_assessment || '',
+          nsgp_mission_statement: a0.nsgp_mission_statement || '',
+          nsgp_target_hardening_description: a0.nsgp_target_hardening_description || '',
+          eoc_construction_timeline: a0.eoc_construction_timeline || '',
+          eoc_site_control_status: a0.eoc_site_control_status || '',
+          eoc_site_control_notes: a0.eoc_site_control_notes || '',
+          eoc_procurement_plan: a0.eoc_procurement_plan || '',
+          procurement_method: a0.procurement_method || '',
+          procurement_justification: a0.procurement_justification || '',
+          procurement_amount: a0.procurement_amount || 0,
+          ehp_required: a0.ehp_required || false,
+          ehp_screening_answers: a0.ehp_screening_answers || {},
+          ehp_status: a0.ehp_status || 'NotRequired',
+          ehp_notes: a0.ehp_notes || '',
         });
         if (apps[0].nofo_id) {
           const nofos = await base44.entities.Nofo.filter({ id: apps[0].nofo_id });
@@ -93,6 +130,7 @@ export default function NewApplication() {
       submitted_by: user?.email,
       program_code: nofo?.program_code || app?.program_code,
       program_name: nofo?.program_name || app?.program_name,
+      grant_number: nofo?.grant_number || app?.grant_number || '',
       status: 'Draft',
       requested_amount: Number(form.requested_amount),
       match_amount: Number(form.match_amount),
@@ -166,24 +204,20 @@ export default function NewApplication() {
     navigate('/my-applications');
   };
 
-  const addBudgetItem = () => {
-    setBudgetItems(prev => [...prev, { budget_category: 'Personnel', line_description: '', amount_requested: 0, amount_match: 0, isExisting: false }]);
-  };
-
-  const updateBudgetItem = (idx, field, value) => {
-    setBudgetItems(prev => prev.map((item, i) => i === idx ? { ...item, [field]: value } : item));
-  };
-
-  const removeBudgetItem = async (idx) => {
-    const item = budgetItems[idx];
-    if (item.isExisting && item.id) {
-      await base44.entities.ApplicationBudget.delete(item.id);
-    }
-    setBudgetItems(prev => prev.filter((_, i) => i !== idx));
-  };
-
   const budgetTotal = budgetItems.reduce((s, b) => s + (Number(b.amount_requested) || 0), 0);
   const matchTotal = budgetItems.reduce((s, b) => s + (Number(b.amount_match) || 0), 0);
+
+  const handleBudgetChange = async (newItems) => {
+    // Handle deletions of existing items
+    const removedItems = budgetItems.filter(old => old.isExisting && old.id && !newItems.find(n => n.id === old.id));
+    for (const item of removedItems) {
+      await base44.entities.ApplicationBudget.delete(item.id);
+    }
+    setBudgetItems(newItems);
+    const total = newItems.reduce((s, b) => s + (Number(b.amount_requested) || 0), 0);
+    const match = newItems.reduce((s, b) => s + (Number(b.amount_match) || 0), 0);
+    setForm(f => ({ ...f, requested_amount: total, match_amount: match }));
+  };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
@@ -263,106 +297,72 @@ export default function NewApplication() {
           </div>
         )}
 
-        {/* Step 3: Budget */}
+        {/* Step 3: Program Details */}
         {step === 2 && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-lg">Budget</h2>
-              <Button variant="outline" size="sm" onClick={addBudgetItem}>+ Add Line Item</Button>
+            <div>
+              <h2 className="font-semibold text-lg">Program-Specific Details</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                These fields are required for {nofo?.program_code || app?.program_code || 'your selected program'} compliance.
+              </p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="text-left p-2 font-medium text-muted-foreground">Category</th>
-                    <th className="text-left p-2 font-medium text-muted-foreground">Description</th>
-                    <th className="text-right p-2 font-medium text-muted-foreground">Requested ($)</th>
-                    <th className="text-right p-2 font-medium text-muted-foreground">Match ($)</th>
-                    <th className="p-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {budgetItems.map((item, idx) => (
-                    <tr key={idx} className="border-b">
-                      <td className="p-2">
-                        <Select value={item.budget_category} onValueChange={v => updateBudgetItem(idx, 'budget_category', v)}>
-                          <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>{BUDGET_CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
-                        </Select>
-                      </td>
-                      <td className="p-2"><Input value={item.line_description} onChange={e => updateBudgetItem(idx, 'line_description', e.target.value)} /></td>
-                      <td className="p-2"><Input type="number" className="text-right w-28" value={item.amount_requested} onChange={e => updateBudgetItem(idx, 'amount_requested', e.target.value)} /></td>
-                      <td className="p-2"><Input type="number" className="text-right w-28" value={item.amount_match} onChange={e => updateBudgetItem(idx, 'amount_match', e.target.value)} /></td>
-                      <td className="p-2"><Button variant="ghost" size="icon" onClick={() => removeBudgetItem(idx)}><Trash2 className="h-3.5 w-3.5 text-muted-foreground" /></Button></td>
-                    </tr>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr className="bg-muted/50 font-bold">
-                    <td className="p-2" colSpan={2}>Total</td>
-                    <td className="p-2 text-right">{formatCurrency(budgetTotal)}</td>
-                    <td className="p-2 text-right">{formatCurrency(matchTotal)}</td>
-                    <td></td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-            {budgetTotal !== Number(form.requested_amount) && Number(form.requested_amount) > 0 && (
-              <p className="text-sm text-amber-600">Budget total ({formatCurrency(budgetTotal)}) does not match requested amount ({formatCurrency(Number(form.requested_amount))})</p>
-            )}
+            <ProgramSpecificFields
+              programCode={nofo?.program_code || app?.program_code}
+              form={form}
+              onChange={setForm}
+            />
           </div>
         )}
 
-        {/* Step 4: Documents */}
+        {/* Step 4: EHP Screening */}
         {step === 3 && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-lg">Documents</h2>
-            {nofo?.required_documents?.length > 0 ? (
-              <div className="space-y-3">
-                {nofo.required_documents.map((doc, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 rounded-lg border bg-muted/30">
-                    <div className="flex items-center gap-3">
-                      <Upload className="h-5 w-5 text-muted-foreground" />
-                      <div>
-                        <p className="text-sm font-medium">{doc.name}</p>
-                        <p className="text-xs text-muted-foreground">{doc.mandatory ? 'Required' : 'Optional'}</p>
-                      </div>
-                    </div>
-                    <Button variant="outline" size="sm" onClick={async () => {
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = '.pdf,.doc,.docx,.xls,.xlsx';
-                      input.onchange = async (e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const { file_url } = await base44.integrations.Core.UploadFile({ file });
-                          await base44.entities.Document.create({
-                            name: doc.name, doc_type: 'Application', file_url,
-                            uploaded_by: user?.email, organization_id: org?.id,
-                            entity_id: app?.id, uploaded_at: new Date().toISOString(),
-                          });
-                        }
-                      };
-                      input.click();
-                    }}>
-                      Upload
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-muted-foreground text-sm">No specific documents required for this NOFO. You can upload supporting documents below.</p>
-            )}
+            <div>
+              <h2 className="font-semibold text-lg">Environmental & Historic Preservation (EHP)</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                FEMA requires EHP review before construction or installation activities. Complete this screening to determine if EHP documentation is needed.
+              </p>
+            </div>
+            <EHPScreening form={form} onChange={setForm} />
           </div>
         )}
 
-        {/* Step 5: Review */}
+        {/* Step 5: Budget */}
         {step === 4 && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="font-semibold text-lg">Budget Builder</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">Add line items for each category of spending. The total will automatically sync to your requested amount.</p>
+            </div>
+            <BudgetBuilder
+              items={budgetItems}
+              nofo={nofo}
+              onChange={handleBudgetChange}
+            />
+          </div>
+        )}
+
+        {/* Step 6: Documents */}
+        {step === 5 && (
+          <DocumentsStep
+            nofo={nofo}
+            app={app}
+            user={user}
+            org={org}
+            onSaveDraft={saveDraft}
+          />
+        )}
+
+        {/* Step 7: Review */}
+        {step === 6 && (
           <div className="space-y-4">
             <h2 className="font-semibold text-lg">Review & Submit</h2>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div><p className="text-muted-foreground text-xs">Organization</p><p className="font-medium">{orgForm.name}</p></div>
               <div><p className="text-muted-foreground text-xs">NOFO</p><p className="font-medium">{nofo?.title}</p></div>
+              {(nofo?.grant_number || app?.grant_number) && (
+                <div><p className="text-muted-foreground text-xs">Grant Number</p><p className="font-medium font-mono">{nofo?.grant_number || app?.grant_number}</p></div>
+              )}
               <div><p className="text-muted-foreground text-xs">Project Title</p><p className="font-medium">{form.project_title}</p></div>
               <div><p className="text-muted-foreground text-xs">Requested Amount</p><p className="font-bold text-lg">{formatCurrency(Number(form.requested_amount))}</p></div>
               <div><p className="text-muted-foreground text-xs">Match Commitment</p><p className="font-medium">{formatCurrency(Number(form.match_amount))}</p></div>

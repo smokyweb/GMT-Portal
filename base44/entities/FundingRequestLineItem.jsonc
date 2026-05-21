@@ -23,6 +23,119 @@
     "amount": {
       "type": "number"
     },
+    "quantity": {
+      "type": "number",
+      "description": "Number of units"
+    },
+    "unit_cost": {
+      "type": "number",
+      "description": "Cost per unit"
+    },
+    "ael_number": {
+      "type": "string",
+      "description": "Authorized Equipment List (AEL) item number selected from dropdown"
+    },
+    "ael_category": {
+      "type": "string",
+      "description": "AEL category label selected from dropdown"
+    },
+    "expenditure_name": {
+      "type": "string",
+      "description": "Name/title of the expenditure item"
+    },
+    "item_manufacturer": {
+      "type": "string",
+      "description": "Manufacturer of the item"
+    },
+    "item_model": {
+      "type": "string",
+      "description": "Model number or name of the item"
+    },
+    "item_detail_description": {
+      "type": "string",
+      "description": "Detailed description of the specific item being purchased"
+    },
+    "sole_source_justification": {
+      "type": "string",
+      "description": "Justification if this is a sole-source purchase"
+    },
+    "thira_spr_capability_action": {
+      "type": "string",
+      "enum": [
+        "Sustain/Maintain",
+        "Build New Capability"
+      ],
+      "description": "THIRA/SPR capability action for this line item"
+    },
+    "thira_spr_primary_capability": {
+      "type": "string",
+      "enum": [
+        "Planning",
+        "Public Information and Warning",
+        "Operational Coordination",
+        "Forensics and Attribution",
+        "Intelligence and Information Sharing",
+        "Interdiction and Disruption",
+        "Screening, Search, and Detection",
+        "Access Control and Identity Verification",
+        "Cybersecurity",
+        "Physical Protective Measures",
+        "Risk Management for Protection Programs and Activities",
+        "Supply Chain Integrity and Security",
+        "Community Resilience",
+        "Long-Term Vulnerability Reduction",
+        "Risk and Disaster Resilience Assessment",
+        "Threats and Hazards Identification",
+        "Critical Transportation",
+        "Environmental Response/Health and Safety",
+        "Fatality Management Services",
+        "Fire Management and Suppression",
+        "Infrastructure Systems",
+        "Logistics and Supply Chain Management",
+        "Mass Care Services",
+        "Mass Search and Rescue Operations",
+        "On-Scene Security, Protection, and Law Enforcement",
+        "Operational Communications",
+        "Public Health, Healthcare, and Emergency Medical Services",
+        "Situational Assessment",
+        "Economic Recovery",
+        "Health and Social Services",
+        "Housing",
+        "Natural and Cultural Resources"
+      ],
+      "description": "Primary FEMA core capability for this line item"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "Deployable",
+        "Shareable"
+      ],
+      "description": "Whether this resource is deployable or shareable"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "Agriculture and Food",
+        "Cyber Security",
+        "Emergency Management",
+        "Emergency Medical Services - Fire Based",
+        "Emergency Medical Services - Non-Fire Based",
+        "Emergency Management Agency",
+        "Fire Service",
+        "Governmental Administrative",
+        "Hazardous Materials",
+        "Health Care",
+        "Law Enforcement",
+        "Not for Profit / Non-Profit",
+        "Public Health",
+        "Public Safety Communications",
+        "Public Works",
+        "Regional Transit System",
+        "Search and Rescue"
+      ],
+      "description": "Discipline for this line item"
+    },
     "is_allowable": {
       "type": "boolean"
     },

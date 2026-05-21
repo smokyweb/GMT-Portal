@@ -74,12 +74,19 @@ export default function DocumentTemplates() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const [tmpl, appList] = await Promise.all([
+      const [tmpl, appList, orgs] = await Promise.all([
         base44.entities.DocumentTemplate.list('-created_date', 100),
         base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200),
+        base44.entities.Organization.list(),
       ]);
       setTemplates(tmpl);
-      setApps(appList);
+      // Apply scope filtering to approved apps
+      let visibleApps = appList;
+      if (u?.scope_state) {
+        const orgIds = new Set(orgs.filter(o => o.state === u.scope_state).map(o => o.id));
+        visibleApps = appList.filter(a => orgIds.has(a.organization_id));
+      }
+      setApps(visibleApps);
       setLoading(false);
     });
   }, []);

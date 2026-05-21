@@ -10,26 +10,45 @@
       "enum": [
         "Document Uploaded",
         "Application Status Changed",
+        "Application Submitted",
         "Compliance Flag Created",
         "Compliance Flag Resolved",
         "Funding Request Submitted",
         "Funding Request Approved",
+        "Funding Request Denied",
+        "Funding Request Payment Initiated",
+        "Report Submitted",
         "Report Due Date Passed",
         "Milestone Due Date Passed",
-        "Application Submitted"
+        "Expenditure Threshold Exceeded"
       ]
     },
     "condition": {
       "type": "string"
     },
+    "condition_program": {
+      "type": "string",
+      "description": "Optional program code filter (e.g. SHSP, UASI)"
+    },
+    "condition_amount": {
+      "type": "number",
+      "description": "Optional amount threshold for trigger"
+    },
+    "condition_severity": {
+      "type": "string",
+      "description": "Optional severity level filter"
+    },
     "action_type": {
       "type": "string",
       "enum": [
         "Send Email Notification",
+        "Send Email to Admins",
+        "Send Email to Subrecipient",
         "Transition Application Status",
         "Create Compliance Flag",
-        "Send Email to Admins",
-        "Send Email to Subrecipient"
+        "Enable Multi-Step Payment Approval",
+        "Set Funding Request Payment Status",
+        "Create Milestone"
       ]
     },
     "action_detail": {
@@ -45,6 +64,35 @@
         "RevisionRequested",
         "Approved",
         "Denied"
+      ]
+    },
+    "payment_target_status": {
+      "type": "string",
+      "enum": [
+        "PendingDisbursement",
+        "SubmittedToFinance",
+        "PendingPMApproval",
+        "PendingFOApproval",
+        "Paid",
+        "PaymentFailed"
+      ]
+    },
+    "flag_type": {
+      "type": "string",
+      "enum": [
+        "OverdueReport",
+        "MissingDocument",
+        "FinancialDiscrepancy",
+        "MatchShortfall"
+      ]
+    },
+    "flag_severity": {
+      "type": "string",
+      "enum": [
+        "Low",
+        "Medium",
+        "High",
+        "Critical"
       ]
     },
     "email_subject": {

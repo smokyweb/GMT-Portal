@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import StatusBadge from '../components/StatusBadge';
+import RequiredTemplatesPanel from '@/components/RequiredTemplatesPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 import { Paperclip, X, Loader2 } from 'lucide-react';
 
@@ -167,6 +168,19 @@ export default function MyReports() {
                 <div><Label>Expenditure This Period ($)</Label><Input type="number" value={form.expenditure_ytd} onChange={e => setForm(f => ({ ...f, expenditure_ytd: e.target.value }))} /></div>
                 <div><Label>Match Documented ($)</Label><Input type="number" value={form.match_ytd} onChange={e => setForm(f => ({ ...f, match_ytd: e.target.value }))} /></div>
               </div>
+
+              {/* Required Templates */}
+              {selected.required_template_ids?.length > 0 && (
+                <div className="border rounded-lg p-4 bg-muted/20">
+                  <RequiredTemplatesPanel
+                    entityType="ProgressReport"
+                    entityId={selected.id}
+                    requiredTemplateIds={selected.required_template_ids || []}
+                    onUpdate={() => {}}
+                    isAdmin={false}
+                  />
+                </div>
+              )}
 
               {/* Attachments */}
               <div>

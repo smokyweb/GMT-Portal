@@ -55,11 +55,12 @@ async function api(method, path, body) {
 // ── Entity proxy ──────────────────────────────────────────────
 const ENTITY_NAMES = [
   'Application', 'ApplicationBudget', 'ApplicationReview',
-  'AuditLog', 'ComplianceFlag', 'Document', 'DocumentTemplate',
+  'AppSettings', 'AuditLog', 'BudgetAmendment', 'ComplianceFlag',
+  'Credit', 'CreditApplication', 'Document', 'DocumentTemplate',
   'FundingRequest', 'FundingRequestLineItem', 'GeneratedDocument',
   'Grantee', 'GrantProgram', 'Message', 'Milestone', 'Nofo',
   'Notification', 'Organization', 'ProgressReport', 'ReportSchedule',
-  'SavedReport', 'TemplateVersion', 'User', 'WorkflowRule',
+  'SavedReport', 'Task', 'TemplateVersion', 'User', 'WorkflowRule',
 ];
 
 function createEntityClient(entityName) {

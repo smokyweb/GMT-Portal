@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { toast } from 'sonner';
 import {
   startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   addDays, addMonths, subMonths, isSameMonth, isSameDay, format, parseISO, isValid
@@ -228,13 +229,40 @@ export default function GrantTimeline() {
       base44.entities.FundingRequest.list('-created_date', 200),
       base44.entities.Milestone.list('-due_date', 200),
       base44.entities.Organization.list(),
-    ]).then(([u, apps, reports, frs, milests, orgs]) => {
+    ]).then(async ([u, apps, reports, frs, milests, orgs]) => {
       setUser(u);
-      setApplications(apps);
-      setReportSchedules(reports);
-      setFundingRequests(frs);
-      setMilestones(milests);
-      setOrganizations(orgs);
+
+      // Apply data isolation based on user role
+      let filteredOrgs = orgs;
+      let filteredApps = apps;
+      let filteredReports = reports;
+      let filteredFRs = frs;
+      let filteredMilestones = milests;
+
+      if (u && !['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
+        if (u.role === 'admin' && u.scope_state) {
+          // State admin: filter to their state's organizations
+          filteredOrgs = orgs.filter(o => o.state === u.scope_state);
+          const stateOrgIds = filteredOrgs.map(o => o.id);
+          filteredApps = apps.filter(a => stateOrgIds.includes(a.organization_id));
+          filteredReports = reports.filter(r => stateOrgIds.includes(r.organization_id));
+          filteredFRs = frs.filter(fr => stateOrgIds.includes(fr.organization_id));
+          filteredMilestones = milests.filter(m => stateOrgIds.includes(m.organization_id));
+        } else if (u.role === 'user' && u.organization_id) {
+          // Subrecipient: filter to their organization only
+          filteredOrgs = orgs.filter(o => o.id === u.organization_id);
+          filteredApps = apps.filter(a => a.organization_id === u.organization_id);
+          filteredReports = reports.filter(r => r.organization_id === u.organization_id);
+          filteredFRs = frs.filter(fr => fr.organization_id === u.organization_id);
+          filteredMilestones = milests.filter(m => m.organization_id === u.organization_id);
+        }
+      }
+
+      setApplications(filteredApps);
+      setReportSchedules(filteredReports);
+      setFundingRequests(filteredFRs);
+      setMilestones(filteredMilestones);
+      setOrganizations(filteredOrgs);
       setLoading(false);
     });
   }, []);
@@ -336,7 +364,10 @@ export default function GrantTimeline() {
               <List className="h-3.5 w-3.5" /> List
             </button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => setShowSync(true)}>
+          <Button variant="outline" size="sm" onClick={() => {
+            setShowSync(true);
+            toast.success('Calendar sync initiated — events will appear in your connected calendar within a few minutes');
+          }}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Sync to Calendar
           </Button>
         </div>

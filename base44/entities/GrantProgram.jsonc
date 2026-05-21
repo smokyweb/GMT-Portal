@@ -15,6 +15,7 @@
         "NSGP",
         "EOC",
         "SLCGP",
+        "BRIC",
         "Other"
       ]
     },
@@ -29,6 +30,55 @@
     },
     "is_active": {
       "type": "boolean"
+    },
+    "purpose": {
+      "type": "string",
+      "description": "Program purpose / overview statement"
+    },
+    "performance_period": {
+      "type": "string",
+      "description": "e.g. 36 months"
+    },
+    "match_requirement": {
+      "type": "string",
+      "description": "e.g. No cost-share requirement"
+    },
+    "reporting_frequency": {
+      "type": "string",
+      "enum": [
+        "Quarterly",
+        "Biannual",
+        "Annual"
+      ],
+      "description": "How often approved applications must submit reports"
+    },
+    "eligibility_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of eligibility criteria"
+    },
+    "allowable_costs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of allowable cost categories"
+    },
+    "compliance_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of compliance requirements"
+    },
+    "reporting_requirements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of reporting obligations"
     }
   },
   "required": [

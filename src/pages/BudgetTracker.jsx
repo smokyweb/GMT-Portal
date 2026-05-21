@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { AlertTriangle, TrendingUp, DollarSign, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, TrendingUp, DollarSign, CheckCircle2, Search, ChevronRight } from 'lucide-react';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrency } from '../lib/helpers';
+import { formatCurrency, formatDateShort } from '../lib/helpers';
 
 const CATEGORY_COLORS = {
   Personnel:     'bg-blue-500',
@@ -41,6 +42,7 @@ export default function BudgetTracker() {
   const [expenditures, setExpenditures] = useState([]);
   const [loading, setLoading] = useState(true);
   const [lineLoading, setLineLoading] = useState(false);
+  const [categorySearch, setCategorySearch] = useState('');
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
@@ -127,29 +129,97 @@ export default function BudgetTracker() {
     </div>
   );
 
+  const filteredCategoryRows = categoryRows.filter(r =>
+    !categorySearch || r.budget_category?.toLowerCase().includes(categorySearch.toLowerCase()) ||
+    r.line_description?.toLowerCase().includes(categorySearch.toLowerCase())
+  );
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-5xl">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <div>
-          <h1 className="text-2xl font-bold">Budget Tracker</h1>
-          <p className="text-muted-foreground text-sm mt-1">Budget vs. actual expenditures per line item</p>
-        </div>
-        {apps.length > 1 && (
-          <Select value={selectedAppId} onValueChange={setSelectedAppId}>
-            <SelectTrigger className="w-[280px]">
-              <SelectValue placeholder="Select grant…" />
-            </SelectTrigger>
-            <SelectContent>
-              {apps.map(a => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.application_number || 'Draft'} — {a.project_title || 'Untitled'}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        )}
+      <div>
+        <h1 className="text-2xl font-bold">Budget Tracker</h1>
+        <p className="text-muted-foreground text-sm mt-1">Budget vs. actual expenditures per line item</p>
       </div>
+
+      {/* Grant Selector — dropdown or card grid */}
+       {apps.length > 0 && (
+         <>
+           {apps.length === 1 ? (
+             // Single grant: show as dropdown select
+             <div className="flex flex-col gap-2">
+               <label className="text-sm font-medium text-muted-foreground">Select Grant</label>
+               <Select value={selectedAppId} onValueChange={setSelectedAppId}>
+                 <SelectTrigger>
+                   <SelectValue />
+                 </SelectTrigger>
+                 <SelectContent>
+                   {apps.map(a => (
+                     <SelectItem key={a.id} value={a.id}>
+                       <span className="flex items-center gap-2">
+                         {a.application_number} — {a.project_title} <span className="text-xs opacity-60">({a.program_code})</span>
+                       </span>
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           ) : (
+             // Multiple grants: show as card grid
+             <div>
+               <p className="text-sm font-medium text-muted-foreground mb-2">Select Grant</p>
+               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                 {apps.map(a => {
+                   const rate = a.expenditure_rate || 0;
+                   const isSelected = a.id === selectedAppId;
+                   const daysLeft = a.performance_end
+                     ? Math.max(0, Math.ceil((new Date(a.performance_end) - new Date()) / 86400000))
+                     : null;
+                   const barColor = rate > 90 ? 'bg-red-500' : rate > 75 ? 'bg-amber-500' : 'bg-primary';
+                   return (
+                     <button
+                       key={a.id}
+                       onClick={() => setSelectedAppId(a.id)}
+                       className={`text-left p-4 rounded-xl border transition-all duration-150 ${
+                         isSelected
+                           ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
+                           : 'bg-card hover:border-primary/40 hover:shadow-sm'
+                       }`}
+                     >
+                       <div className="flex items-start justify-between gap-2 mb-2">
+                         <div className="min-w-0">
+                           <p className="font-semibold text-sm truncate leading-snug">{a.project_title || 'Untitled'}</p>
+                           <p className="text-[11px] font-mono text-muted-foreground mt-0.5">{a.application_number}</p>
+                         </div>
+                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary flex-shrink-0">{a.program_code || '—'}</span>
+                       </div>
+                       <div className="space-y-1.5">
+                         <div className="flex justify-between text-[11px] text-muted-foreground">
+                           <span>{formatCurrency(a.awarded_amount)} awarded</span>
+                           <span className="font-medium">{Math.round(rate)}%</span>
+                         </div>
+                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                           <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, rate)}%` }} />
+                         </div>
+                         {daysLeft !== null && (
+                           <p className={`text-[10px] ${daysLeft < 60 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
+                             {daysLeft}d remaining · ends {formatDateShort(a.performance_end)}
+                           </p>
+                         )}
+                       </div>
+                       {isSelected && (
+                         <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-primary">
+                           <ChevronRight className="h-3 w-3" /> Viewing this grant
+                         </div>
+                       )}
+                     </button>
+                   );
+                 })}
+               </div>
+             </div>
+           )}
+         </>
+       )}
 
       {apps.length === 0 ? (
         <div className="border border-dashed rounded-xl p-14 text-center text-muted-foreground">
@@ -157,7 +227,7 @@ export default function BudgetTracker() {
           <p className="font-medium">No approved grants found.</p>
           <p className="text-sm mt-1">Budget tracking is available once a grant application is approved.</p>
         </div>
-      ) : (
+      ) : selectedAppId && (
         <>
           {/* Grant summary header */}
           {selectedApp && (
@@ -245,11 +315,22 @@ export default function BudgetTracker() {
             </div>
           ) : (
             <div className="bg-card border rounded-xl overflow-hidden">
-              <div className="px-4 py-3 border-b bg-muted/30">
+              <div className="px-4 py-3 border-b bg-muted/30 flex items-center justify-between gap-3 flex-wrap">
                 <p className="font-semibold text-sm">Budget by Category</p>
+                {categoryRows.length > 3 && (
+                  <div className="relative">
+                    <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                      className="pl-8 h-8 text-xs w-52"
+                      placeholder="Filter categories…"
+                      value={categorySearch}
+                      onChange={e => setCategorySearch(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
               <div className="divide-y">
-                {categoryRows.map(row => (
+                {filteredCategoryRows.map(row => (
                   <div key={row.id} className={`p-4 ${row.over ? 'bg-red-50/40' : row.warning ? 'bg-amber-50/40' : ''}`}>
                     <div className="flex items-start justify-between mb-2 gap-4">
                       <div className="flex items-center gap-2 min-w-0">
@@ -282,16 +363,21 @@ export default function BudgetTracker() {
                   </div>
                 ))}
               </div>
-              {/* Grand total row */}
-              <div className={`px-4 py-3 border-t font-semibold flex items-center justify-between
-                ${totalOver ? 'bg-red-50' : totalWarning ? 'bg-amber-50' : 'bg-muted/30'}`}>
-                <span className="text-sm">Total</span>
-                <div className="flex gap-6 text-right text-sm">
-                  <span>{formatCurrency(totalBudgeted)}</span>
-                  <span className={totalOver ? 'text-red-600' : ''}>{formatCurrency(totalActual)}</span>
-                  <span className={totalOver ? 'text-red-600' : 'text-green-700'}>{formatCurrency(totalBudgeted - totalActual)}</span>
+              {/* Grand total row — only when not filtered */}
+              {!categorySearch && (
+                <div className={`px-4 py-3 border-t font-semibold flex items-center justify-between
+                  ${totalOver ? 'bg-red-50' : totalWarning ? 'bg-amber-50' : 'bg-muted/30'}`}>
+                  <span className="text-sm">Total</span>
+                  <div className="flex gap-6 text-right text-sm">
+                    <span>{formatCurrency(totalBudgeted)}</span>
+                    <span className={totalOver ? 'text-red-600' : ''}>{formatCurrency(totalActual)}</span>
+                    <span className={totalOver ? 'text-red-600' : 'text-green-700'}>{formatCurrency(totalBudgeted - totalActual)}</span>
+                  </div>
                 </div>
-              </div>
+              )}
+              {categorySearch && filteredCategoryRows.length === 0 && (
+                <div className="p-8 text-center text-muted-foreground text-sm">No categories match your search.</div>
+              )}
             </div>
           )}
         </>

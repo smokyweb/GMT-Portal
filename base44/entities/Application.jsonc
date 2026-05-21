@@ -8,6 +8,10 @@
     "nofo_title": {
       "type": "string"
     },
+    "grant_number": {
+      "type": "string",
+      "description": "Copied from the NOFO's grant_number at submission time"
+    },
     "organization_id": {
       "type": "string"
     },
@@ -67,8 +71,23 @@
         "UnderReview",
         "RevisionRequested",
         "Approved",
-        "Denied"
+        "Denied",
+        "Closed",
+        "Archived"
       ]
+    },
+    "closed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp when the application was closed/archived \u2014 used for retention scheduling"
+    },
+    "flagged_for_retention": {
+      "type": "boolean",
+      "description": "Flagged by the retention scheduler for long-term storage or deletion review"
+    },
+    "retention_flagged_at": {
+      "type": "string",
+      "format": "date-time"
     },
     "program_code": {
       "type": "string"
@@ -85,6 +104,182 @@
     },
     "revision_notes": {
       "type": "string"
+    },
+    "ij_title": {
+      "type": "string",
+      "description": "SHSP/NSGP: Investment Justification title"
+    },
+    "ij_description": {
+      "type": "string",
+      "description": "SHSP/NSGP: Investment Justification narrative"
+    },
+    "ij_core_capability": {
+      "type": "string",
+      "description": "SHSP/NSGP: Primary core capability addressed"
+    },
+    "ij_funding_priority": {
+      "type": "string",
+      "description": "SHSP: Funding priority alignment"
+    },
+    "thira_spr_alignment": {
+      "type": "string",
+      "description": "SHSP: How project aligns with THIRA/SPR findings"
+    },
+    "npa_minimum_met": {
+      "type": "boolean",
+      "description": "SHSP: Whether NPA minimum allocation is met"
+    },
+    "npa_allocation_amount": {
+      "type": "number",
+      "description": "SHSP: NPA minimum allocation amount"
+    },
+    "empg_match_source": {
+      "type": "string",
+      "description": "EMPG: Source of the required cost-share match"
+    },
+    "empg_match_description": {
+      "type": "string",
+      "description": "EMPG: Description of match activities"
+    },
+    "empg_work_plan_objectives": {
+      "type": "string",
+      "description": "EMPG: Key objectives from the work plan"
+    },
+    "slcgp_cybersecurity_plan": {
+      "type": "string",
+      "description": "SLCGP: Cybersecurity plan narrative"
+    },
+    "slcgp_project_worksheet": {
+      "type": "string",
+      "description": "SLCGP: Project Worksheet details"
+    },
+    "slcgp_rural_allocation": {
+      "type": "number",
+      "description": "SLCGP: Rural allocation amount"
+    },
+    "slcgp_rural_allocation_notes": {
+      "type": "string",
+      "description": "SLCGP: Notes on rural allocation approach"
+    },
+    "nsgp_vulnerability_assessment": {
+      "type": "string",
+      "description": "NSGP: Vulnerability assessment summary"
+    },
+    "nsgp_mission_statement": {
+      "type": "string",
+      "description": "NSGP: Organization mission statement"
+    },
+    "nsgp_target_hardening_description": {
+      "type": "string",
+      "description": "NSGP: Description of target hardening activities"
+    },
+    "eoc_construction_timeline": {
+      "type": "string",
+      "description": "EOC: Construction timeline narrative"
+    },
+    "eoc_site_control_status": {
+      "type": "string",
+      "enum": [
+        "Owned",
+        "Leased",
+        "In-Progress",
+        "Not-Established"
+      ],
+      "description": "EOC: Status of site control"
+    },
+    "eoc_site_control_notes": {
+      "type": "string",
+      "description": "EOC: Notes on site control documentation"
+    },
+    "eoc_procurement_plan": {
+      "type": "string",
+      "description": "EOC: Procurement plan details"
+    },
+    "ehp_required": {
+      "type": "boolean",
+      "description": "Whether EHP review is required for this project"
+    },
+    "ehp_screening_answers": {
+      "type": "object",
+      "description": "JSON object storing EHP pre-screening Q&A"
+    },
+    "ehp_status": {
+      "type": "string",
+      "enum": [
+        "NotRequired",
+        "ScreeningRequired",
+        "Submitted",
+        "Approved",
+        "ConditionalApproval",
+        "Denied"
+      ],
+      "description": "Current EHP review status"
+    },
+    "ehp_notes": {
+      "type": "string",
+      "description": "Notes on EHP requirements or conditions"
+    },
+    "ehp_approval_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "procurement_method": {
+      "type": "string",
+      "enum": [
+        "CompetitiveBid",
+        "SoleSource",
+        "SmallPurchase",
+        "MicroPurchase",
+        "NotApplicable"
+      ],
+      "description": "Primary procurement method"
+    },
+    "procurement_justification": {
+      "type": "string",
+      "description": "Justification if sole source or other non-competitive method"
+    },
+    "procurement_amount": {
+      "type": "number",
+      "description": "Estimated procurement amount"
+    },
+    "internal_review_notes": {
+      "type": "string",
+      "description": "NEMA internal notes \u2014 NOT visible to applicant"
+    },
+    "internal_priority_rank": {
+      "type": "number",
+      "description": "NEMA internal prioritization rank"
+    },
+    "fema_submission_status": {
+      "type": "string",
+      "enum": [
+        "NotSubmitted",
+        "ReadyForSubmission",
+        "SubmittedToFEMA",
+        "FEMAApproved",
+        "FEMADenied"
+      ],
+      "description": "Status of NEMA's submission to FEMA GO"
+    },
+    "fema_submission_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "fema_award_conditions": {
+      "type": "string",
+      "description": "Conditions attached to the FEMA award"
+    },
+    "subaward_signed": {
+      "type": "boolean",
+      "description": "Whether the subaward agreement has been electronically signed"
+    },
+    "subaward_signed_date": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "subaward_signed_by": {
+      "type": "string",
+      "description": "Name/email of signatory"
     }
   },
   "required": [

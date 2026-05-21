@@ -1,0 +1,42 @@
+{
+  "name": "CreditApplication",
+  "type": "object",
+  "properties": {
+    "credit_id": {
+      "type": "string",
+      "description": "FK to Credit"
+    },
+    "credit_number": {
+      "type": "string"
+    },
+    "funding_request_id": {
+      "type": "string",
+      "description": "FK to FundingRequest this credit was applied to"
+    },
+    "funding_request_number": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "amount_applied": {
+      "type": "number",
+      "description": "Amount of the credit applied to this request"
+    },
+    "applied_by": {
+      "type": "string",
+      "description": "Email of the user who applied the credit"
+    },
+    "note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "credit_id",
+    "funding_request_id",
+    "amount_applied"
+  ]
+}

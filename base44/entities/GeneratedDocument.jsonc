@@ -46,6 +46,7 @@
       "type": "string",
       "enum": [
         "Sent",
+        "Pending Signature",
         "Reviewed",
         "Signed",
         "Rejected"

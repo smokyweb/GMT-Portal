@@ -1,6 +1,7 @@
 import { base44 } from '@/api/base44Client';
 import { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Upload, Paperclip, X, Loader2 } from 'lucide-react';
+import { Plus, Trash2, Upload, Paperclip, X, Loader2, Eye, Search } from 'lucide-react';
+import DocumentUploadPanel from '../components/DocumentUploadPanel';
 import CsvImportDialog from '../components/CsvImportDialog';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
@@ -8,48 +9,101 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../components/StatusBadge';
+import LifecycleProgress from '../components/LifecycleProgress';
+import CreditApplicationPanel from '../components/CreditApplicationPanel';
 import ExpenditureBar from '../components/ExpenditureBar';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 import { toast } from 'sonner';
+import { AEL_CATEGORY_LABELS, getAELItemsForCategory } from '../lib/aelData';
 
 const CATEGORIES = ['Personnel', 'Equipment', 'Training', 'Travel', 'Contractual', 'Planning', 'Other'];
 
-const MODIFICATION_TYPES = [
-  'Budget Modification',
-  'Scope of Work Change',
-  'Period of Performance Extension',
-  'Key Personnel Change',
-  'Other',
+const CORE_CAPABILITIES = [
+  'Planning', 'Public Information and Warning', 'Operational Coordination',
+  'Forensics and Attribution', 'Intelligence and Information Sharing', 'Interdiction and Disruption',
+  'Screening, Search, and Detection', 'Access Control and Identity Verification', 'Cybersecurity',
+  'Physical Protective Measures', 'Risk Management for Protection Programs and Activities',
+  'Supply Chain Integrity and Security', 'Community Resilience', 'Long-Term Vulnerability Reduction',
+  'Risk and Disaster Resilience Assessment', 'Threats and Hazards Identification',
+  'Critical Transportation', 'Environmental Response/Health and Safety', 'Fatality Management Services',
+  'Fire Management and Suppression', 'Infrastructure Systems', 'Logistics and Supply Chain Management',
+  'Mass Care Services', 'Mass Search and Rescue Operations',
+  'On-Scene Security, Protection, and Law Enforcement', 'Operational Communications',
+  'Public Health, Healthcare, and Emergency Medical Services', 'Situational Assessment',
+  'Economic Recovery', 'Health and Social Services', 'Housing', 'Natural and Cultural Resources',
 ];
+
+const DISCIPLINES = [
+  'Agriculture and Food', 'Cyber Security', 'Emergency Management',
+  'Emergency Medical Services - Fire Based', 'Emergency Medical Services - Non-Fire Based',
+  'Emergency Management Agency', 'Fire Service', 'Governmental Administrative',
+  'Hazardous Materials', 'Health Care', 'Law Enforcement', 'Not for Profit / Non-Profit',
+  'Public Health', 'Public Safety Communications', 'Public Works',
+  'Regional Transit System', 'Search and Rescue',
+];
+
+
+
+const PAYMENT_STATUS_CONFIG = {
+  PendingDisbursement: { label: 'Pending Disbursement', bg: 'bg-slate-100', text: 'text-slate-700', dot: 'bg-slate-400' },
+  SubmittedToFinance:  { label: 'Submitted to Finance', bg: 'bg-blue-100',  text: 'text-blue-700',  dot: 'bg-blue-500' },
+  Paid:                { label: 'Paid',                  bg: 'bg-green-100', text: 'text-green-700', dot: 'bg-green-500' },
+  PaymentFailed:       { label: 'Payment Failed',        bg: 'bg-red-100',   text: 'text-red-700',   dot: 'bg-red-500' },
+};
+
+function PaymentBadge({ status }) {
+  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  const cfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PendingDisbursement;
+  return (
+    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
+      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
+      {cfg.label}
+    </span>
+  );
+}
+
+const MODIFICATION_TYPES = [
+  'Budget Modification', 'Scope of Work Change', 'Period of Performance Extension',
+  'Key Personnel Change', 'Other',
+];
+
+const EMPTY_LINE_ITEM = {
+  budget_category: 'Equipment', description: '', amount: 0,
+  quantity: '', unit_cost: '',
+  ael_category: '', ael_number: '',
+  expenditure_name: '', item_manufacturer: '', item_model: '',
+  item_detail_description: '', sole_source_justification: '',
+  thira_spr_capability_action: '', thira_spr_primary_capability: '',
+  resource_type: '', discipline: '',
+};
 
 export default function MyFundingRequests() {
   const [requests, setRequests] = useState([]);
   const [apps, setApps] = useState([]);
   const [user, setUser] = useState(null);
+  const [viewRequest, setViewRequest] = useState(null);
+  const [search, setSearch] = useState('');
+  const [filterType, setFilterType] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [open, setOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    application_id: '',
-    request_type: 'Reimbursement',
-    period_start: '',
-    period_end: '',
-    match_documented: 0,
-    modification_type: '',
-    modification_justification: '',
-    scope_of_work_current: '',
-    scope_of_work_proposed: '',
+    application_id: '', request_type: 'Reimbursement',
+    period_start: '', period_end: '', match_documented: 0,
+    modification_type: '', modification_justification: '',
+    scope_of_work_current: '', scope_of_work_proposed: '',
     budget_modification_notes: '',
   });
   const [lineItems, setLineItems] = useState([]);
-  const [attachments, setAttachments] = useState([]); // [{ file, uploading, url, name }]
+  const [attachments, setAttachments] = useState([]);
+  const [attachDocType, setAttachDocType] = useState('Other');
   const fileInputRef = useRef(null);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
   const loadData = async () => {
     const u = await base44.auth.me();
@@ -73,13 +127,22 @@ export default function MyFundingRequests() {
   const resetForm = () => {
     setLineItems([]);
     setAttachments([]);
-    setForm({ application_id: '', request_type: 'Reimbursement', period_start: '', period_end: '', match_documented: 0, modification_type: '', modification_justification: '', scope_of_work_current: '', scope_of_work_proposed: '', budget_modification_notes: '' });
+    setForm({
+      application_id: '', request_type: 'Reimbursement',
+      period_start: '', period_end: '', match_documented: 0,
+      modification_type: '', modification_justification: '',
+      scope_of_work_current: '', scope_of_work_proposed: '',
+      budget_modification_notes: '',
+    });
   };
+
+  const updateLineItem = (idx, field, value) =>
+    setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
 
   const handleFileAdd = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
-    const newItems = files.map(f => ({ file: f, uploading: true, url: null, name: f.name }));
+    const newItems = files.map(f => ({ file: f, uploading: true, url: null, name: f.name, docType: attachDocType }));
     setAttachments(prev => [...prev, ...newItems]);
     for (const item of newItems) {
       const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
@@ -94,7 +157,6 @@ export default function MyFundingRequests() {
     setSubmitting(true);
     const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000);
     const reqNum = `REQ-${new Date().getFullYear()}-${String(allReqs.length + 1).padStart(5, '0')}`;
-
     const isModification = form.request_type === 'Modification';
 
     const fr = await base44.entities.FundingRequest.create({
@@ -129,29 +191,42 @@ export default function MyFundingRequests() {
           budget_category: li.budget_category,
           description: li.description,
           amount: Number(li.amount),
+          quantity: li.quantity ? Number(li.quantity) : undefined,
+          unit_cost: li.unit_cost ? Number(li.unit_cost) : undefined,
+          ael_number: li.ael_number || undefined,
+          ael_category: li.ael_category || undefined,
+          expenditure_name: li.expenditure_name || undefined,
+          item_manufacturer: li.item_manufacturer || undefined,
+          item_model: li.item_model || undefined,
+          item_detail_description: li.item_detail_description || undefined,
+          sole_source_justification: li.sole_source_justification || undefined,
+          thira_spr_capability_action: li.thira_spr_capability_action || undefined,
+          thira_spr_primary_capability: li.thira_spr_primary_capability || undefined,
+          resource_type: li.resource_type || undefined,
+          discipline: li.discipline || undefined,
           is_allowable: true,
         });
       }
     }
 
-    // Save uploaded documents linked to this request
     for (const att of attachments.filter(a => a.url)) {
       await base44.entities.Document.create({
         name: att.name,
-        doc_type: 'Invoice',
+        doc_type: att.docType || 'Other',
         file_url: att.url,
         uploaded_by: user.email,
         organization_id: user.organization_id,
         application_id: form.application_id,
         application_number: selectedApp?.application_number,
         organization_name: selectedApp?.organization_name,
+        funding_request_id: fr.id,
+        funding_request_number: reqNum,
         review_status: 'Pending',
         uploaded_at: new Date().toISOString(),
         description: `Attached to funding request ${reqNum}`,
       });
     }
 
-    // Notify state reviewers
     const users = await base44.entities.User.list();
     const reviewers = users.filter(u => u.role === 'admin' || u.role === 'reviewer');
     for (const r of reviewers) {
@@ -167,6 +242,14 @@ export default function MyFundingRequests() {
     toast.success(`Request ${reqNum} submitted successfully.`);
     loadData();
   };
+
+  const filteredRequests = requests.filter(req => {
+    const q = search.toLowerCase();
+    const matchSearch = !q || req.request_number?.toLowerCase().includes(q) || req.application_number?.toLowerCase().includes(q);
+    const matchType = !filterType || req.request_type === filterType;
+    const matchStatus = !filterStatus || req.status === filterStatus;
+    return matchSearch && matchType && matchStatus;
+  });
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
@@ -187,6 +270,40 @@ export default function MyFundingRequests() {
         </div>
       </div>
 
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[180px]">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <input type="text" placeholder="Search by request # or grant..." value={search} onChange={e => setSearch(e.target.value)}
+            className="w-full pl-8 pr-3 h-9 rounded-md border border-input bg-transparent text-sm focus:outline-none focus:ring-1 focus:ring-ring" />
+        </div>
+        <Select value={filterType || 'all'} onValueChange={v => setFilterType(v === 'all' ? '' : v)}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Types" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Types</SelectItem>
+            <SelectItem value="Reimbursement">Reimbursement</SelectItem>
+            <SelectItem value="Advance">Advance</SelectItem>
+            <SelectItem value="Modification">Modification</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterStatus || 'all'} onValueChange={v => setFilterStatus(v === 'all' ? '' : v)}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Submitted">Submitted</SelectItem>
+            <SelectItem value="UnderReview">Under Review</SelectItem>
+            <SelectItem value="AdditionalInfoRequested">Info Requested</SelectItem>
+            <SelectItem value="Approved">Approved</SelectItem>
+            <SelectItem value="Denied">Denied</SelectItem>
+          </SelectContent>
+        </Select>
+        {(search || filterType || filterStatus) && (
+          <Button variant="ghost" size="sm" onClick={() => { setSearch(''); setFilterType(''); setFilterStatus(''); }}>
+            <X className="h-3.5 w-3.5 mr-1" /> Clear
+          </Button>
+        )}
+      </div>
+
       <div className="bg-card rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -198,10 +315,12 @@ export default function MyFundingRequests() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Period</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
+                <th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
-              {requests.map(req => (
+              {filteredRequests.map(req => (
                 <tr key={req.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-3 font-mono text-xs">{req.request_number}</td>
                   <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{req.request_type}</span></td>
@@ -209,21 +328,69 @@ export default function MyFundingRequests() {
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} – {formatDateShort(req.period_end)}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><StatusBadge status={req.status} /></td>
+                  <td className="p-3">{req.request_type !== 'Modification' ? <PaymentBadge status={req.payment_status} /> : <span className="text-xs text-muted-foreground">N/A</span>}</td>
+                  <td className="p-3 text-right"><Button variant="ghost" size="sm" onClick={() => setViewRequest(req)}><Eye className="h-3.5 w-3.5 mr-1" />View</Button></td>
                 </tr>
               ))}
-              {requests.length === 0 && <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No funding requests</td></tr>}
+              {filteredRequests.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">{requests.length === 0 ? 'No funding requests' : 'No requests match your filters'}</td></tr>}
             </tbody>
           </table>
         </div>
       </div>
 
-      <CsvImportDialog
-        open={csvOpen}
-        onClose={() => setCsvOpen(false)}
-        apps={apps}
-        user={user}
-        onSuccess={loadData}
-      />
+      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} apps={apps} user={user} onSuccess={loadData} />
+
+      {/* View Request Dialog */}
+      <Dialog open={!!viewRequest} onOpenChange={() => setViewRequest(null)}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>Request {viewRequest?.request_number}</DialogTitle></DialogHeader>
+          {viewRequest && (
+            <Tabs defaultValue="summary">
+              <TabsList className="mb-4">
+                <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="credits">Credits</TabsTrigger>
+                <TabsTrigger value="attachments">Attachments</TabsTrigger>
+              </TabsList>
+              <TabsContent value="summary" className="space-y-3 text-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div><p className="text-xs text-muted-foreground">Request #</p><p className="font-mono font-medium">{viewRequest.request_number}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{viewRequest.request_type}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Grant</p><p className="font-medium">{viewRequest.application_number}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewRequest.status} /></div>
+                  <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} – {formatDateShort(viewRequest.period_end)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Amount Requested</p><p className="font-semibold">{formatCurrency(viewRequest.amount_requested)}</p></div>
+                  {viewRequest.amount_approved != null && <div><p className="text-xs text-muted-foreground">Amount Approved</p><p className="font-semibold text-green-700">{formatCurrency(viewRequest.amount_approved)}</p></div>}
+                  {viewRequest.request_type !== 'Modification' && (
+                    <div><p className="text-xs text-muted-foreground">Payment Status</p><div className="mt-1"><PaymentBadge status={viewRequest.payment_status} /></div></div>
+                  )}
+                  {viewRequest.payment_reference && <div><p className="text-xs text-muted-foreground">Payment Reference</p><p className="font-mono font-medium">{viewRequest.payment_reference}</p></div>}
+                  {viewRequest.payment_date && <div><p className="text-xs text-muted-foreground">Payment Date</p><p className="font-medium">{viewRequest.payment_date}</p></div>}
+                </div>
+                <LifecycleProgress status={viewRequest.status} type="funding" />
+              </TabsContent>
+              <TabsContent value="credits">
+                <CreditApplicationPanel
+                  organizationId={user?.organization_id}
+                  fundingRequest={viewRequest}
+                  user={user}
+                  onApplied={loadData}
+                />
+              </TabsContent>
+              <TabsContent value="attachments">
+                <DocumentUploadPanel
+                  applicationId={viewRequest.application_id}
+                  applicationNumber={viewRequest.application_number}
+                  organizationName={viewRequest.organization_name}
+                  organizationId={user?.organization_id}
+                  user={user}
+                  fundingRequestId={viewRequest.id}
+                  fundingRequestNumber={viewRequest.request_number}
+                />
+              </TabsContent>
+            </Tabs>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* New Request Dialog */}
       <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>
@@ -235,7 +402,7 @@ export default function MyFundingRequests() {
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-5">
-            {/* Type selector + grant selector */}
+            {/* Type + Grant */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Request Type</Label>
@@ -265,67 +432,41 @@ export default function MyFundingRequests() {
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                   A modification request changes the terms of your existing grant award. All modifications are subject to state approval before taking effect.
                 </div>
-
                 <div>
                   <Label>Modification Type</Label>
                   <Select value={form.modification_type} onValueChange={v => setForm(f => ({ ...f, modification_type: v }))}>
                     <SelectTrigger><SelectValue placeholder="Select modification type" /></SelectTrigger>
-                    <SelectContent>
-                      {MODIFICATION_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
+                    <SelectContent>{MODIFICATION_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
                   </Select>
                 </div>
-
                 <div>
                   <Label>Justification / Reason for Modification</Label>
-                  <Textarea
-                    rows={3}
-                    placeholder="Describe why this modification is needed..."
-                    value={form.modification_justification}
-                    onChange={e => setForm(f => ({ ...f, modification_justification: e.target.value }))}
-                  />
+                  <Textarea rows={3} placeholder="Describe why this modification is needed..."
+                    value={form.modification_justification} onChange={e => setForm(f => ({ ...f, modification_justification: e.target.value }))} />
                 </div>
-
-                {/* Scope of Work Change fields */}
                 {form.modification_type === 'Scope of Work Change' && (
                   <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
-                    <p className="text-sm font-semibold text-foreground">Scope of Work Change</p>
+                    <p className="text-sm font-semibold">Scope of Work Change</p>
                     <div>
                       <Label>Current Scope of Work</Label>
-                      <Textarea
-                        rows={4}
-                        placeholder="Describe the current approved scope of work..."
-                        value={form.scope_of_work_current}
-                        onChange={e => setForm(f => ({ ...f, scope_of_work_current: e.target.value }))}
-                      />
+                      <Textarea rows={4} placeholder="Describe the current approved scope of work..."
+                        value={form.scope_of_work_current} onChange={e => setForm(f => ({ ...f, scope_of_work_current: e.target.value }))} />
                     </div>
                     <div>
                       <Label>Proposed Scope of Work</Label>
-                      <Textarea
-                        rows={4}
-                        placeholder="Describe the proposed changes to the scope of work..."
-                        value={form.scope_of_work_proposed}
-                        onChange={e => setForm(f => ({ ...f, scope_of_work_proposed: e.target.value }))}
-                      />
+                      <Textarea rows={4} placeholder="Describe the proposed changes..."
+                        value={form.scope_of_work_proposed} onChange={e => setForm(f => ({ ...f, scope_of_work_proposed: e.target.value }))} />
                     </div>
                   </div>
                 )}
-
-                {/* Budget Modification fields */}
                 {form.modification_type === 'Budget Modification' && (
                   <div className="space-y-4 rounded-lg border p-4 bg-muted/30">
-                    <p className="text-sm font-semibold text-foreground">Budget Modification Details</p>
+                    <p className="text-sm font-semibold">Budget Modification Details</p>
                     <div>
                       <Label>Budget Change Description</Label>
-                      <Textarea
-                        rows={4}
-                        placeholder="Describe the budget categories being changed and the amounts involved..."
-                        value={form.budget_modification_notes}
-                        onChange={e => setForm(f => ({ ...f, budget_modification_notes: e.target.value }))}
-                      />
+                      <Textarea rows={4} placeholder="Describe the budget categories being changed and the amounts involved..."
+                        value={form.budget_modification_notes} onChange={e => setForm(f => ({ ...f, budget_modification_notes: e.target.value }))} />
                     </div>
-
-                    {/* Line items still available for budget mods */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
                         <Label>Revised Budget Line Items</Label>
@@ -342,13 +483,13 @@ export default function MyFundingRequests() {
                           {lineItems.map((li, idx) => (
                             <tr key={idx} className="border-b">
                               <td className="p-2">
-                                <Select value={li.budget_category} onValueChange={v => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, budget_category: v } : l))}>
+                                <Select value={li.budget_category} onValueChange={v => updateLineItem(idx, 'budget_category', v)}>
                                   <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
                                   <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                                 </Select>
                               </td>
-                              <td className="p-2"><Input value={li.description} onChange={e => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, description: e.target.value } : l))} /></td>
-                              <td className="p-2"><Input type="number" className="text-right w-28" value={li.amount} onChange={e => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, amount: e.target.value } : l))} /></td>
+                              <td className="p-2"><Input value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} /></td>
+                              <td className="p-2"><Input type="number" className="text-right w-28" value={li.amount} onChange={e => updateLineItem(idx, 'amount', e.target.value)} /></td>
                               <td className="p-2"><Button variant="ghost" size="icon" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button></td>
                             </tr>
                           ))}
@@ -358,11 +499,9 @@ export default function MyFundingRequests() {
                     </div>
                   </div>
                 )}
-
-                {/* Period extension dates */}
                 {form.modification_type === 'Period of Performance Extension' && (
                   <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 bg-muted/30">
-                    <p className="col-span-2 text-sm font-semibold text-foreground">New Performance Period</p>
+                    <p className="col-span-2 text-sm font-semibold">New Performance Period</p>
                     <div><Label>New Start Date</Label><Input type="date" value={form.period_start} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
                     <div><Label>New End Date</Label><Input type="date" value={form.period_end} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
                   </div>
@@ -384,7 +523,6 @@ export default function MyFundingRequests() {
                   </div>
                 )}
 
-                {/* Summary panel */}
                 {selectedApp && (
                   <div className="bg-muted/50 rounded-lg p-4 grid grid-cols-3 gap-3 text-sm">
                     <div><p className="text-muted-foreground text-xs">Awarded</p><p className="font-bold">{formatCurrency(selectedApp.awarded_amount)}</p></div>
@@ -399,58 +537,181 @@ export default function MyFundingRequests() {
                 {/* Line Items */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label>Line Items</Label>
-                    <Button variant="outline" size="sm" onClick={() => setLineItems(prev => [...prev, { budget_category: 'Personnel', description: '', amount: 0 }])}>+ Add</Button>
+                    <Label>Expenditure Line Items</Label>
+                    <Button variant="outline" size="sm" onClick={() => setLineItems(prev => [...prev, { ...EMPTY_LINE_ITEM }])}>+ Add Item</Button>
                   </div>
-                  <table className="w-full text-sm">
-                    <thead><tr className="border-b bg-muted/50">
-                      <th className="text-left p-2 font-medium text-muted-foreground">Category</th>
-                      <th className="text-left p-2 font-medium text-muted-foreground">Description</th>
-                      <th className="text-right p-2 font-medium text-muted-foreground">Amount</th>
-                      <th className="p-2"></th>
-                    </tr></thead>
-                    <tbody>
-                      {lineItems.map((li, idx) => (
-                        <tr key={idx} className="border-b">
-                          <td className="p-2">
-                            <Select value={li.budget_category} onValueChange={v => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, budget_category: v } : l))}>
-                              <SelectTrigger className="w-[130px]"><SelectValue /></SelectTrigger>
+                  <div className="space-y-4">
+                    {lineItems.map((li, idx) => (
+                      <div key={idx} className="rounded-lg border p-4 bg-muted/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-semibold text-muted-foreground">Item {idx + 1}</span>
+                          <Button variant="ghost" size="icon" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button>
+                        </div>
+
+                        {/* Basic info */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <Label className="text-xs">Budget Category</Label>
+                            <Select value={li.budget_category} onValueChange={v => updateLineItem(idx, 'budget_category', v)}>
+                              <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                               <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                             </Select>
-                          </td>
-                          <td className="p-2"><Input value={li.description} onChange={e => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, description: e.target.value } : l))} /></td>
-                          <td className="p-2"><Input type="number" className="text-right w-28" value={li.amount} onChange={e => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, amount: e.target.value } : l))} /></td>
-                          <td className="p-2"><Button variant="ghost" size="icon" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                    <tfoot><tr className="font-bold"><td colSpan={2} className="p-2">Total</td><td className="p-2 text-right">{formatCurrency(lineTotal)}</td><td></td></tr></tfoot>
-                  </table>
+                          </div>
+                          <div>
+                            <Label className="text-xs">Expenditure Name</Label>
+                            <Input className="mt-1" placeholder="e.g. Physical Access Control System" value={li.expenditure_name} onChange={e => updateLineItem(idx, 'expenditure_name', e.target.value)} />
+                          </div>
+
+                          {/* AEL / Equipment-specific fields */}
+                          {li.budget_category === 'Equipment' && <>
+                            <div>
+                              <Label className="text-xs">AEL Category</Label>
+                              <Select value={li.ael_category} onValueChange={v => setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, ael_category: v, ael_number: '' } : l))}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select AEL category" /></SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                  {AEL_CATEGORY_LABELS.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs">AEL Number</Label>
+                              <Select value={li.ael_number} onValueChange={v => updateLineItem(idx, 'ael_number', v)} disabled={!li.ael_category}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder={li.ael_category ? 'Select AEL item' : 'Select category first'} /></SelectTrigger>
+                                <SelectContent className="max-h-60">
+                                  {getAELItemsForCategory(li.ael_category).map(item => (
+                                    <SelectItem key={item.code} value={item.code}>{item.code} — {item.title}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Manufacturer</Label>
+                              <Input className="mt-1" placeholder="Manufacturer name" value={li.item_manufacturer} onChange={e => updateLineItem(idx, 'item_manufacturer', e.target.value)} />
+                            </div>
+                            <div>
+                              <Label className="text-xs">Model</Label>
+                              <Input className="mt-1" placeholder="Model number or name" value={li.item_model} onChange={e => updateLineItem(idx, 'item_model', e.target.value)} />
+                            </div>
+                          </>}
+                          <div>
+                            <Label className="text-xs">Quantity</Label>
+                            <Input className="mt-1" type="number" placeholder="0" value={li.quantity}
+                              onChange={e => {
+                                const qty = e.target.value;
+                                const total = li.unit_cost ? (Number(qty) * Number(li.unit_cost)).toFixed(2) : li.amount;
+                                setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, quantity: qty, amount: total } : l));
+                              }} />
+                          </div>
+                          <div>
+                            <Label className="text-xs">Unit Cost ($)</Label>
+                            <Input className="mt-1" type="number" placeholder="0.00" value={li.unit_cost}
+                              onChange={e => {
+                                const uc = e.target.value;
+                                const total = (Number(uc) * (Number(li.quantity) || 1)).toFixed(2);
+                                setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, unit_cost: uc, amount: total } : l));
+                              }} />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Item Description</Label>
+                            <Textarea className="mt-1" rows={2} placeholder="Detailed description of the item..." value={li.item_detail_description} onChange={e => updateLineItem(idx, 'item_detail_description', e.target.value)} />
+                          </div>
+                          <div className="col-span-2">
+                            <Label className="text-xs">Sole Source Justification (if applicable)</Label>
+                            <Input className="mt-1" placeholder="Leave blank if not a sole-source purchase" value={li.sole_source_justification} onChange={e => updateLineItem(idx, 'sole_source_justification', e.target.value)} />
+                          </div>
+                          <div className="col-span-2 flex items-center justify-between border-t pt-3">
+                            <div className="flex-1 mr-4">
+                              <Label className="text-xs">General Description / Purpose</Label>
+                              <Input className="mt-1" placeholder="Brief description / purpose" value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} />
+                            </div>
+                            <div className="flex items-center gap-2 flex-shrink-0">
+                              <Label className="text-xs font-semibold">Total ($)</Label>
+                              <Input type="number" className="text-right w-28" value={li.amount} onChange={e => updateLineItem(idx, 'amount', e.target.value)} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* THIRA/SPR per line item */}
+                        <div className="rounded-lg border border-blue-100 bg-blue-50/50 p-3 space-y-3">
+                          <p className="text-xs font-semibold text-blue-800">THIRA/SPR Classification</p>
+                          <div className="grid grid-cols-2 gap-3">
+                            <div>
+                              <Label className="text-xs">Capability Action</Label>
+                              <Select value={li.thira_spr_capability_action} onValueChange={v => updateLineItem(idx, 'thira_spr_capability_action', v)}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select action" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Sustain/Maintain">Sustain/Maintain</SelectItem>
+                                  <SelectItem value="Build New Capability">Build New Capability</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div>
+                              <Label className="text-xs">Resource Type</Label>
+                              <Select value={li.resource_type} onValueChange={v => updateLineItem(idx, 'resource_type', v)}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select type" /></SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="Deployable">Deployable</SelectItem>
+                                  <SelectItem value="Shareable">Shareable</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Label className="text-xs">Primary Core Capability</Label>
+                              <Select value={li.thira_spr_primary_capability} onValueChange={v => updateLineItem(idx, 'thira_spr_primary_capability', v)}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select core capability" /></SelectTrigger>
+                                <SelectContent className="max-h-60">{CORE_CAPABILITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div className="col-span-2">
+                              <Label className="text-xs">Discipline</Label>
+                              <Select value={li.discipline} onValueChange={v => updateLineItem(idx, 'discipline', v)}>
+                                <SelectTrigger className="mt-1"><SelectValue placeholder="Select discipline" /></SelectTrigger>
+                                <SelectContent className="max-h-60">{DISCIPLINES.map(d => <SelectItem key={d} value={d}>{d}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                  {lineItems.length > 0 && (
+                    <div className="flex justify-end mt-2 font-bold text-sm border-t pt-2">
+                      Total: {formatCurrency(lineTotal)}
+                    </div>
+                  )}
                 </div>
               </>
             )}
+
             {/* Attachments */}
             <div>
               <Label>Supporting Documents</Label>
               <p className="text-xs text-muted-foreground mb-2">Attach receipts, invoices, or any supporting documentation.</p>
+              <div className="flex items-center gap-2 mb-2">
+                <Select value={attachDocType} onValueChange={setAttachDocType}>
+                  <SelectTrigger className="h-8 w-[180px] text-xs"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['Invoice','PerformanceEvidence','Contract','BudgetJustification','MatchDocumentation','ProgressNarrative','FinalReport','Other'].map(t => (
+                      <SelectItem key={t} value={t}>{t.replace(/([A-Z])/g, ' $1').trim()}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <span className="text-xs text-muted-foreground">Document type for next upload</span>
+              </div>
               <div className="space-y-2">
                 {attachments.map(a => (
                   <div key={a.name} className="flex items-center gap-2 p-2 rounded-lg border bg-muted/30 text-sm">
-                    {a.uploading
-                      ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" />
-                      : <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
+                    {a.uploading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" /> : <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                     <span className="flex-1 truncate text-xs">{a.name}</span>
-                    {!a.uploading && <span className="text-xs text-green-600 font-medium">Uploaded</span>}
+                    {a.docType && <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded bg-muted">{a.docType.replace(/([A-Z])/g, ' $1').trim()}</span>}
+                    {!a.uploading && <span className="text-xs text-green-600 font-medium">✓</span>}
                     <button onClick={() => removeAttachment(a.name)} className="text-muted-foreground hover:text-destructive transition">
                       <X className="h-3.5 w-3.5" />
                     </button>
                   </div>
                 ))}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed text-sm text-muted-foreground hover:bg-muted/30 hover:text-foreground transition w-full"
-                >
+                <button type="button" onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-dashed text-sm text-muted-foreground hover:bg-muted/30 hover:text-foreground transition w-full">
                   <Paperclip className="h-4 w-4" /> Attach files
                 </button>
                 <input ref={fileInputRef} type="file" multiple className="hidden" onChange={handleFileAdd} />

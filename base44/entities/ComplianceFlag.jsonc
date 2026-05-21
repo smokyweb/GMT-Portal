@@ -41,6 +41,10 @@
     "resolved_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "resolution_notes": {
+      "type": "string",
+      "description": "Notes describing how the compliance issue was resolved"
     }
   },
   "required": [
