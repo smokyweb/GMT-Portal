@@ -66,9 +66,18 @@ export default function NofoManagement() {
     setOpen(true);
   };
 
+  // Format ISO date strings to YYYY-MM-DD for date inputs
+  const toDateInput = (val) => {
+    if (!val) return '';
+    if (typeof val === 'string' && val.length >= 10) return val.substring(0, 10);
+    return '';
+  };
+
   const openEdit = (nofo) => {
     setForm({
       ...nofo,
+      open_date: toDateInput(nofo.open_date),
+      close_date: toDateInput(nofo.close_date),
       eligible_org_types: nofo.eligible_org_types || [],
     });
     setEditing(nofo);
@@ -145,7 +154,7 @@ export default function NofoManagement() {
       case 'Draft': actions.push({ label: 'Submit for Review', status: 'UnderReview' }); break;
       case 'UnderReview':
         actions.push({ label: 'Approve & Publish', status: 'Published' });
-        actions.push({ label: 'Request Changes', status: 'Draft' });
+        actions.push({ label: 'Request Changes', status: 'RevisionRequested' });
         break;
       case 'Published': actions.push({ label: 'Close', status: 'Closed' }); break;
       case 'Closed': actions.push({ label: 'Archive', status: 'Archived' }); break;

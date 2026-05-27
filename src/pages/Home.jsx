@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import StateDashboard from './StateDashboard';
 import SubrecipientHome from './SubrecipientHome';
@@ -10,25 +11,22 @@ import { isStateUser } from '../lib/helpers';
 import { isFederal } from '../lib/permissions';
 
 export default function Home() {
-  const [user, setUser] = useState(null);
+  const { user } = useAuth();
   const [allApps, setAllApps] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
-    base44.auth.me().then(async u => {
-      setUser(u);
-      const isState = isStateUser(u?.role);
-      const apps = isState
-        ? await base44.entities.Application.list('-created_date', 200)
-        : u?.organization_id
-          ? await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100)
-          : [];
-      setAllApps(apps);
-      setLoading(false);
-    });
-  }, []);
+    if (!user) return;
+    const isState = isStateUser(user?.role);
+    const fetchApps = isState
+      ? base44.entities.Application.list('-created_date', 200)
+      : user?.organization_id
+        ? base44.entities.Application.filter({ organization_id: user.organization_id }, '-created_date', 100)
+        : Promise.resolve([]);
+    fetchApps.then(apps => { setAllApps(apps || []); setLoading(false); }).catch(() => setLoading(false));
+  }, [user]);
 
   const filteredApps = useMemo(() => applyDashboardFilters(allApps, filters), [allApps, filters]);
 

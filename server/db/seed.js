@@ -79,8 +79,20 @@ async function seed(entityName, csvPath) {
 
   console.log(`Parsed ${records.length} records from ${csvPath}`);
 
-  // Use the columns from the first row
-  const columns = Object.keys(records[0]).filter(c => c !== 'id');
+  // Query actual table columns from DB so we skip unknown CSV columns gracefully
+  const colResult = await pool.query(
+    `SELECT column_name FROM information_schema.columns WHERE table_name = $1 AND table_schema = 'public'`,
+    [table]
+  );
+  const tableColumns = new Set(colResult.rows.map(r => r.column_name));
+
+  // Filter CSV columns to only those that exist in the table (skip 'id' - auto-generated)
+  const allCsvColumns = Object.keys(records[0]);
+  const columns = allCsvColumns.filter(c => c !== 'id' && tableColumns.has(c));
+  const skipped = allCsvColumns.filter(c => c !== 'id' && !tableColumns.has(c));
+  if (skipped.length) {
+    console.log(`Skipping ${skipped.length} unknown columns: ${skipped.slice(0, 5).join(', ')}${skipped.length > 5 ? '...' : ''}`);
+  }
 
   let inserted = 0;
   let errors = 0;
@@ -100,13 +112,13 @@ async function seed(entityName, csvPath) {
 
     try {
       await pool.query(
-        `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders})`,
+        `INSERT INTO ${table} (${columns.join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
         values
       );
       inserted++;
     } catch (err) {
       errors++;
-      if (errors <= 5) {
+      if (errors <= 3) {
         console.error(`Row error:`, err.message);
       }
     }
