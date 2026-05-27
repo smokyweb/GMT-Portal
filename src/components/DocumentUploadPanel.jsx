@@ -60,8 +60,22 @@ export default function DocumentUploadPanel({
     const files = Array.from(e.target.files);
     if (!files.length) return;
     setUploading(true);
+    try {
     for (const file of files) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      // Upload file to server
+      let file_url = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const token = localStorage.getItem('gmt_token');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) { const data = await res.json(); file_url = data.url || ''; }
+      } catch (uploadErr) {
+        console.warn('File upload failed, saving record without URL:', uploadErr.message);
+      }
       await base44.entities.Document.create({
         name: file.name,
         doc_type: docType,
@@ -80,9 +94,13 @@ export default function DocumentUploadPanel({
           : `Uploaded via grant record ${applicationNumber || applicationId}`,
       });
     }
-    e.target.value = '';
-    setUploading(false);
-    load();
+    } catch (err) {
+      console.error('Document upload error:', err);
+    } finally {
+      e.target.value = '';
+      setUploading(false);
+      load();
+    }
   };
 
   const handleDelete = async (doc) => {

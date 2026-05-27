@@ -140,32 +140,42 @@ export default function WorkflowRules() {
 
   const applyTemplate = async (template) => {
     setSaving(true);
-    await base44.entities.WorkflowRule.create({
-      ...template,
-      is_active: true,
-      created_by_name: user?.full_name || user?.email,
-    });
-    const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
-    setCustomRules(rules);
-    setSaving(false);
-    setShowTemplates(false);
+    try {
+      await base44.entities.WorkflowRule.create({
+        ...template,
+        is_active: true,
+        created_by_name: user?.full_name || user?.email,
+      });
+      const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
+      setCustomRules(rules);
+      setShowTemplates(false);
+    } catch (err) {
+      console.error('Failed to create workflow rule:', err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSave = async () => {
     if (!form.name || !form.trigger || !form.action_type) return;
     setSaving(true);
-    const payload = { ...form, is_active: true, created_by_name: user?.full_name || user?.email };
-    if (editingRule) {
-      await base44.entities.WorkflowRule.update(editingRule.id, payload);
-    } else {
-      await base44.entities.WorkflowRule.create(payload);
+    try {
+      const payload = { ...form, is_active: true, created_by_name: user?.full_name || user?.email };
+      if (editingRule) {
+        await base44.entities.WorkflowRule.update(editingRule.id, payload);
+      } else {
+        await base44.entities.WorkflowRule.create(payload);
+      }
+      setShowDialog(false);
+      setForm(EMPTY_FORM);
+      setEditingRule(null);
+      const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
+      setCustomRules(rules);
+    } catch (err) {
+      console.error('Failed to save workflow rule:', err);
+    } finally {
+      setSaving(false);
     }
-    setShowDialog(false);
-    setForm(EMPTY_FORM);
-    setEditingRule(null);
-    const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
-    setCustomRules(rules);
-    setSaving(false);
   };
 
   const toggleActive = async (rule) => {
