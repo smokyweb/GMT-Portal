@@ -136,6 +136,11 @@ export default function Documents() {
         docList = await base44.entities.Document.filter({ organization_id: u.organization_id }, '-uploaded_at', 200);
         appList = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50);
         receivedList = await base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at', 100);
+      } else {
+        // admin without scope_state: see all docs
+        docList = await base44.entities.Document.list('-uploaded_at', 200);
+        appList = await base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200);
+        receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
       }
     } else {
       // ISC/federal: see all
