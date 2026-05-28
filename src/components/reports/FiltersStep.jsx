@@ -87,7 +87,7 @@ export default function FiltersStep({ sourceKey, filters, onChange, filterLogic,
               <SelectTrigger className="h-8 text-xs w-48">
                 <SelectValue placeholder="Select field" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="z-50">
                 {groups.map(g => (
                   <div key={g.group}>
                     <div className="px-2 py-1 text-[10px] font-semibold text-muted-foreground uppercase">{g.group}</div>
@@ -104,7 +104,7 @@ export default function FiltersStep({ sourceKey, filters, onChange, filterLogic,
               <SelectTrigger className="h-8 text-xs w-40">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="z-50">
                 {ops.map(op => <SelectItem key={op.value} value={op.value}>{op.label}</SelectItem>)}
               </SelectContent>
             </Select>
@@ -116,7 +116,7 @@ export default function FiltersStep({ sourceKey, filters, onChange, filterLogic,
                   <SelectTrigger className="h-8 text-xs w-36">
                     <SelectValue placeholder="Select…" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" className="z-50">
                     {fieldDef.options.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}
                   </SelectContent>
                 </Select>

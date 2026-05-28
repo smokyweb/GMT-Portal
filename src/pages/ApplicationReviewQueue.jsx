@@ -13,6 +13,7 @@ import StatusBadge from '../components/StatusBadge';
 import ApplicationAuditTab from '../components/ApplicationAuditTab';
 import ApplicationPdfExport from '../components/ApplicationPdfExport';
 import AuditPackageExport from '../components/AuditPackageExport';
+import ReviewHistory from '../components/ReviewHistory';
 import AppLockedBanner from '../components/AppLockedBanner';
 import { isAppLocked } from '../hooks/useAppLock';
 import ComplianceChecklist from '../components/ComplianceChecklist';
@@ -123,6 +124,13 @@ export default function ApplicationReviewQueue() {
       score: Number(reviewScore) || null,
       notes: reviewNotes,
     });
+    if (reviewNotes) {
+      await base44.entities.ReviewComment.create({
+        entity_type: 'Application', entity_id: selected.id,
+        reviewer_email: user.email, reviewer_name: user.full_name,
+        comment: reviewNotes, action: 'Approved',
+      }).catch(() => {});
+    }
     // Create report schedules
     if (selected.performance_start && selected.performance_end) {
       let current = moment(selected.performance_start);
@@ -644,6 +652,14 @@ export default function ApplicationReviewQueue() {
                     )}
                   </>
                 )}
+                {/* Review History */}
+                <ReviewHistory
+                  entityType="Application"
+                  entityId={selected?.id}
+                  user={user}
+                  className="mt-2 pt-3 border-t"
+                />
+
                 <div className="flex gap-2 justify-end">
                   <Button variant="outline" onClick={() => setSelected(null)}>Cancel</Button>
                   {!locked && (

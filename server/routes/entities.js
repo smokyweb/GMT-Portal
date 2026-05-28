@@ -34,6 +34,7 @@ const TABLE_MAP = {
   TemplateVersion:         'template_versions',
   User:                    'users',
   WorkflowRule:            'workflow_rules',
+  ReviewComment:           'review_comments',
 };
 
 function resolveTable(entity) {

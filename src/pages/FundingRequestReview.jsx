@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ExpenditureBar from '../components/ExpenditureBar';
 import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
+import ReviewHistory from '../components/ReviewHistory';
 
 const CORE_CAPABILITIES = [
   'Planning', 'Public Information and Warning', 'Operational Coordination',
@@ -710,6 +711,12 @@ export default function FundingRequestReview() {
             </div>
               </TabsContent>
               <TabsContent value="documents">
+                <ReviewHistory
+                  entityType="FundingRequest"
+                  entityId={selected?.id}
+                  user={user}
+                  className="mb-4"
+                />
                 <FundingRequestDocsViewer fundingRequest={selected} user={user} />
               </TabsContent>
               <TabsContent value="required-templates">

@@ -55,7 +55,7 @@ async function api(method, path, body) {
 // ── Entity proxy ──────────────────────────────────────────────
 const ENTITY_NAMES = [
   'Application', 'ApplicationBudget', 'ApplicationReview',
-  'AppSettings', 'AuditLog', 'BudgetAmendment', 'ComplianceFlag',
+  'AppSettings', 'AuditLog', 'BudgetAmendment', 'ComplianceFlag', 'ReviewComment',
   'Credit', 'CreditApplication', 'Document', 'DocumentTemplate',
   'FundingRequest', 'FundingRequestLineItem', 'GeneratedDocument',
   'Grantee', 'GrantProgram', 'Message', 'Milestone', 'Nofo',

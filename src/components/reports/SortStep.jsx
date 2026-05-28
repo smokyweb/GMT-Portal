@@ -38,7 +38,7 @@ export default function SortStep({ selectedFields, sortRules, onChange }) {
             <SelectTrigger className="h-8 text-xs flex-1">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="z-50">
               {selectedFields.map(f => (
                 <SelectItem key={f.key} value={f.key}>{f.label}</SelectItem>
               ))}
