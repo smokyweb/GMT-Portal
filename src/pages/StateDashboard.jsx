@@ -90,7 +90,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
     );
   }
 
-  const totalAwarded = displayApps.filter(a => a.status === 'Approved').reduce((s, a) => s + (a.awarded_amount || 0), 0);
+  const totalAwarded = displayApps.filter(a => a.status === 'Approved').reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
 
    // Filter active orgs by scope (state admins see only their state's orgs)
    const scopedOrgs = currentUser?.scope_state
@@ -108,8 +108,8 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
   approvedApps.forEach(a => {
     const code = a.program_code || 'Other';
     if (!programMap[code]) programMap[code] = { program: code, awarded: 0, expended: 0 };
-    programMap[code].awarded += a.awarded_amount || 0;
-    programMap[code].expended += a.total_expended || 0;
+    programMap[code].awarded += Number(a.awarded_amount) || 0;
+    programMap[code].expended += Number(a.total_expended) || 0;
   });
   const chartData = Object.values(programMap).map(p => ({
     ...p,
