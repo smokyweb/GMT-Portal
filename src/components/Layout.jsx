@@ -69,6 +69,8 @@ const stateNavGroups = [
   label: 'COMPLIANCE',
   items: [
   { label: 'Reports & Compliance', icon: BarChart3, path: '/reports-compliance' },
+  { label: 'Report Builder', icon: FileSearch, path: '/report-builder' },
+  { label: 'Analytics', icon: LineChart, path: '/analytics' },
   { label: 'Compliance Flags', icon: Shield, path: '/compliance-flags' },
   { label: 'Milestones', icon: Flag, path: '/milestones' }]
 },
