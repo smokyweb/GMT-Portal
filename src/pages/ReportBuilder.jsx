@@ -87,16 +87,29 @@ export default function ReportBuilder() {
       name = window.prompt('Save as:', name + ' (Copy)') || name + ' (Copy)';
     }
     setSaveLoading(true);
-    const payload = { ...config, report_name: name };
-    let result;
-    if (savedId && !saveAs) {
-      result = await base44.entities.SavedReport.update(savedId, payload);
-    } else {
-      result = await base44.entities.SavedReport.create(payload);
-      setSavedId(result.id);
+    try {
+      // Serialize arrays to JSON strings for TEXT columns
+      const payload = {
+        ...config,
+        report_name: name,
+        selected_fields: Array.isArray(config.selected_fields) ? JSON.stringify(config.selected_fields) : config.selected_fields,
+        sort_rules: Array.isArray(config.sort_rules) ? JSON.stringify(config.sort_rules) : config.sort_rules,
+        group_by: Array.isArray(config.group_by) ? JSON.stringify(config.group_by) : config.group_by,
+      };
+      let result;
+      if (savedId && !saveAs) {
+        result = await base44.entities.SavedReport.update(savedId, payload);
+      } else {
+        result = await base44.entities.SavedReport.create(payload);
+        if (result?.id) setSavedId(result.id);
+      }
+      setDirty(false);
+    } catch (err) {
+      console.error('Failed to save report:', err);
+      alert('Failed to save report: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSaveLoading(false);
     }
-    setSaveLoading(false);
-    setDirty(false);
   };
 
   const handleRunFull = async () => {

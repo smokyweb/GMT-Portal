@@ -48,6 +48,10 @@ export default function Analytics() {
       base44.entities.Organization.list(),
       base44.auth.me(),
     ]).then(async ([apps, reqs, flags, orgs, me]) => {
+      apps = Array.isArray(apps) ? apps : [];
+      reqs = Array.isArray(reqs) ? reqs : [];
+      flags = Array.isArray(flags) ? flags : [];
+      orgs = Array.isArray(orgs) ? orgs : [];
       setUser(me);
       // Apply scope filtering
       let visibleApps = apps;
@@ -67,7 +71,7 @@ export default function Analytics() {
       setLoading(false);
       // Auto-run variance scan on load
       runScan(me);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const programs = useMemo(() => {
@@ -143,9 +147,10 @@ export default function Analytics() {
     })).filter(d => d.value > 0);
   }, [filtered]);
 
-  const totalAwarded = filtered.reduce((s, a) => s + (a.awarded_amount || 0), 0);
-  const totalRequested = filtered.reduce((s, a) => s + (a.requested_amount || 0), 0);
-  const totalExpended = filtered.reduce((s, a) => s + (a.total_expended || 0), 0);
+  // Coerce string values from DB to numbers
+  const totalAwarded = filtered.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
+  const totalRequested = filtered.reduce((s, a) => s + (Number(a.requested_amount) || 0), 0);
+  const totalExpended = filtered.reduce((s, a) => s + (Number(a.total_expended) || 0), 0);
   const approvedCount = filtered.filter(a => a.status === 'Approved').length;
   const openFlags = complianceFlags.filter(f => !f.is_resolved).length;
 

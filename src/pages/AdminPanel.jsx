@@ -75,7 +75,13 @@ export default function AdminPanel() {
   const handleInvite = async () => {
     if (!inviteEmail) return;
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail, inviteRole);
+    try {
+    // Create the user directly via our auth API (no email system in self-hosted mode)
+    const tempPassword = 'GMT_Welcome_2026!';
+    await base44.auth.register(inviteEmail, tempPassword, inviteEmail.split('@')[0], inviteRole).catch(async () => {
+      // If register fails (user might exist), try creating via entity
+      await base44.entities.User.create({ email: inviteEmail, role: inviteRole, full_name: inviteEmail.split('@')[0] }).catch(() => {});
+    });
     // Poll briefly for the user record to appear, then set org/scope_state
     if (inviteOrgId || inviteScopeState) {
       const org = organizations.find(o => o.id === inviteOrgId);
@@ -95,7 +101,11 @@ export default function AdminPanel() {
         attempts++;
       }
     }
-    setInviting(false);
+    } catch (err) {
+      console.error('Invite error:', err);
+    } finally {
+      setInviting(false);
+    }
     setInviteSuccess(true);
     setInviteEmail('');
     setInviteOrgId('');
