@@ -107,12 +107,12 @@ export default function Documents() {
       setUser(u);
       const [, settings] = await Promise.all([
         loadData(u),
-        base44.entities.AppSettings.filter({ key: 'document_review' }),
+        base44.entities.AppSettings.filter({ key: 'document_review' }).catch(() => []),
       ]);
       if (settings?.length > 0) {
         setCustomDocTypes(settings[0].value?.custom_types || []);
       }
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const loadData = async (u) => {
@@ -160,8 +160,18 @@ export default function Documents() {
     const app = apps.find(a => a.id === uploadForm.application_id);
     let file_url = '';
     if (uploadFile) {
-      const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
-      file_url = result.file_url;
+      try {
+        const formData = new FormData();
+        formData.append('file', uploadFile);
+        const token = localStorage.getItem('gmt_token');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+        clearTimeout(timeoutId);
+        if (res.ok) { const data = await res.json(); file_url = data.url || ''; }
+      } catch (uploadErr) {
+        console.warn('File upload failed, saving record without URL:', uploadErr.message);
+      }
     }
     let version = 1;
     if (uploadForm.version_of) {
@@ -185,7 +195,9 @@ export default function Documents() {
       review_status: 'Pending',
       uploaded_at: new Date().toISOString(),
     });
-    if (uploadForm.application_id) await onDocumentUploaded(base44, uploadForm.application_id);
+    try {
+      if (uploadForm.application_id) await onDocumentUploaded(base44, uploadForm.application_id);
+    } catch (e) { console.warn('Post-upload hook failed:', e); }
     setShowUpload(false);
     setUploadForm(BLANK_UPLOAD);
     setUploadFile(null);

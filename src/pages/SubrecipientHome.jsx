@@ -585,7 +585,7 @@ export default function SubrecipientHome() {
     setLoading(false);
   };
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => { loadData().catch(() => setLoading(false)); }, []);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">

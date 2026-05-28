@@ -36,21 +36,31 @@ export default function Organizations() {
   }, []);
 
   const toggleActive = async (org) => {
-    await base44.entities.Organization.update(org.id, { is_active: !org.is_active });
-    setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, is_active: !o.is_active } : o));
+    try {
+      await base44.entities.Organization.update(org.id, { is_active: !org.is_active });
+      setOrgs(prev => prev.map(o => o.id === org.id ? { ...o, is_active: !o.is_active } : o));
+    } catch (err) {
+      console.error('Failed to toggle org status:', err);
+    }
   };
 
   const handleSave = async () => {
     setSaving(true);
-    if (editOrg.id) {
-      const updated = await base44.entities.Organization.update(editOrg.id, editOrg);
-      setOrgs(prev => prev.map(o => o.id === updated.id ? updated : o));
-    } else {
-      const created = await base44.entities.Organization.create(editOrg);
-      setOrgs(prev => [...prev, created]);
+    try {
+      if (editOrg.id) {
+        const updated = await base44.entities.Organization.update(editOrg.id, editOrg);
+        setOrgs(prev => prev.map(o => o.id === (updated?.id || editOrg.id) ? { ...o, ...editOrg } : o));
+      } else {
+        const created = await base44.entities.Organization.create(editOrg);
+        if (created?.id) setOrgs(prev => [...prev, created]);
+      }
+      setEditOrg(null);
+    } catch (err) {
+      console.error('Failed to save organization:', err);
+      alert('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setEditOrg(null);
   };
 
   const field = (key, label, placeholder = '') => (
