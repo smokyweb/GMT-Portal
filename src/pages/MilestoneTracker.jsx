@@ -23,6 +23,12 @@ import { CheckCircle2, Circle, AlertCircle, Plus } from 'lucide-react';
 const formatMilestoneDate = (dateStr) => {
   if (!dateStr) return '-';
   try {
+    // Parse date without timezone conversion to avoid off-by-one day issue
+    const parts = dateStr.substring(0, 10).split('-');
+    if (parts.length === 3) {
+      const d = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+      return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return dateStr;
     return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
