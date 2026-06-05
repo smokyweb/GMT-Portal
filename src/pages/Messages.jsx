@@ -38,17 +38,18 @@ export default function Messages() {
           base44.entities.Message.list('-created_date', 500),
         ]);
       } else if (isState) {
-        // State admin: see only orgs in their scope_state
-        const orgs = await base44.entities.Organization.list('-created_date', 500);
-        orgIds = orgs.filter(o => o.state === u?.scope_state).map(o => o.id);
-        
+        // State admin: if scope_state set, filter to that state; otherwise see all
         [appList, msgList] = await Promise.all([
           base44.entities.Application.list('-created_date', 200),
           base44.entities.Message.list('-created_date', 500),
         ]);
-        
-        appList = appList.filter(a => orgIds.includes(a.organization_id));
-        msgList = msgList.filter(m => orgIds.includes(m.organization_id));
+
+        if (u?.scope_state) {
+          const orgs = await base44.entities.Organization.list('-created_date', 500);
+          orgIds = orgs.filter(o => o.state === u.scope_state).map(o => o.id);
+          appList = appList.filter(a => orgIds.includes(a.organization_id));
+          msgList = msgList.filter(m => orgIds.includes(m.organization_id));
+        }
       } else {
         // Subrecipient: see only their org
         const orgId = u?.organization_id;
@@ -59,19 +60,23 @@ export default function Messages() {
         ]);
       }
 
-      setApps(appList);
-      setMessages(msgList);
-      if (appList.length > 0) setSelectedApp(appList[0]);
+      setApps(Array.isArray(appList) ? appList : []);
+      setMessages(Array.isArray(msgList) ? msgList : []);
+      if (appList?.length > 0) setSelectedApp(appList[0]);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const reload = async () => {
     const isState = isStateUser(user?.role);
-    const msgList = isState
-      ? await base44.entities.Message.list('-created_date', 500)
-      : await base44.entities.Message.filter({ organization_id: user?.organization_id }, '-created_date', 500);
-    setMessages(msgList);
+    const isFed = ['federal_admin', 'federal_officer', 'isc_admin'].includes(user?.role);
+    let msgList;
+    if (isState || isFed) {
+      msgList = await base44.entities.Message.list('-created_date', 500);
+    } else {
+      msgList = await base44.entities.Message.filter({ organization_id: user?.organization_id }, '-created_date', 500);
+    }
+    setMessages(msgList || []);
   };
 
   // Threads = root messages (no thread_id) for an app
