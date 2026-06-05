@@ -84,32 +84,48 @@ export default function NofoManagement() {
     setOpen(true);
   };
 
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+
   const handleSave = async () => {
-    const prog = programs.find(p => p.id === form.program_id);
-    let data = {
-      ...form,
-      program_name: prog?.name || form.program_name,
-      program_code: prog?.code || form.program_code,
-      total_funding_available: Number(form.total_funding_available) || 0,
-      min_award: Number(form.min_award) || 0,
-      max_award: Number(form.max_award) || 0,
-      eligible_org_types: form.eligible_org_types || [],
-    };
-
-    // Auto-set scope_states for state admins creating NOFOs
-    if (!editing && user && user.role === 'admin' && user.scope_state && (!form.scope_states || form.scope_states.length === 0)) {
-      data.scope_states = [user.scope_state];
+    if (!form.title?.trim()) {
+      setSaveError('Title is required.');
+      return;
     }
+    setSaving(true);
+    setSaveError('');
+    try {
+      const prog = programs.find(p => p.id === form.program_id);
+      let data = {
+        ...form,
+        program_name: prog?.name || form.program_name,
+        program_code: prog?.code || form.program_code,
+        total_funding_available: Number(form.total_funding_available) || 0,
+        min_award: Number(form.min_award) || 0,
+        max_award: Number(form.max_award) || 0,
+        eligible_org_types: form.eligible_org_types || [],
+      };
 
-    if (editing) {
-      await base44.entities.Nofo.update(editing.id, data);
-      await logAudit(base44, user, 'Updated', 'Nofo', editing.id, `Updated NOFO: ${data.title}`);
-    } else {
-      const created = await base44.entities.Nofo.create(data);
-      await logAudit(base44, user, 'Created', 'Nofo', created.id, `Created NOFO: ${data.title}`);
+      // Auto-set scope_states for state admins creating NOFOs
+      if (!editing && user && user.role === 'admin' && user.scope_state && (!form.scope_states || form.scope_states.length === 0)) {
+        data.scope_states = [user.scope_state];
+      }
+
+      if (editing) {
+        await base44.entities.Nofo.update(editing.id, data);
+        await logAudit(base44, user, 'Updated', 'Nofo', editing.id, `Updated NOFO: ${data.title}`);
+      } else {
+        const created = await base44.entities.Nofo.create(data);
+        await logAudit(base44, user, 'Created', 'Nofo', created.id, `Created NOFO: ${data.title}`);
+      }
+      setOpen(false);
+      loadData();
+    } catch (err) {
+      console.error('NOFO save error:', err);
+      setSaveError('Failed to save NOFO: ' + (err.message || 'Unknown error'));
+    } finally {
+      setSaving(false);
     }
-    setOpen(false);
-    loadData();
   };
 
   const changeStatus = async (nofo, newStatus) => {
@@ -273,9 +289,11 @@ export default function NofoManagement() {
                   setForm(f => ({
                     ...f,
                     program_id: v,
-                    // Pre-fill from program defaults if fields are empty
-                    eligibility_criteria: f.eligibility_criteria || (prog?.eligibility_requirements?.join('\n') || ''),
-                    allowable_costs: f.allowable_costs || (prog?.allowable_costs?.join('\n') || ''),
+                    program_name: prog?.name || f.program_name,
+                    program_code: prog?.code || f.program_code,
+                    // Prefill eligibility from program - use eligibility_criteria field
+                    eligibility_criteria: f.eligibility_criteria || prog?.eligibility_criteria || (Array.isArray(prog?.eligibility_requirements) ? prog.eligibility_requirements.join('\n') : '') || '',
+                    allowable_costs: f.allowable_costs || prog?.allowable_costs || '',
                   }));
                 }}
               >
@@ -417,9 +435,12 @@ export default function NofoManagement() {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleSave}>{editing ? 'Update' : 'Create'} NOFO</Button>
+          <DialogFooter className="flex-col items-end gap-2">
+            {saveError && <p className="text-sm text-red-500 w-full">{saveError}</p>}
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => { setOpen(false); setSaveError(''); }}>Cancel</Button>
+              <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : (editing ? 'Update' : 'Create')} NOFO</Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>
