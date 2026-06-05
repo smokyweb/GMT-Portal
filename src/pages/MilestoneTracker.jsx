@@ -415,7 +415,7 @@ export default function MilestoneTracker() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-md w-full max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
             <DialogHeader>
               <DialogTitle>
                 {editingMilestone ? 'Edit Milestone' : 'Add Milestone'}
@@ -428,7 +428,7 @@ export default function MilestoneTracker() {
                   value={form.application_id}
                   onValueChange={(v) => setForm({ ...form, application_id: v })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="truncate" title={form.application_id ? applications.find(a => a.id === form.application_id)?.project_title : ""}>
                     <SelectValue placeholder="Select application" />
                   </SelectTrigger>
                   <SelectContent className="max-h-60 overflow-y-auto">
