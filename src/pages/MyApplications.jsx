@@ -46,8 +46,8 @@ function ExpenditureHistory({ applicationId, application }) {
 
   if (loading) return <div className="flex items-center justify-center p-8"><div className="w-6 h-6 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
-  const totalRequested = fundingRequests.reduce((s, fr) => s + (fr.amount_requested || 0), 0);
-  const totalApproved = fundingRequests.filter(fr => fr.status === 'Approved').reduce((s, fr) => s + (fr.amount_approved || 0), 0);
+  const totalRequested = fundingRequests.reduce((s, fr) => s + (Number(fr.amount_requested) || 0), 0);
+  const totalApproved = fundingRequests.filter(fr => fr.status === 'Approved').reduce((s, fr) => s + (Number(fr.amount_approved) || 0), 0);
   const totalPaid = fundingRequests.filter(fr => fr.payment_status === 'Paid').reduce((s, fr) => s + (fr.amount_approved || fr.amount_requested || 0), 0);
 
   // Category breakdown across all line items

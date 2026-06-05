@@ -20,7 +20,7 @@ const BURN_RISK = (rate) => {
   return { label: 'Under-Spending', color: 'text-blue-600', bg: 'bg-blue-50 border-blue-200', icon: TrendingDown };
 };
 
-const fmt = (v) => v >= 1_000_000 ? `$${(v/1_000_000).toFixed(1)}M` : v >= 1_000 ? `$${(v/1_000).toFixed(0)}K` : `$${v}`;
+const fmt = (v) => { const n = Number(v) || 0; return n >= 1_000_000 ? `$${(n/1_000_000).toFixed(1)}M` : n >= 1_000 ? `$${(n/1_000).toFixed(0)}K` : `$${n}`; };
 
 function KPICard({ label, value, sub, accent }) {
   return (
@@ -82,18 +82,18 @@ export default function FinancialOverview() {
   }, [filtered]);
 
   // --- Portfolio KPIs ---
-  const totalAwarded = filtered.reduce((s, a) => s + (a.awarded_amount || 0), 0);
-  const totalExpended = filtered.reduce((s, a) => s + (a.total_expended || 0), 0);
+  const totalAwarded = filtered.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
+  const totalExpended = filtered.reduce((s, a) => s + (Number(a.total_expended) || 0), 0);
   const totalRemaining = totalAwarded - totalExpended;
   const portfolioBurnRate = totalAwarded > 0 ? Math.round((totalExpended / totalAwarded) * 100) : 0;
 
   // High-risk projects (>90% burn or 0% with past mid-point)
   const highRisk = filtered.filter(a => {
-    const rate = a.awarded_amount > 0 ? (a.total_expended || 0) / a.awarded_amount * 100 : 0;
+    const rate = a.awarded_amount > 0 ? (Number(a.total_expended) || 0) / a.awarded_amount * 100 : 0;
     return rate >= 90;
   });
   const underSpending = filtered.filter(a => {
-    const rate = a.awarded_amount > 0 ? (a.total_expended || 0) / a.awarded_amount * 100 : 0;
+    const rate = a.awarded_amount > 0 ? (Number(a.total_expended) || 0) / a.awarded_amount * 100 : 0;
     return rate < 20 && a.awarded_amount > 0;
   });
 
@@ -101,7 +101,7 @@ export default function FinancialOverview() {
   const projectData = useMemo(() =>
     [...filtered]
       .filter(a => a.awarded_amount > 0)
-      .sort((a, b) => (b.awarded_amount || 0) - (a.awarded_amount || 0))
+      .sort((a, b) => (b.awarded_amount || 0) - (Number(a.awarded_amount) || 0))
       .slice(0, 25)
       .map(a => ({
         name: a.application_number || 'Draft',
@@ -109,7 +109,7 @@ export default function FinancialOverview() {
         program: a.program_code,
         awarded: a.awarded_amount,
         expended: a.total_expended || 0,
-        rate: a.awarded_amount > 0 ? Math.round(((a.total_expended || 0) / a.awarded_amount) * 100) : 0,
+        rate: a.awarded_amount > 0 ? Math.round(((Number(a.total_expended) || 0) / a.awarded_amount) * 100) : 0,
       })),
     [filtered]
   );

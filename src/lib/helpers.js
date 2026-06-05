@@ -1,8 +1,15 @@
 import moment from 'moment';
 
 export function formatCurrency(amount) {
-  if (amount == null || isNaN(amount)) return '$0';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(amount);
+  const num = Number(amount);
+  if (amount == null || isNaN(num)) return '$0';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(num);
+}
+
+// Safe numeric coercion - always returns a number, never NaN or concatenated string
+export function toNum(val) {
+  const n = Number(val);
+  return isNaN(n) ? 0 : n;
 }
 
 export function formatDate(date) {

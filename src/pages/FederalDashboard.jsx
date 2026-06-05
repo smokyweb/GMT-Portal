@@ -65,9 +65,9 @@ export default function FederalDashboard() {
     });
 
     const stateRows = Object.values(byState).filter(r => r.apps > 0 || r.flags > 0).sort((a, b) => b.awarded - a.awarded);
-    const totalAwarded  = filteredApps.reduce((s, a) => s + (a.awarded_amount || 0), 0);
+    const totalAwarded  = filteredApps.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
     const pendingReview = filteredApps.filter(a => ['Submitted', 'PendingReview', 'UnderReview'].includes(a.status)).length;
-    const totalExpended = filteredApps.reduce((s, a) => s + (a.total_expended || 0), 0);
+    const totalExpended = filteredApps.reduce((s, a) => s + (Number(a.total_expended) || 0), 0);
 
     return {
       totalOrgs: orgs.length,
@@ -82,7 +82,7 @@ export default function FederalDashboard() {
       programBreakdown: programs.map(p => ({
         name: p.code || p.name,
         apps: filteredApps.filter(a => a.program_code === p.code).length,
-        awarded: filteredApps.filter(a => a.program_code === p.code).reduce((s, a) => s + (a.awarded_amount || 0), 0),
+        awarded: filteredApps.filter(a => a.program_code === p.code).reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0),
       })).filter(p => p.apps > 0),
     };
   }, [filteredApps, orgs, allFlags, programs]);

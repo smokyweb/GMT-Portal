@@ -68,10 +68,10 @@ export default function FinancialReporting() {
   }), [requests, filterProgram, filterPayment]);
 
   // KPIs
-  const totalApproved = filtered.reduce((s, r) => s + (r.amount_approved || 0), 0);
-  const totalPaid = filtered.filter(r => r.payment_status === 'Paid').reduce((s, r) => s + (r.amount_approved || 0), 0);
-  const totalPending = filtered.filter(r => !r.payment_status || r.payment_status === 'PendingDisbursement').reduce((s, r) => s + (r.amount_approved || 0), 0);
-  const totalFailed = filtered.filter(r => r.payment_status === 'PaymentFailed').reduce((s, r) => s + (r.amount_approved || 0), 0);
+  const totalApproved = filtered.reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
+  const totalPaid = filtered.filter(r => r.payment_status === 'Paid').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
+  const totalPending = filtered.filter(r => !r.payment_status || r.payment_status === 'PendingDisbursement').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
+  const totalFailed = filtered.filter(r => r.payment_status === 'PaymentFailed').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
 
   // Approved vs Paid by Program
   const programChartData = useMemo(() => {
