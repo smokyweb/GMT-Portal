@@ -34,6 +34,7 @@ import Messages from './pages/Messages';
 import MilestoneTracker from './pages/MilestoneTracker';
 import WorkflowRules from './pages/WorkflowRules';
 import FinancialOverview from './pages/FinancialOverview';
+import FinancialReporting from './pages/FinancialReporting';
 import DocumentTemplates from './pages/DocumentTemplates';
 import AdminPanel from './pages/AdminPanel';
 import AdminApplicationsDocReview from './pages/AdminApplicationsDocReview';
@@ -100,6 +101,7 @@ const AuthenticatedApp = () => {
         <Route path="/milestones" element={<MilestoneTracker />} />
         <Route path="/workflow" element={<WorkflowRules />} />
         <Route path="/financials" element={<FinancialOverview />} />
+          <Route path="/financial-reporting" element={<FinancialReporting />} />
         <Route path="/document-templates" element={<DocumentTemplates />} />
         <Route path="/admin" element={<AdminPanel />} />
         <Route path="/admin-applications" element={<AdminApplicationsDocReview />} />
