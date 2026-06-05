@@ -415,13 +415,13 @@ export default function MilestoneTracker() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
+          <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-md max-h-[90vh] flex flex-col overflow-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
             <DialogHeader>
               <DialogTitle>
                 {editingMilestone ? 'Edit Milestone' : 'Add Milestone'}
               </DialogTitle>
             </DialogHeader>
-            <div className="space-y-4">
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1">
               <div>
                 <Label>Application</Label>
                 <Select
