@@ -415,7 +415,7 @@ export default function MilestoneTracker() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="w-[calc(100vw-2rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden">
+          <DialogContent className="w-[calc(100vw-3rem)] max-w-md max-h-[90vh] overflow-y-auto overflow-x-hidden mx-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingMilestone ? 'Edit Milestone' : 'Add Milestone'}
@@ -519,11 +519,10 @@ export default function MilestoneTracker() {
                 />
               </div>
             </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setShowForm(false)}>
-                Cancel
-              </Button>
+            <DialogFooter className="pt-4 flex flex-row gap-2 justify-end">
+              <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setShowForm(false)}>Cancel</Button>
               <Button
+                className="flex-1 sm:flex-none"
                 onClick={handleSave}
                 disabled={saving || !form.title || !form.due_date || !form.application_id}
               >
