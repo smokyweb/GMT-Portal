@@ -18,7 +18,7 @@ const STATUS_CONFIG = {
   Cancelled: { color: 'bg-slate-100 text-slate-500', icon: null },
 };
 
-export default function RfiPanel({ applicationId, applicationNumber, organizationName, user, isAdmin = false }) {
+export default function RfiPanel({ applicationId, applicationNumber, organizationName, submittedBy, user, isAdmin = false }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -30,7 +30,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
     description: '',
     priority: 'High',
     due_date: '',
-    assigned_to: '',
+    assigned_to: submittedBy || '',
   });
 
   useEffect(() => {
@@ -59,9 +59,18 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
     }).catch(() => {});
     await logAudit(base44, user, 'RFICreated', 'Application', applicationId,
       `RFI issued: "${form.title}" — assigned to ${form.assigned_to}`);
+    // Log RFI in Review History
+    await base44.entities.ReviewComment.create({
+      entity_type: 'Application',
+      entity_id: applicationId,
+      reviewer_email: user.email,
+      reviewer_name: user.full_name || user.email,
+      comment: `RFI issued: "${form.title}" — assigned to ${form.assigned_to}. ${form.description || ''}`.trim(),
+      action: 'RFICreated',
+    }).catch(() => {});
     setTasks(prev => [task, ...prev]);
     setShowCreate(false);
-    setForm({ title: '', description: '', priority: 'High', due_date: '', assigned_to: '' });
+    setForm({ title: '', description: '', priority: 'High', due_date: '', assigned_to: submittedBy || '' });
     setSaving(false);
   };
 
@@ -195,7 +204,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
               </div>
             </div>
             <div>
-              <Label>Assign To (Email)</Label>
+              <Label>Assign To (Email) <span className="text-xs text-muted-foreground font-normal">— auto-filled from application submitter</span></Label>
               <Input className="mt-1" type="email" placeholder="subrecipient@org.gov" value={form.assigned_to} onChange={e => setForm(p => ({ ...p, assigned_to: e.target.value }))} />
             </div>
           </div>

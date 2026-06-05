@@ -606,6 +606,7 @@ export default function ApplicationReviewQueue() {
                   applicationId={selected.id}
                   applicationNumber={selected.application_number}
                   organizationName={selected.organization_name}
+                  submittedBy={selected.submitted_by}
                   user={user}
                   isAdmin={true}
                 />
