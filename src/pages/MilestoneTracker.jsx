@@ -19,6 +19,15 @@ import {
 } from '@/components/ui/dialog';
 import { CheckCircle2, Circle, AlertCircle, Plus } from 'lucide-react';
 
+// Format date string to readable format (handles both YYYY-MM-DD and ISO strings)
+const formatMilestoneDate = (dateStr) => {
+  if (!dateStr) return '-';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return dateStr;
+    return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  } catch { return dateStr; }
+};
 const MILESTONE_TYPES = [
   'ProjectKickoff',
   'MidTermReview',
@@ -367,10 +376,10 @@ export default function MilestoneTracker() {
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-foreground">
-                                {milestone.due_date}
+                                {formatMilestoneDate(milestone.due_date)}
                               </td>
                               <td className="px-6 py-4 text-sm text-foreground">
-                                {milestone.completed_date || '-'}
+                                {formatMilestoneDate(milestone.completed_date)}
                               </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">
@@ -406,7 +415,7 @@ export default function MilestoneTracker() {
 
         {/* Add/Edit Dialog */}
         <Dialog open={showForm} onOpenChange={setShowForm}>
-          <DialogContent className="max-w-lg">
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingMilestone ? 'Edit Milestone' : 'Add Milestone'}
@@ -422,7 +431,7 @@ export default function MilestoneTracker() {
                   <SelectTrigger>
                     <SelectValue placeholder="Select application" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {applications.map((app) => (
                       <SelectItem key={app.id} value={app.id}>
                         {app.project_title} ({app.application_number})
