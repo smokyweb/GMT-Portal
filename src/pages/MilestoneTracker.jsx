@@ -524,7 +524,7 @@ export default function MilestoneTracker() {
               <Button
                 className="flex-1 sm:flex-none"
                 onClick={handleSave}
-                disabled={saving || !form.title || !form.due_date || !form.application_id}
+                disabled={saving || !form.title || !form.due_date}
               >
                 {saving ? 'Saving...' : editingMilestone ? 'Save Changes' : 'Add Milestone'}
               </Button>
