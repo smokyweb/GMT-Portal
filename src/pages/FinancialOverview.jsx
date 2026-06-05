@@ -70,8 +70,8 @@ export default function FinancialOverview() {
     filtered.forEach(a => {
       const p = a.program_code || 'Unknown';
       if (!map[p]) map[p] = { program: p, awarded: 0, expended: 0, count: 0 };
-      map[p].awarded += a.awarded_amount || 0;
-      map[p].expended += a.total_expended || 0;
+      map[p].awarded += Number(a.awarded_amount) || 0;
+      map[p].expended += Number(a.total_expended) || 0;
       map[p].count += 1;
     });
     return Object.values(map).map(d => ({
