@@ -204,13 +204,13 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
               </div>
             </div>
             <div>
-              <Label>Assign To (Email) <span className="text-xs text-muted-foreground font-normal">— auto-filled from application submitter</span></Label>
+              <Label>Assign To (Email) <span className="text-xs text-muted-foreground font-normal">— optional, auto-filled if available</span></Label>
               <Input className="mt-1" type="email" placeholder="subrecipient@org.gov" value={form.assigned_to} onChange={e => setForm(p => ({ ...p, assigned_to: e.target.value }))} />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={saving || !form.title || !form.assigned_to}>
+            <Button onClick={handleCreate} disabled={saving || !form.title}>
               {saving ? 'Creating…' : 'Create RFI'}
             </Button>
           </DialogFooter>
