@@ -9,9 +9,9 @@ import { formatCurrency } from '../lib/helpers';
 
 const PROGRAM_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
 
-const fmt = (v) =>
-  v >= 1_000_000 ? `$${(v / 1_000_000).toFixed(1)}M` :
-  v >= 1_000 ? `$${(v / 1_000).toFixed(0)}K` : `$${v}`;
+const fmt = (v) => { const n = Number(v) || 0; return n >= 1_000_000 ? "\$${(n/1_000_000).toFixed(1)}M" : n >= 1_000 ? "\$${(n/1_000).toFixed(0)}K" : "\$${n}"; };
+
+
 
 const PAYMENT_LABELS = {
   PendingDisbursement: { label: 'Pending Disbursement', bg: 'bg-slate-100', text: 'text-slate-700', dot: 'bg-slate-400' },
@@ -79,9 +79,9 @@ export default function FinancialReporting() {
     filtered.forEach(r => {
       const p = r.program_code || 'Unknown';
       if (!map[p]) map[p] = { program: p, approved: 0, paid: 0, submittedToFinance: 0 };
-      map[p].approved += r.amount_approved || 0;
-      if (r.payment_status === 'Paid') map[p].paid += r.amount_approved || 0;
-      if (r.payment_status === 'SubmittedToFinance') map[p].submittedToFinance += r.amount_approved || 0;
+      map[p].approved += Number(r.amount_approved) || 0;
+      if (r.payment_status === 'Paid') map[p].paid += Number(r.amount_approved) || 0;
+      if (r.payment_status === 'SubmittedToFinance') map[p].submittedToFinance += Number(r.amount_approved) || 0;
     });
     return Object.values(map).sort((a, b) => b.approved - a.approved);
   }, [filtered]);
@@ -92,8 +92,8 @@ export default function FinancialReporting() {
     filtered.forEach(r => {
       const org = r.organization_name || 'Unknown';
       if (!map[org]) map[org] = { org, approved: 0, paid: 0, count: 0 };
-      map[org].approved += r.amount_approved || 0;
-      if (r.payment_status === 'Paid') map[org].paid += r.amount_approved || 0;
+      map[org].approved += Number(r.amount_approved) || 0;
+      if (r.payment_status === 'Paid') map[org].paid += Number(r.amount_approved) || 0;
       map[org].count += 1;
     });
     return Object.values(map)
