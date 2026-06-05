@@ -13,7 +13,7 @@ const ACTION_CONFIG = {
   AdditionalInfoRequested: { icon: Info, color: 'text-purple-600', bg: 'bg-purple-50' },
 };
 
-export default function ReviewHistory({ entityType, entityId, user, className = '' }) {
+export default function ReviewHistory({ entityType, entityId, user, readOnly = false, className = '' }) {
   const [comments, setComments] = useState([]);
   const [newNote, setNewNote] = useState('');
   const [saving, setSaving] = useState(false);
@@ -100,18 +100,22 @@ export default function ReviewHistory({ entityType, entityId, user, className = 
         })}
       </div>
 
-      <div className="space-y-2">
-        <Textarea
-          value={newNote}
-          onChange={e => setNewNote(e.target.value)}
-          placeholder="Add a reviewer note..."
-          rows={2}
-          className="text-sm"
-        />
-        <Button size="sm" onClick={saveNote} disabled={saving || !newNote.trim()}>
-          {saving ? 'Saving...' : 'Add Note'}
-        </Button>
-      </div>
+      {!readOnly ? (
+        <div className="space-y-2">
+          <Textarea
+            value={newNote}
+            onChange={e => setNewNote(e.target.value)}
+            placeholder="Add a reviewer note..."
+            rows={2}
+            className="text-sm"
+          />
+          <Button size="sm" onClick={saveNote} disabled={saving || !newNote.trim()}>
+            {saving ? 'Saving...' : 'Add Note'}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground italic">This record is locked — no new notes can be added.</p>
+      )}
     </div>
   );
 }

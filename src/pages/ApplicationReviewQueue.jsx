@@ -108,6 +108,22 @@ export default function ApplicationReviewQueue() {
   };
 
   const handleApprove = async () => {
+    // Validate score is required and in range
+    const scoreNum = Number(reviewScore);
+    if (reviewScore === '' || reviewScore === null || reviewScore === undefined) {
+      alert('A review score is required before approving. Please enter a score between 0 and 100.');
+      return;
+    }
+    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
+      alert('Score must be a number between 0 and 100.');
+      return;
+    }
+    // Confirmation dialog
+    const confirmed = window.confirm(
+      `Approve application ${selected.application_number}?\n\nScore: ${scoreNum}/100\nAward Amount: $${Number(awardAmount) || selected.requested_amount}\n\nThis action will set the application status to Approved and cannot be undone.`
+    );
+    if (!confirmed) return;
+
     const awarded = Number(awardAmount) || selected.requested_amount;
     await base44.entities.Application.update(selected.id, {
       status: 'Approved',
@@ -629,8 +645,17 @@ export default function ApplicationReviewQueue() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Score (0–100)</Label>
-                        <Input type="number" min={0} max={100} value={reviewScore} onChange={e => setReviewScore(e.target.value)} />
+                        <Label>Score (0–100) <span className="text-red-500">*</span></Label>
+                        <Input
+                          type="number" min={0} max={100}
+                          value={reviewScore}
+                          onChange={e => setReviewScore(e.target.value)}
+                          className={reviewScore === '' ? 'border-amber-400' : (Number(reviewScore) < 0 || Number(reviewScore) > 100) ? 'border-red-500' : ''}
+                          placeholder="Required for approval"
+                        />
+                        {reviewScore !== '' && (Number(reviewScore) < 0 || Number(reviewScore) > 100) && (
+                          <p className="text-xs text-red-500 mt-1">Score must be between 0 and 100</p>
+                        )}
                       </div>
                       <div>
                         <Label>Award Amount ($)</Label>
@@ -657,6 +682,7 @@ export default function ApplicationReviewQueue() {
                   entityType="Application"
                   entityId={selected?.id}
                   user={user}
+                  readOnly={locked}
                   className="mt-2 pt-3 border-t"
                 />
 
@@ -671,7 +697,11 @@ export default function ApplicationReviewQueue() {
                           <Lock className="h-3.5 w-3.5 mr-1" /> Close & Lock
                         </Button>
                       )}
-                      <Button onClick={handleApprove} disabled={hasBlockingRfis} title={hasBlockingRfis ? 'Resolve all open RFIs first' : ''}>Approve</Button>
+                      <Button
+                        onClick={handleApprove}
+                        disabled={hasBlockingRfis || reviewScore === '' || reviewScore === null || reviewScore === undefined || isNaN(Number(reviewScore)) || Number(reviewScore) < 0 || Number(reviewScore) > 100}
+                        title={hasBlockingRfis ? 'Resolve all open RFIs first' : (reviewScore === '' ? 'Enter a score (0-100) before approving' : '')}
+                      >Approve</Button>
                     </>
                   )}
                 </div>
