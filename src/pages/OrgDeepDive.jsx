@@ -10,6 +10,7 @@ export default function OrgDeepDive() {
   const [selectedOrg, setSelectedOrg] = useState(null);
   const [orgData, setOrgData] = useState({});
   const [loading, setLoading] = useState(true);
+  const [loadingOrg, setLoadingOrg] = useState(false);
   const [searchOrg, setSearchOrg] = useState('');
 
   useEffect(() => {
@@ -27,38 +28,55 @@ export default function OrgDeepDive() {
 
       setOrgs(filteredOrgs);
       if (filteredOrgs.length > 0) {
-        await loadOrgData(filteredOrgs[0].id);
         setSelectedOrg(filteredOrgs[0]);
+        await loadOrgData(filteredOrgs[0].id);
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const loadOrgData = async (orgId) => {
-    const [apps, frs, docs, flags, messages, milestones] = await Promise.all([
-      base44.entities.Application.filter({ organization_id: orgId }, '-created_date', 100),
-      base44.entities.FundingRequest.filter({ organization_id: orgId }, '-created_date', 100),
-      base44.entities.Document.filter({ organization_id: orgId }, '-created_date', 100),
-      base44.entities.ComplianceFlag.filter({ organization_id: orgId }, '-created_date', 100),
-      base44.entities.Message.filter({ organization_id: orgId }, '-created_date', 100),
-      base44.entities.Milestone.filter({ organization_id: orgId }, '-created_date', 100),
-    ]);
+    setLoadingOrg(true);
+    try {
+      const [apps, frs, docs, flags, messages, milestones] = await Promise.all([
+        base44.entities.Application.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        base44.entities.FundingRequest.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        base44.entities.Document.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        base44.entities.ComplianceFlag.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        base44.entities.Message.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        base44.entities.Milestone.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+      ]);
 
-    const approvedApps = apps.filter(a => a.status === 'Approved');
-    const totalAwarded = approvedApps.reduce((s, a) => s + (a.awarded_amount || 0), 0);
-    const pendingApps = apps.filter(a => a.status === 'Submitted').length;
-    const openFlags = flags.filter(f => !f.is_resolved).length;
-    const completedDocs = docs.filter(d => d.review_status === 'Approved').length;
-    const docCompleteness = docs.length > 0 ? Math.round((completedDocs / docs.length) * 100) : 0;
+      const safeApps = Array.isArray(apps) ? apps : [];
+      const safeFrs = Array.isArray(frs) ? frs : [];
+      const safeDocs = Array.isArray(docs) ? docs : [];
+      const safeFlags = Array.isArray(flags) ? flags : [];
+      const safeMessages = Array.isArray(messages) ? messages : [];
+      const safeMilestones = Array.isArray(milestones) ? milestones : [];
 
-    setOrgData({
-      apps, frs, docs, flags, messages, milestones,
-      totalAwarded, pendingApps, openFlags, docCompleteness,
-    });
+      const approvedApps = safeApps.filter(a => a.status === 'Approved');
+      const totalAwarded = approvedApps.reduce((s, a) => s + (a.awarded_amount || 0), 0);
+      const pendingApps = safeApps.filter(a => a.status === 'Submitted').length;
+      const openFlags = safeFlags.filter(f => !f.is_resolved).length;
+      const completedDocs = safeDocs.filter(d => d.review_status === 'Approved').length;
+      const docCompleteness = safeDocs.length > 0 ? Math.round((completedDocs / safeDocs.length) * 100) : 0;
+
+      setOrgData({
+        apps: safeApps, frs: safeFrs, docs: safeDocs,
+        flags: safeFlags, messages: safeMessages, milestones: safeMilestones,
+        totalAwarded, pendingApps, openFlags, docCompleteness,
+      });
+    } catch (err) {
+      console.error('OrgDeepDive loadOrgData error:', err);
+      setOrgData({ apps: [], frs: [], docs: [], flags: [], messages: [], milestones: [], totalAwarded: 0, pendingApps: 0, openFlags: 0, docCompleteness: 0 });
+    } finally {
+      setLoadingOrg(false);
+    }
   };
 
   const handleSelectOrg = async (org) => {
     setSelectedOrg(org);
+    setOrgData({});
     await loadOrgData(org.id);
   };
 
@@ -99,7 +117,13 @@ export default function OrgDeepDive() {
 
         {/* Org Details */}
         <div className="lg:col-span-3 space-y-4">
-          {selectedOrg && (
+          {loadingOrg && (
+            <div className="flex items-center justify-center h-32">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <span className="ml-2 text-sm text-muted-foreground">Loading organization data…</span>
+            </div>
+          )}
+          {selectedOrg && !loadingOrg && (
             <>
               {/* Header */}
               <div className="bg-card border rounded-xl p-5">
@@ -182,7 +206,7 @@ export default function OrgDeepDive() {
                               <tr key={i} className="border-b last:border-0 hover:bg-muted/20">
                                 <td className="p-3 text-xs font-mono">{item.application_number || item.request_number || item.name || item.flag_type || item.subject || item.title}</td>
                                 <td className="p-3 text-xs">{item.status}</td>
-                                <td className="p-3 text-xs text-muted-foreground">{new Date(item.created_date || item.updated_date).toLocaleDateString()}</td>
+                                <td className="p-3 text-xs text-muted-foreground">{item.created_date || item.updated_date ? new Date(item.created_date || item.updated_date).toLocaleDateString() : '—'}</td>
                               </tr>
                             ))}
                           </tbody>
