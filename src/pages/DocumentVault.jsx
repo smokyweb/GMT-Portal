@@ -45,6 +45,7 @@ export default function DocumentVault() {
   const [user, setUser] = useState(null);
   const [docs, setDocs] = useState([]);
   const [apps, setApps] = useState([]);
+  const [orgs, setOrgs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
 
@@ -56,7 +57,8 @@ export default function DocumentVault() {
 
   // Upload dialog
   const [showUpload, setShowUpload] = useState(false);
-  const [uploadForm, setUploadForm] = useState({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '' });
+  const [uploadForm, setUploadForm] = useState({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '', organization_id: '', recipient: '', subrecipient: '' });
+  const [appSearch, setAppSearch] = useState('');
   const [uploadFile, setUploadFile] = useState(null);
   const fileInputRef = useRef();
 
@@ -83,8 +85,10 @@ export default function DocumentVault() {
     if (isStateUser(role)) {
       [docList, appList] = await Promise.all([
         base44.entities.Document.list('-uploaded_at', 200),
-        base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200),
+        base44.entities.Application.list('-created_date', 200),
       ]);
+      const orgList = await base44.entities.Organization.list('-created_date', 200);
+      setOrgs(orgList);
     } else {
       const orgId = u?.organization_id;
       if (!orgId) { setLoading(false); return; }
@@ -124,15 +128,18 @@ export default function DocumentVault() {
 
     const tags = uploadForm.tags ? uploadForm.tags.split(',').map(t => t.trim()).filter(Boolean) : [];
 
+    const selectedOrg = orgs.find(o => o.id === uploadForm.organization_id);
     await base44.entities.Document.create({
       name: uploadForm.name || uploadFile?.name || 'Untitled',
       doc_type: uploadForm.doc_type,
       file_url,
       uploaded_by: user?.email,
-      organization_id: user?.organization_id,
-      organization_name: app?.organization_name || '',
+      organization_id: uploadForm.organization_id || app?.organization_id || user?.organization_id,
+      organization_name: selectedOrg?.name || app?.organization_name || '',
       application_id: uploadForm.application_id || null,
       application_number: app?.application_number || '',
+      recipient: uploadForm.recipient || null,
+      subrecipient: uploadForm.subrecipient || null,
       description: uploadForm.description,
       tags,
       version,
@@ -142,8 +149,9 @@ export default function DocumentVault() {
     });
 
     setShowUpload(false);
-    setUploadForm({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '' });
+    setUploadForm({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '', organization_id: '', recipient: '', subrecipient: '' });
     setUploadFile(null);
+    setAppSearch('');
     await loadData(user);
     // Trigger workflow: document uploaded
     if (uploadForm.application_id) {
@@ -300,6 +308,15 @@ export default function DocumentVault() {
             <div className="px-4 py-3 border-b bg-muted/30 flex items-center gap-2">
               <FileText className="h-4 w-4 text-muted-foreground" />
               <span className="font-semibold text-sm">{group.label}</span>
+              {appId !== '__none__' && (
+                <a
+                  href={`/applications/${appId}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-blue-600 hover:underline ml-1"
+                  title="Open application in new tab"
+                >Open ↗</a>
+              )}
               <span className="text-xs text-muted-foreground ml-1">({group.docs.length} doc{group.docs.length !== 1 ? 's' : ''})</span>
             </div>
             <table className="w-full text-sm">
@@ -397,12 +414,12 @@ export default function DocumentVault() {
       )}
 
       {/* Upload Dialog */}
-      <Dialog open={showUpload} onOpenChange={v => { if (!v) { setShowUpload(false); setUploadForm({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '' }); setUploadFile(null); }}}>
-        <DialogContent className="max-w-lg">
+      <Dialog open={showUpload} onOpenChange={v => { if (!v) { setShowUpload(false); setUploadForm({ name: '', doc_type: 'Invoice', application_id: '', description: '', tags: '', version_of: '', organization_id: '', recipient: '', subrecipient: '' }); setUploadFile(null); setAppSearch(''); }}}>
+        <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-lg max-h-[90vh] flex flex-col overflow-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
           <DialogHeader>
             <DialogTitle>{uploadForm.version_of ? 'Upload New Version' : 'Upload Document'}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             {uploadForm.version_of && (
               <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 text-xs text-blue-700">
                 Uploading a new version of: <strong>{uploadForm.name}</strong>
@@ -441,20 +458,101 @@ export default function DocumentVault() {
                 </Select>
               </div>
             </div>
+
+            {/* Admin-only: Organization, Recipient, Subrecipient */}
+            {isState && (
+              <>
+                <div>
+                  <Label>Organization</Label>
+                  <Select value={uploadForm.organization_id} onValueChange={v => setUploadForm(f => ({ ...f, organization_id: v }))}>
+                    <SelectTrigger><SelectValue placeholder="Select organization (optional)" /></SelectTrigger>
+                    <SelectContent className="max-h-48 overflow-y-auto">
+                      <SelectItem value="">None</SelectItem>
+                      {orgs.map(o => (
+                        <SelectItem key={o.id} value={o.id}>{o.name || o.id}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Recipient</Label>
+                    <Input value={uploadForm.recipient} onChange={e => setUploadForm(f => ({ ...f, recipient: e.target.value }))} placeholder="Recipient name or email" />
+                  </div>
+                  <div>
+                    <Label>Subrecipient</Label>
+                    <Input value={uploadForm.subrecipient} onChange={e => setUploadForm(f => ({ ...f, subrecipient: e.target.value }))} placeholder="Subrecipient name" />
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Searchable Application dropdown */}
             <div>
               <Label>Linked Application</Label>
-              <Select value={uploadForm.application_id} onValueChange={v => setUploadForm(f => ({ ...f, application_id: v }))}>
-                <SelectTrigger><SelectValue placeholder="Select application (optional)" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={null}>None</SelectItem>
-                  {apps.map(a => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.application_number || 'Draft'} — {a.project_title || 'Untitled'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="relative mt-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  className="pl-8 text-sm"
+                  placeholder="Search application number or title…"
+                  value={appSearch}
+                  onChange={e => setAppSearch(e.target.value)}
+                />
+              </div>
+              {appSearch && (
+                <div className="border rounded-lg mt-1 max-h-40 overflow-y-auto bg-background shadow-md z-50">
+                  <div
+                    className="px-3 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50"
+                    onClick={() => { setUploadForm(f => ({ ...f, application_id: '' })); setAppSearch(''); }}
+                  >None / Clear</div>
+                  {apps
+                    .filter(a =>
+                      !appSearch ||
+                      a.application_number?.toLowerCase().includes(appSearch.toLowerCase()) ||
+                      a.project_title?.toLowerCase().includes(appSearch.toLowerCase()) ||
+                      a.organization_name?.toLowerCase().includes(appSearch.toLowerCase())
+                    )
+                    .map(a => (
+                      <div
+                        key={a.id}
+                        className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${uploadForm.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
+                        onClick={() => {
+                          setUploadForm(f => ({ ...f, application_id: a.id }));
+                          setAppSearch(`${a.application_number || 'Draft'} — ${a.project_title || 'Untitled'}`);
+                        }}
+                      >
+                        <span className="font-medium">{a.application_number || 'Draft'}</span>
+                        {' — '}{a.project_title || 'Untitled'}
+                        {a.organization_name && <span className="text-xs text-muted-foreground ml-1">({a.organization_name})</span>}
+                        {uploadForm.application_id === a.id && (
+                          <a
+                            href={`/applications/${a.id}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 text-xs text-blue-600 hover:underline"
+                            onClick={e => e.stopPropagation()}
+                          >Open ↗</a>
+                        )}
+                      </div>
+                    ))
+                  }
+                </div>
+              )}
+              {uploadForm.application_id && !appSearch.includes('—') && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Selected: {apps.find(a => a.id === uploadForm.application_id)?.application_number} —{' '}
+                  {apps.find(a => a.id === uploadForm.application_id)?.project_title}
+                  {' '}<a href={`/applications/${uploadForm.application_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Open ↗</a>
+                </p>
+              )}
+              {uploadForm.application_id && (
+                <p className="text-xs text-green-700 mt-1 font-medium">
+                  ✓ Linked: {apps.find(a => a.id === uploadForm.application_id)?.application_number || 'Selected'}
+                  {' '}<button className="text-red-400 hover:text-red-600 ml-1" onClick={() => { setUploadForm(f => ({ ...f, application_id: '' })); setAppSearch(''); }}>✕ Clear</button>
+                </p>
+              )}
             </div>
+
             <div>
               <Label>Description</Label>
               <Textarea value={uploadForm.description} onChange={e => setUploadForm(f => ({ ...f, description: e.target.value }))} rows={2} placeholder="Brief description of this document…" />
@@ -464,9 +562,9 @@ export default function DocumentVault() {
               <Input value={uploadForm.tags} onChange={e => setUploadForm(f => ({ ...f, tags: e.target.value }))} placeholder="e.g. Q1, equipment, reimbursement" />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowUpload(false)}>Cancel</Button>
-            <Button onClick={handleUpload} disabled={uploading || !uploadFile}>
+          <DialogFooter className="pt-4 flex flex-row gap-2 justify-end flex-shrink-0">
+            <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setShowUpload(false)}>Cancel</Button>
+            <Button className="flex-1 sm:flex-none" onClick={handleUpload} disabled={uploading || !uploadFile}>
               <Upload className="h-3.5 w-3.5 mr-1" /> {uploading ? 'Uploading…' : 'Upload'}
             </Button>
           </DialogFooter>
@@ -520,11 +618,11 @@ export default function DocumentVault() {
 
       {/* Version History Dialog */}
       <Dialog open={!!versionDoc} onOpenChange={() => setVersionDoc(null)}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-lg max-h-[90vh] flex flex-col overflow-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
           <DialogHeader>
             <DialogTitle>Version History — {versionDoc?.name}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-2">
+          <div className="flex-1 overflow-y-auto space-y-2">
             {versionHistory.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No version history found.</p>}
             {versionHistory.map((v, i) => (
               <div key={v.id} className={`flex items-center justify-between p-3 rounded-lg border ${v.id === versionDoc?.id ? 'border-primary/40 bg-primary/5' : ''}`}>
