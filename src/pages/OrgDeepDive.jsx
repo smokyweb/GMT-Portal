@@ -3,6 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Building2 } from 'lucide-react';
+import { formatCurrency } from '../lib/helpers';
 
 export default function OrgDeepDive() {
   const [user, setUser] = useState(null);
@@ -169,7 +170,7 @@ export default function OrgDeepDive() {
               {/* KPIs */}
               <div className="grid grid-cols-2 gap-3">
                 {[
-                  { label: 'Total Awarded', value: `$${(orgData.totalAwarded || 0).toLocaleString()}` },
+                  { label: 'Total Awarded', value: formatCurrency(orgData.totalAwarded || 0) },
                   { label: 'Pending Apps', value: orgData.pendingApps || 0 },
                   { label: 'Open Flags', value: orgData.openFlags || 0 },
                   { label: 'Doc Completeness', value: `${orgData.docCompleteness || 0}%` },
