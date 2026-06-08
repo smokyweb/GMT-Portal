@@ -42,17 +42,14 @@ export default function OrgDeepDive() {
       // (IDs may be in different formats between orgs and related entities)
       const fetchByOrg = async (entity) => {
         try {
-          const byId = await entity.filter({ organization_id: orgId }, '-created_date', 100);
-          if (Array.isArray(byId) && byId.length > 0) return byId;
-          // Fallback: load all and filter by name
-          if (orgName) {
-            const all = await entity.list('-created_date', 500).catch(() => []);
-            return (Array.isArray(all) ? all : []).filter(r =>
-              r.organization_id === orgId ||
-              (orgName && r.organization_name?.toLowerCase().trim() === orgName.toLowerCase().trim())
-            );
-          }
-          return byId || [];
+          // Load all and match by org_id OR org_name (IDs may use different formats in seeded data)
+          const all = await entity.list('-created_date', 500).catch(() => []);
+          const items = Array.isArray(all) ? all : [];
+          const matched = items.filter(r =>
+            r.organization_id === orgId ||
+            (orgName && r.organization_name && r.organization_name.toLowerCase().trim() === orgName.toLowerCase().trim())
+          );
+          return matched;
         } catch { return []; }
       };
 
