@@ -71,7 +71,7 @@ export default function OrgDeepDive() {
       const safeMilestones = Array.isArray(milestones) ? milestones : [];
 
       const approvedApps = safeApps.filter(a => a.status === 'Approved');
-      const totalAwarded = approvedApps.reduce((s, a) => s + (a.awarded_amount || 0), 0);
+      const totalAwarded = approvedApps.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
       const pendingApps = safeApps.filter(a => a.status === 'Submitted').length;
       const openFlags = safeFlags.filter(f => !f.is_resolved).length;
       const completedDocs = safeDocs.filter(d => d.review_status === 'Approved').length;
