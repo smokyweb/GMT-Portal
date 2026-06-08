@@ -663,10 +663,10 @@ export default function Documents() {
               <>
                 <div>
                   <Label>Organization</Label>
-                  <Select value={uploadForm.organization_id} onValueChange={v => setUploadForm(f => ({ ...f, organization_id: v }))}>
+                  <Select value={uploadForm.organization_id || '__none__'} onValueChange={v => setUploadForm(f => ({ ...f, organization_id: v === '__none__' ? '' : v }))}>
                     <SelectTrigger><SelectValue placeholder="Select organization (optional)" /></SelectTrigger>
                     <SelectContent className="max-h-48 overflow-y-auto">
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {orgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name || o.id}</SelectItem>)}
                     </SelectContent>
                   </Select>
