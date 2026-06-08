@@ -29,6 +29,7 @@ function CreditBadge({ status }) {
 export default function Credits() {
   const [credits, setCredits] = useState([]);
   const [orgs, setOrgs] = useState([]);
+  const [apps, setApps] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -37,10 +38,12 @@ export default function Credits() {
   const [voidDialog, setVoidDialog] = useState(null);
   const [voidReason, setVoidReason] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [appSearch, setAppSearch] = useState('');
   const [form, setForm] = useState({
     organization_id: '',
     amount: '',
     description: '',
+    application_id: '',
     application_number: '',
     program_code: '',
     expiration_date: '',
@@ -49,36 +52,39 @@ export default function Credits() {
   useEffect(() => { load(); }, []);
 
   const load = async () => {
-    const [u, c, o] = await Promise.all([
+    const [u, c, o, a] = await Promise.all([
       base44.auth.me(),
       base44.entities.Credit.list('-created_date', 100),
       base44.entities.Organization.filter({ is_active: true }),
+      base44.entities.Application.list('-created_date', 200),
     ]);
     setUser(u);
 
-    // Filter credits and organizations by user role
+    // Filter credits, organizations, and apps by user role
     let filteredOrgs = o;
     let filteredCredits = c;
+    let filteredApps = a;
 
     if (u && !['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
       if (u.role === 'admin' && u.scope_state) {
-        // State admin: see organizations and credits in their state
         filteredOrgs = o.filter(org => org.state === u.scope_state);
         const stateOrgIds = new Set(filteredOrgs.map(org => org.id));
         filteredCredits = c.filter(credit => stateOrgIds.has(credit.organization_id));
+        filteredApps = a.filter(app => stateOrgIds.has(app.organization_id));
       } else if (u.role === 'user' && u.organization_id) {
-        // Subrecipient: see only their organization's credits
         filteredOrgs = o.filter(org => org.id === u.organization_id);
         filteredCredits = c.filter(credit => credit.organization_id === u.organization_id);
+        filteredApps = a.filter(app => app.organization_id === u.organization_id);
       }
     }
 
     setCredits(filteredCredits);
     setOrgs(filteredOrgs);
+    setApps(filteredApps);
     setLoading(false);
   };
 
-  const resetForm = () => setForm({ organization_id: '', amount: '', description: '', application_number: '', program_code: '', expiration_date: '' });
+  const resetForm = () => { setForm({ organization_id: '', amount: '', description: '', application_id: '', application_number: '', program_code: '', expiration_date: '' }); setAppSearch(''); };
 
   const handleIssue = async () => {
     setSubmitting(true);
@@ -87,6 +93,7 @@ export default function Credits() {
     const org = orgs.find(o => o.id === form.organization_id);
     const amt = Number(form.amount);
 
+    const selectedApp = apps.find(a => a.id === form.application_id);
     const credit = await base44.entities.Credit.create({
       organization_id: form.organization_id,
       organization_name: org?.name || '',
@@ -96,8 +103,9 @@ export default function Credits() {
       issued_by: user.email,
       credit_number: creditNum,
       status: 'Active',
-      application_number: form.application_number || undefined,
-      program_code: form.program_code || undefined,
+      application_id: form.application_id || undefined,
+      application_number: selectedApp?.application_number || form.application_number || undefined,
+      program_code: selectedApp?.program_code || form.program_code || undefined,
       expiration_date: form.expiration_date || undefined,
     });
 
@@ -200,6 +208,8 @@ export default function Credits() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Remaining</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Application</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Description</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Issued By</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Date</th>
@@ -215,6 +225,8 @@ export default function Credits() {
                   <td className="p-3 font-medium">{c.organization_name}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(c.amount)}</td>
                   <td className="p-3 text-right font-semibold text-green-700">{formatCurrency(c.amount_remaining)}</td>
+                  <td className="p-3 text-xs font-mono">{c.application_number || '—'}</td>
+                  <td className="p-3 text-xs">{c.program_code || '—'}</td>
                   <td className="p-3 text-muted-foreground max-w-[200px] truncate">{c.description || '—'}</td>
                   <td className="p-3 text-xs text-muted-foreground">{c.issued_by}</td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(c.created_date)}</td>
@@ -231,7 +243,7 @@ export default function Credits() {
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">No credits found</td></tr>
+                <tr><td colSpan={12} className="p-8 text-center text-muted-foreground">No credits found</td></tr>
               )}
             </tbody>
           </table>
@@ -240,11 +252,11 @@ export default function Credits() {
 
       {/* Issue Credit Dialog */}
       <Dialog open={open} onOpenChange={v => { setOpen(v); if (!v) resetForm(); }}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-lg max-h-[90vh] flex flex-col overflow-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2"><BadgeDollarSign className="h-5 w-5" /> Issue Credit</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1">
             <div>
               <Label>Organization <span className="text-red-500">*</span></Label>
               <Select value={form.organization_id} onValueChange={v => setForm(f => ({ ...f, organization_id: v }))}>
@@ -262,24 +274,74 @@ export default function Credits() {
               <Label>Description / Reason</Label>
               <Textarea className="mt-1" rows={2} placeholder="e.g. Overpayment adjustment, performance incentive…" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Associated Application # <span className="text-xs text-muted-foreground">(optional)</span></Label>
-                <Input className="mt-1" placeholder="e.g. APP-2025-0001" value={form.application_number} onChange={e => setForm(f => ({ ...f, application_number: e.target.value }))} />
+
+            {/* Searchable Application dropdown */}
+            <div>
+              <Label>Associated Application <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <div className="relative mt-1">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                <Input
+                  className="pl-8 text-sm"
+                  placeholder="Search app number or title…"
+                  value={appSearch}
+                  onChange={e => { setAppSearch(e.target.value); if (!e.target.value) setForm(f => ({ ...f, application_id: '', application_number: '', program_code: '' })); }}
+                />
               </div>
-              <div>
-                <Label>Program Code <span className="text-xs text-muted-foreground">(optional)</span></Label>
-                <Input className="mt-1" placeholder="e.g. SHSP" value={form.program_code} onChange={e => setForm(f => ({ ...f, program_code: e.target.value }))} />
-              </div>
+              {appSearch && (
+                <div className="border rounded-lg mt-1 max-h-40 overflow-y-auto bg-background shadow-md">
+                  <div className="px-3 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50"
+                    onClick={() => { setForm(f => ({ ...f, application_id: '', application_number: '', program_code: '' })); setAppSearch(''); }}>None / Clear</div>
+                  {apps.filter(a =>
+                    a.application_number?.toLowerCase().includes(appSearch.toLowerCase()) ||
+                    a.project_title?.toLowerCase().includes(appSearch.toLowerCase()) ||
+                    a.organization_name?.toLowerCase().includes(appSearch.toLowerCase())
+                  ).map(a => (
+                    <div key={a.id}
+                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${form.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
+                      onClick={() => {
+                        setForm(f => ({ ...f, application_id: a.id, application_number: a.application_number || '', program_code: a.program_code || f.program_code }));
+                        setAppSearch(`${a.application_number || 'Draft'} — ${a.project_title || 'Untitled'}`);
+                      }}
+                    >
+                      <span className="font-medium">{a.application_number || 'Draft'}</span> — {a.project_title || 'Untitled'}
+                      {a.program_code && <span className="text-xs text-muted-foreground ml-1">({a.program_code})</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {form.application_id && (
+                <p className="text-xs text-green-700 mt-1 font-medium">
+                  ✓ {apps.find(a => a.id === form.application_id)?.application_number}
+                  {' '}<button className="text-red-400 hover:text-red-600 ml-1" onClick={() => { setForm(f => ({ ...f, application_id: '', application_number: '', program_code: '' })); setAppSearch(''); }}>✕ Clear</button>
+                </p>
+              )}
             </div>
+
+            {/* Program Code dropdown derived from apps */}
+            <div>
+              <Label>Program Code <span className="text-xs text-muted-foreground">(optional)</span></Label>
+              <Select
+                value={form.program_code || '__none__'}
+                onValueChange={v => setForm(f => ({ ...f, program_code: v === '__none__' ? '' : v }))}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select program code…" /></SelectTrigger>
+                <SelectContent className="max-h-48">
+                  <SelectItem value="__none__">None</SelectItem>
+                  {[...new Set(apps.map(a => a.program_code).filter(Boolean))].sort().map(code => (
+                    <SelectItem key={code} value={code}>{code}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div>
               <Label>Expiration Date <span className="text-xs text-muted-foreground">(optional)</span></Label>
               <Input className="mt-1" type="date" value={form.expiration_date} onChange={e => setForm(f => ({ ...f, expiration_date: e.target.value }))} />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={handleIssue} disabled={submitting || !form.organization_id || !form.amount || Number(form.amount) <= 0}>
+          <DialogFooter className="pt-4 flex flex-row gap-2 justify-end flex-shrink-0">
+            <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => { setOpen(false); resetForm(); }}>Cancel</Button>
+            <Button className="flex-1 sm:flex-none" onClick={handleIssue} disabled={submitting || !form.organization_id || !form.amount || Number(form.amount) <= 0}>
               {submitting ? 'Issuing…' : 'Issue Credit'}
             </Button>
           </DialogFooter>
