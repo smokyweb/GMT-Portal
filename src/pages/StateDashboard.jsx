@@ -218,7 +218,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
             <div className="bg-card rounded-xl border">
               <div className="flex items-center justify-between p-5 border-b">
                 <h2 className="font-semibold">Compliance Alerts</h2>
-                <Link to="/compliance">
+                <Link to="/compliance-flags">
                   <Button variant="ghost" size="sm">View All</Button>
                 </Link>
               </div>

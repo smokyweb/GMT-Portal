@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Eye, Search, FileText, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -25,6 +26,7 @@ import { formatCurrency, formatDateShort, logAudit, createNotification } from '.
 import moment from 'moment';
 
 export default function ApplicationReviewQueue() {
+  const [searchParams] = useSearchParams();
   const [apps, setApps] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -79,6 +81,12 @@ export default function ApplicationReviewQueue() {
     setUser(u);
     setNofos(visibleNofos);
     setLoading(false);
+    // Auto-open application from ?review= URL param
+    const reviewId = searchParams.get('review');
+    if (reviewId) {
+      const target = visibleApps.find(a => a.id === reviewId);
+      if (target) openReview(target);
+    }
   };
 
   const openReview = async (app) => {

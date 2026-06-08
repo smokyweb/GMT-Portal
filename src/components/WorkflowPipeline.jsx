@@ -56,7 +56,7 @@ const STAGES = [
     color: 'bg-red-50 border-red-200 text-red-700',
     dot: 'bg-red-500',
     actionLabel: 'View Reports',
-    actionPath: '/reports',
+    actionPath: '/reports-compliance',
     description: (n) => `${n} report${n !== 1 ? 's' : ''} past due date`,
   },
   {
@@ -66,7 +66,7 @@ const STAGES = [
     color: 'bg-rose-50 border-rose-200 text-rose-700',
     dot: 'bg-rose-500',
     actionLabel: 'Resolve Flags',
-    actionPath: '/compliance',
+    actionPath: '/compliance-flags',
     description: (n) => `${n} unresolved compliance flag${n !== 1 ? 's' : ''}`,
   },
   {
