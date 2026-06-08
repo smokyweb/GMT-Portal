@@ -29,22 +29,40 @@ export default function OrgDeepDive() {
       setOrgs(filteredOrgs);
       if (filteredOrgs.length > 0) {
         setSelectedOrg(filteredOrgs[0]);
-        await loadOrgData(filteredOrgs[0].id);
+        await loadOrgData(filteredOrgs[0].id, filteredOrgs[0].name);
       }
       setLoading(false);
     }).catch(() => setLoading(false));
   }, []);
 
-  const loadOrgData = async (orgId) => {
+  const loadOrgData = async (orgId, orgName) => {
     setLoadingOrg(true);
     try {
+      // Try by organization_id first; fall back to filtering by organization_name
+      // (IDs may be in different formats between orgs and related entities)
+      const fetchByOrg = async (entity) => {
+        try {
+          const byId = await entity.filter({ organization_id: orgId }, '-created_date', 100);
+          if (Array.isArray(byId) && byId.length > 0) return byId;
+          // Fallback: load all and filter by name
+          if (orgName) {
+            const all = await entity.list('-created_date', 500).catch(() => []);
+            return (Array.isArray(all) ? all : []).filter(r =>
+              r.organization_id === orgId ||
+              (orgName && r.organization_name?.toLowerCase().trim() === orgName.toLowerCase().trim())
+            );
+          }
+          return byId || [];
+        } catch { return []; }
+      };
+
       const [apps, frs, docs, flags, messages, milestones] = await Promise.all([
-        base44.entities.Application.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
-        base44.entities.FundingRequest.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
-        base44.entities.Document.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
-        base44.entities.ComplianceFlag.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
-        base44.entities.Message.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
-        base44.entities.Milestone.filter({ organization_id: orgId }, '-created_date', 100).catch(() => []),
+        fetchByOrg(base44.entities.Application),
+        fetchByOrg(base44.entities.FundingRequest),
+        fetchByOrg(base44.entities.Document),
+        fetchByOrg(base44.entities.ComplianceFlag),
+        fetchByOrg(base44.entities.Message),
+        fetchByOrg(base44.entities.Milestone),
       ]);
 
       const safeApps = Array.isArray(apps) ? apps : [];
@@ -77,7 +95,7 @@ export default function OrgDeepDive() {
   const handleSelectOrg = async (org) => {
     setSelectedOrg(org);
     setOrgData({});
-    await loadOrgData(org.id);
+    await loadOrgData(org.id, org.name);
   };
 
   const filteredOrgs = orgs.filter(o =>
