@@ -54,7 +54,7 @@ const PAYMENT_STATUS_CONFIG = {
 };
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">â€”</span>;
   const cfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -111,7 +111,7 @@ export default function MyFundingRequests() {
     if (u.organization_id) {
       const [r, a] = await Promise.all([
         base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 50),
-        base44.entities.Application.filter({ organization_id: u.organization_id, status: 'Approved' }),
+        base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
       ]);
       setRequests(r);
       setApps(a);
@@ -325,7 +325,7 @@ export default function MyFundingRequests() {
                   <td className="p-3 font-mono text-xs">{req.request_number}</td>
                   <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{req.request_type}</span></td>
                   <td className="p-3 text-xs">{req.application_number}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} – {formatDateShort(req.period_end)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} â€“ {formatDateShort(req.period_end)}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><StatusBadge status={req.status} /></td>
                   <td className="p-3">{req.request_type !== 'Modification' ? <PaymentBadge status={req.payment_status} /> : <span className="text-xs text-muted-foreground">N/A</span>}</td>
@@ -357,7 +357,7 @@ export default function MyFundingRequests() {
                   <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{viewRequest.request_type}</p></div>
                   <div><p className="text-xs text-muted-foreground">Grant</p><p className="font-medium">{viewRequest.application_number}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewRequest.status} /></div>
-                  <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} – {formatDateShort(viewRequest.period_end)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} â€“ {formatDateShort(viewRequest.period_end)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Amount Requested</p><p className="font-semibold">{formatCurrency(viewRequest.amount_requested)}</p></div>
                   {viewRequest.amount_approved != null && <div><p className="text-xs text-muted-foreground">Amount Approved</p><p className="font-semibold text-green-700">{formatCurrency(viewRequest.amount_approved)}</p></div>}
                   {viewRequest.request_type !== 'Modification' && (
@@ -420,13 +420,13 @@ export default function MyFundingRequests() {
                 <Select value={form.application_id} onValueChange={v => setForm(f => ({ ...f, application_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Choose active grant" /></SelectTrigger>
                   <SelectContent>
-                    {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} — {a.project_title}</SelectItem>)}
+                    {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} â€” {a.project_title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* ── MODIFICATION FORM ── */}
+            {/* â”€â”€ MODIFICATION FORM â”€â”€ */}
             {form.request_type === 'Modification' && (
               <div className="space-y-4">
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -509,7 +509,7 @@ export default function MyFundingRequests() {
               </div>
             )}
 
-            {/* ── REIMBURSEMENT / ADVANCE FORM ── */}
+            {/* â”€â”€ REIMBURSEMENT / ADVANCE FORM â”€â”€ */}
             {form.request_type !== 'Modification' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
@@ -579,7 +579,7 @@ export default function MyFundingRequests() {
                                 <SelectTrigger className="mt-1"><SelectValue placeholder={li.ael_category ? 'Select AEL item' : 'Select category first'} /></SelectTrigger>
                                 <SelectContent className="max-h-60">
                                   {getAELItemsForCategory(li.ael_category).map(item => (
-                                    <SelectItem key={item.code} value={item.code}>{item.code} — {item.title}</SelectItem>
+                                    <SelectItem key={item.code} value={item.code}>{item.code} â€” {item.title}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -704,7 +704,7 @@ export default function MyFundingRequests() {
                     {a.uploading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" /> : <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                     <span className="flex-1 truncate text-xs">{a.name}</span>
                     {a.docType && <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded bg-muted">{a.docType.replace(/([A-Z])/g, ' $1').trim()}</span>}
-                    {!a.uploading && <span className="text-xs text-green-600 font-medium">✓</span>}
+                    {!a.uploading && <span className="text-xs text-green-600 font-medium">âœ“</span>}
                     <button onClick={() => removeAttachment(a.name)} className="text-muted-foreground hover:text-destructive transition">
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -730,7 +730,7 @@ export default function MyFundingRequests() {
                 (form.request_type === 'Modification' && !form.modification_type)
               }
             >
-              {submitting ? 'Submitting…' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
+              {submitting ? 'Submittingâ€¦' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
