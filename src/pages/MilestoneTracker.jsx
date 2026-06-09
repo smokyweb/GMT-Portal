@@ -97,10 +97,16 @@ export default function MilestoneTracker() {
 
         if (isSubrecipient && currentUser.organization_id) {
           // Scope to this org's applications only
-          appsData = await base44.entities.Application.filter({ organization_id: currentUser.organization_id });
+          appsData = await base44.entities.Application.filter({ organization_id: currentUser.organization_id }, '-created_date', 50).catch(() => []);
           const appIds = new Set((appsData || []).map(a => a.id));
-          const allMilestones = await base44.entities.Milestone.list();
-          milestonesData = (allMilestones || []).filter(m => appIds.has(m.application_id));
+          // Filter milestones server-side by organization_id first, then app_id as fallback
+          const [byOrg, byApps] = await Promise.all([
+            base44.entities.Milestone.filter({ organization_id: currentUser.organization_id }, '-due_date', 200).catch(() => []),
+            base44.entities.Milestone.list('-due_date', 500).catch(() => []),
+          ]);
+          // Merge: prefer org filter, fall back to app_id filter
+          const orgMilestones = Array.isArray(byOrg) && byOrg.length > 0 ? byOrg : (Array.isArray(byApps) ? byApps.filter(m => appIds.has(m.application_id)) : []);
+          milestonesData = orgMilestones;
           orgsData = [];
         } else {
           milestonesData = await base44.entities.Milestone.list();
@@ -234,6 +240,17 @@ export default function MilestoneTracker() {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+      </div>
+    );
+  }
+
+  // Block subrecipients without an org
+  if (user?.role === 'user' && !user?.organization_id) {
+    return (
+      <div className="text-center py-16 text-muted-foreground">
+        <svg className="h-10 w-10 mx-auto mb-3 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H14l-1-1H5a2 2 0 00-2 2zm9-13.5V9" /></svg>
+        <p className="font-medium">No organization linked to your account.</p>
+        <p className="text-sm mt-1">Please contact your administrator to assign your organization.</p>
       </div>
     );
   }
