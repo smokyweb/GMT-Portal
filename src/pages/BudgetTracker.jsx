@@ -72,13 +72,13 @@ export default function BudgetTracker() {
       base44.entities.FundingRequest.filter({ application_id: appId }),
     ]);
 
-    // Get approved funding request IDs for this app
-    const approvedFRIds = new Set(
-      fundingRequests.filter(fr => fr.status === 'Approved').map(fr => fr.id)
+    // Get all active funding request IDs for this app (Submitted + Approved)
+    const activeFRIds = new Set(
+      fundingRequests.filter(fr => ['Approved', 'Submitted', 'Pending'].includes(fr.status)).map(fr => fr.id)
     );
 
-    // Filter line items to only approved FRs for this app
-    const relevantLines = frLines.filter(l => approvedFRIds.has(l.funding_request_id));
+    // Filter line items to active FRs for this app
+    const relevantLines = frLines.filter(l => activeFRIds.has(l.funding_request_id));
     setExpenditures(relevantLines);
     setBudgetLines(budgets);
     setLineLoading(false);
