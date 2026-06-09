@@ -20,33 +20,40 @@ function MessageBubble({ msg, user, replies, getReplies, onReply, topicColors, d
   const handleReply = async () => {
     if (!replyText.trim()) return;
     setSending(true);
-    const newMsg = await base44.entities.Message.create({
-      application_id: msg.application_id,
-      application_number: msg.application_number,
-      organization_id: msg.organization_id || user?.organization_id,
-      organization_name: msg.organization_name,
-      thread_id: msg.thread_id || msg.id,
-      parent_id: msg.id,
-      sender_email: user.email,
-      sender_name: user.full_name,
-      sender_role: user.role,
-      body: replyText.trim(),
-      topic: msg.topic,
-      is_read_by_admin: isStateUser(user?.role),
-      is_read_by_subrecipient: !isStateUser(user?.role),
-    });
-    // Email notification
+    const replyBody = replyText.trim();
     try {
-      await base44.integrations.Core.SendEmail({
+      await base44.entities.Message.create({
+        application_id: msg.application_id,
+        application_number: msg.application_number,
+        organization_id: msg.organization_id || user?.organization_id,
+        organization_name: msg.organization_name,
+        thread_id: msg.thread_id || msg.id,
+        parent_id: msg.id,
+        sender_email: user.email,
+        sender_name: user.full_name,
+        sender_role: user.role,
+        body: replyBody,
+        topic: msg.topic,
+        is_read_by_admin: isStateUser(user?.role),
+        is_read_by_subrecipient: !isStateUser(user?.role),
+      });
+      setReplyText('');
+      setReplyOpen(false);
+      onReply();
+    } catch (err) {
+      console.error('Reply error:', err);
+      alert('Failed to send reply. Please try again.');
+    } finally {
+      setSending(false);
+    }
+    // Email — fire and forget
+    try {
+      base44.integrations.Core.SendEmail({
         to: isOwn ? msg.application_number : msg.sender_email,
         subject: `New reply on Application ${msg.application_number}`,
-        body: `${user.full_name} replied to your message on application ${msg.application_number}:\n\n"${replyText.trim()}"\n\nLog in to the GMT Portal to view and respond.`,
-      });
+        body: `${user.full_name} replied:\n\n"${replyBody}"\n\nLog in to the GMT Portal to respond.`,
+      }).catch(() => {});
     } catch (_) {}
-    setReplyText('');
-    setReplyOpen(false);
-    setSending(false);
-    onReply();
   };
 
   return (
@@ -132,37 +139,42 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
   const handleSend = async () => {
     if (!newBody.trim()) return;
     setSending(true);
-    await base44.entities.Message.create({
-      application_id: app.id,
-      application_number: app.application_number,
-      organization_id: app.organization_id || user?.organization_id,
-      organization_name: app.organization_name || user?.organization_name,
-      thread_id: null,
-      parent_id: null,
-      sender_email: user.email,
-      sender_name: user.full_name,
-      sender_role: user.role,
-      body: newBody.trim(),
-      topic: newTopic,
-      is_read_by_admin: isStateUser(user?.role),
-      is_read_by_subrecipient: !isStateUser(user?.role),
-    });
-    // Email notification to other party
+    const bodyToSend = newBody.trim();
     try {
-      const recipientEmail = isStateUser(user?.role)
-        ? app.submitted_by
-        : null; // state admins notified via a generic address or skip
+      await base44.entities.Message.create({
+        application_id: app.id,
+        application_number: app.application_number,
+        organization_id: app.organization_id || user?.organization_id,
+        organization_name: app.organization_name || user?.organization_name,
+        thread_id: null,
+        parent_id: null,
+        sender_email: user.email,
+        sender_name: user.full_name,
+        sender_role: user.role,
+        body: bodyToSend,
+        topic: newTopic,
+        is_read_by_admin: isStateUser(user?.role),
+        is_read_by_subrecipient: !isStateUser(user?.role),
+      });
+      setNewBody('');
+      onMessageSent();
+    } catch (err) {
+      console.error('Send message error:', err);
+      alert('Failed to send message. Please try again.');
+    } finally {
+      setSending(false);
+    }
+    // Email notification — fire and forget, don't block
+    try {
+      const recipientEmail = isStateUser(user?.role) ? app.submitted_by : null;
       if (recipientEmail) {
-        await base44.integrations.Core.SendEmail({
+        base44.integrations.Core.SendEmail({
           to: recipientEmail,
           subject: `New message on Application ${app.application_number} [${newTopic}]`,
-          body: `${user.full_name} sent you a message on application ${app.application_number}:\n\n"${newBody.trim()}"\n\nLog in to the GMT Portal to respond.`,
-        });
+          body: `${user.full_name} sent you a message on application ${app.application_number}:\n\n"${bodyToSend}"\n\nLog in to the GMT Portal to respond.`,
+        }).catch(() => {});
       }
     } catch (_) {}
-    setNewBody('');
-    setSending(false);
-    onMessageSent();
   };
 
   return (
