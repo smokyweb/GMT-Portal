@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Building2, Check } from 'lucide-react';
+import { Building2, Check, AlertCircle } from 'lucide-react';
 import OrgUserManagement from '../components/OrgUserManagement';
 import OrgAlertsPanel from '../components/OrgAlertsPanel';
 
@@ -19,34 +19,66 @@ export default function MyOrganization() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState('');
+
+  const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'address', 'city', 'state', 'zip', 'county'];
+  const extractForm = (o) => FORM_FIELDS.reduce((acc, k) => ({ ...acc, [k]: o[k] || '' }), { type: o.type || 'Municipality' });
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      if (u.organization_id) {
-        const [orgs, myApps] = await Promise.all([
-          base44.entities.Organization.filter({ id: u.organization_id }),
-          base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
-        ]);
-        if (orgs.length > 0) { setOrg(orgs[0]); setForm(orgs[0]); }
-        setApps(myApps);
+      try {
+        if (u.organization_id) {
+          // Load org by listing all and finding by id (filter by id not always supported)
+          const [allOrgs, myApps] = await Promise.all([
+            base44.entities.Organization.list('-created_date', 500).catch(() => []),
+            base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
+          ]);
+          const found = allOrgs.find(o => o.id === u.organization_id);
+          if (found) {
+            setOrg(found);
+            setForm(extractForm(found));
+          }
+          setApps(Array.isArray(myApps) ? myApps : []);
+        }
+      } catch (e) {
+        console.error('Failed to load org:', e);
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    if (org) {
-      await base44.entities.Organization.update(org.id, { ...form, is_active: true });
-    } else {
-      const newOrg = await base44.entities.Organization.create({ ...form, is_active: true });
-      await base44.auth.updateMe({ organization_id: newOrg.id });
-      setOrg(newOrg);
+    setError('');
+    try {
+      if (org) {
+        // Update existing org — only send form fields, not raw org object
+        await base44.entities.Organization.update(org.id, { ...form, is_active: true });
+        setOrg(prev => ({ ...prev, ...form }));
+      } else {
+        // Create new org
+        const newOrg = await base44.entities.Organization.create({ ...form, is_active: true });
+        setOrg(newOrg);
+        // Link org to user — try updateMe, fall back to user entity update
+        try {
+          await base44.auth.updateMe({ organization_id: newOrg.id });
+        } catch {
+          // If updateMe doesn't exist, update user entity directly
+          if (user?.id) {
+            await base44.entities.User.update(user.id, { organization_id: newOrg.id }).catch(() => {});
+          }
+        }
+        setUser(prev => ({ ...prev, organization_id: newOrg.id }));
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Save org error:', err);
+      setError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
@@ -94,9 +126,21 @@ export default function MyOrganization() {
               <div><Label>State</Label><Input value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} placeholder="IL" /></div>
               <div><Label>ZIP Code</Label><Input value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} /></div>
             </div>
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 text-sm bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                {error}
+              </div>
+            )}
+            {saved && (
+              <div className="flex items-center gap-2 text-green-700 text-sm bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                <Check className="h-4 w-4 flex-shrink-0" />
+                Organization saved successfully.
+              </div>
+            )}
             <div className="flex justify-end">
               <Button onClick={handleSave} disabled={saving || !form.name}>
-                {saved ? <><Check className="h-4 w-4 mr-1" /> Saved</> : saving ? 'Saving...' : org ? 'Update Profile' : 'Create Profile'}
+                {saving ? 'Saving...' : org ? 'Update Profile' : 'Create Profile'}
               </Button>
             </div>
           </div>
