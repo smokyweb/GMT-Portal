@@ -29,6 +29,9 @@ export default function NewApplication() {
   const [budgetItems, setBudgetItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   const [form, setForm] = useState({
     project_title: '', project_narrative: '', work_plan: '', risk_assessment: '',
@@ -178,30 +181,64 @@ export default function NewApplication() {
   };
 
   const submitApplication = async () => {
+    setConfirmSubmit(false);
+    setSubmitError('');
     setSaving(true);
-    await saveDraft();
+    try {
+      // Save draft first (without resetting saving state)
+      const data = {
+        ...form,
+        nofo_id: nofo?.id || app?.nofo_id,
+        nofo_title: nofo?.title || app?.nofo_title,
+        organization_id: org?.id || user?.organization_id,
+        organization_name: orgForm.name || org?.name,
+        submitted_by: user?.email,
+        program_code: nofo?.program_code || app?.program_code,
+        program_name: nofo?.program_name || app?.program_name,
+        grant_number: nofo?.grant_number || app?.grant_number || '',
+        status: 'Draft',
+        requested_amount: Number(form.requested_amount),
+        match_amount: Number(form.match_amount),
+        version: (app?.version || 0) + 1,
+      };
+      let savedApp = app;
+      if (app) {
+        await base44.entities.Application.update(app.id, data);
+        savedApp = { ...app, ...data };
+      } else {
+        savedApp = await base44.entities.Application.create(data);
+        setApp(savedApp);
+      }
 
-    const allApps = await base44.entities.Application.list('-created_date', 1000);
-    const appNum = `APP-${new Date().getFullYear()}-${String(allApps.length + 1).padStart(5, '0')}`;
+      // Generate application number
+      const allApps = await base44.entities.Application.list('-created_date', 1000);
+      const appNum = `APP-${new Date().getFullYear()}-${String(allApps.length + 1).padStart(5, '0')}`;
 
-    await base44.entities.Application.update(app.id, {
-      status: 'Submitted',
-      application_number: appNum,
-      submitted_at: new Date().toISOString(),
-    });
+      // Submit
+      await base44.entities.Application.update(savedApp.id, {
+        status: 'Submitted',
+        application_number: appNum,
+        submitted_at: new Date().toISOString(),
+      });
 
-    // Notify state reviewers
-    const users = await base44.entities.User.list();
-    const reviewers = users.filter(u => u.role === 'admin' || u.role === 'reviewer');
-    for (const r of reviewers) {
-      await createNotification(base44, r.email, 'New Application Submitted',
-        `${orgForm.name} submitted application ${appNum} for ${nofo?.title || 'a grant'}.`,
-        'app_submitted', 'Application', app.id, '/applications');
+      // Notify state reviewers
+      const allUsers = await base44.entities.User.list().catch(() => []);
+      const reviewers = (allUsers || []).filter(u => u.role === 'admin' || u.role === 'reviewer');
+      for (const r of reviewers) {
+        await createNotification(base44, r.email, 'New Application Submitted',
+          `${orgForm.name} submitted application ${appNum} for ${nofo?.title || 'a grant'}.`,
+          'app_submitted', 'Application', savedApp.id, '/applications').catch(() => {});
+      }
+
+      await logAudit(base44, user, 'Submitted', 'Application', savedApp.id, `Submitted application ${appNum}`).catch(() => {});
+      setSubmitSuccess(true);
+      setTimeout(() => navigate('/my-applications'), 2000);
+    } catch (err) {
+      console.error('Submit error:', err);
+      setSubmitError('Submission failed: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setSaving(false);
     }
-
-    await logAudit(base44, user, 'Submitted', 'Application', app.id, `Submitted application ${appNum}`);
-    setSaving(false);
-    navigate('/my-applications');
   };
 
   const budgetTotal = budgetItems.reduce((s, b) => s + (Number(b.amount_requested) || 0), 0);
@@ -367,21 +404,97 @@ export default function NewApplication() {
 
         {/* Step 7: Review */}
         {step === 6 && (
-          <div className="space-y-4">
-            <h2 className="font-semibold text-lg">Review & Submit</h2>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div><p className="text-muted-foreground text-xs">Organization</p><p className="font-medium">{orgForm.name}</p></div>
-              <div><p className="text-muted-foreground text-xs">NOFO</p><p className="font-medium">{nofo?.title}</p></div>
-              {(nofo?.grant_number || app?.grant_number) && (
-                <div><p className="text-muted-foreground text-xs">Grant Number</p><p className="font-medium font-mono">{nofo?.grant_number || app?.grant_number}</p></div>
-              )}
-              <div><p className="text-muted-foreground text-xs">Project Title</p><p className="font-medium">{form.project_title}</p></div>
-              <div><p className="text-muted-foreground text-xs">Requested Amount</p><p className="font-bold text-lg">{formatCurrency(Number(form.requested_amount))}</p></div>
-              <div><p className="text-muted-foreground text-xs">Match Commitment</p><p className="font-medium">{formatCurrency(Number(form.match_amount))}</p></div>
-              <div><p className="text-muted-foreground text-xs">Budget Line Items</p><p className="font-medium">{budgetItems.length} items totaling {formatCurrency(budgetTotal)}</p></div>
-              <div><p className="text-muted-foreground text-xs">Performance Start</p><p className="font-medium">{form.performance_start || '—'}</p></div>
-              <div><p className="text-muted-foreground text-xs">Performance End</p><p className="font-medium">{form.performance_end || '—'}</p></div>
+          <div className="space-y-6">
+            <div>
+              <h2 className="font-semibold text-lg">Review & Submit</h2>
+              <p className="text-sm text-muted-foreground mt-1">Please review all information carefully before submitting. Once submitted, you cannot edit the application.</p>
             </div>
+
+            {submitError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3 text-sm text-red-700">
+                {submitError}
+              </div>
+            )}
+            {submitSuccess && (
+              <div className="bg-green-50 border border-green-200 rounded-lg px-4 py-3 text-sm text-green-700 font-medium">
+                ✓ Application submitted successfully! Redirecting…
+              </div>
+            )}
+
+            {/* Organization */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Organization</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{orgForm.name || org?.name || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{orgForm.type || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono">{orgForm.ein || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono">{orgForm.sam_uei || '—'}</p></div>
+                <div className="col-span-2"><p className="text-xs text-muted-foreground">Address</p><p>{[orgForm.address, orgForm.city, orgForm.state, orgForm.zip].filter(Boolean).join(', ') || '—'}</p></div>
+              </div>
+            </div>
+
+            {/* NOFO & Project */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Project Details</h3>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{nofo?.title || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{nofo?.program_code || app?.program_code || '—'}</p></div>
+                {(nofo?.grant_number || app?.grant_number) && (
+                  <div><p className="text-xs text-muted-foreground">Grant Number</p><p className="font-mono">{nofo?.grant_number || app?.grant_number}</p></div>
+                )}
+                <div><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{form.project_title || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance Start</p><p>{form.performance_start || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance End</p><p>{form.performance_end || '—'}</p></div>
+                {form.project_narrative && (
+                  <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Narrative</p><p className="text-xs line-clamp-3">{form.project_narrative}</p></div>
+                )}
+              </div>
+            </div>
+
+            {/* Budget */}
+            <div className="bg-card border rounded-xl p-4 space-y-3">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Budget Summary</h3>
+              <div className="grid grid-cols-3 gap-3 text-sm">
+                <div className="bg-primary/5 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Requested Amount</p>
+                  <p className="font-bold text-lg">{formatCurrency(Number(form.requested_amount))}</p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Match Commitment</p>
+                  <p className="font-bold text-lg">{formatCurrency(Number(form.match_amount))}</p>
+                </div>
+                <div className="bg-muted/30 rounded-lg p-3">
+                  <p className="text-xs text-muted-foreground">Budget Line Items</p>
+                  <p className="font-bold text-lg">{budgetItems.length} items</p>
+                  <p className="text-xs text-muted-foreground">{formatCurrency(budgetTotal)} total</p>
+                </div>
+              </div>
+              {budgetItems.length > 0 && (
+                <table className="w-full text-xs mt-2">
+                  <thead><tr className="border-b"><th className="text-left p-1 text-muted-foreground">Category</th><th className="text-left p-1 text-muted-foreground">Description</th><th className="text-right p-1 text-muted-foreground">Requested</th><th className="text-right p-1 text-muted-foreground">Match</th></tr></thead>
+                  <tbody>
+                    {budgetItems.map((item, i) => (
+                      <tr key={i} className="border-b last:border-0">
+                        <td className="p-1">{item.budget_category}</td>
+                        <td className="p-1 text-muted-foreground">{item.line_description}</td>
+                        <td className="p-1 text-right">{formatCurrency(Number(item.amount_requested))}</td>
+                        <td className="p-1 text-right">{formatCurrency(Number(item.amount_match))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Confirmation checkbox */}
+            {!submitSuccess && (
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="checkbox" checked={confirmSubmit} onChange={e => setConfirmSubmit(e.target.checked)} className="mt-1 rounded" />
+                  <span className="text-sm">I confirm that all information is accurate and complete. I understand that submitted applications cannot be edited without administrator approval.</span>
+                </label>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -400,8 +513,12 @@ export default function NewApplication() {
               Next <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button onClick={submitApplication} disabled={saving}>
-              {saving ? 'Submitting...' : 'Submit Application'}
+            <Button
+              onClick={submitApplication}
+              disabled={saving || !confirmSubmit || submitSuccess}
+              className={confirmSubmit ? '' : 'opacity-50'}
+            >
+              {saving ? 'Submitting...' : submitSuccess ? 'Submitted!' : 'Submit Application'}
             </Button>
           )}
         </div>
