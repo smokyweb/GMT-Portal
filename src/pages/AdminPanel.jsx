@@ -121,7 +121,7 @@ export default function AdminPanel() {
       const updates = {
         role: editFields.role,
         phone: editFields.phone || null,
-        active_status: editFields.active_status,
+        active_status: editFields.active_status || 'active',
         organization_id: orgId,
         organization_name: org?.name || null,
         scope_state: editFields.scope_state || null,
