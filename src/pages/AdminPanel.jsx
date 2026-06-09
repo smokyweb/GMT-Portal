@@ -115,19 +115,26 @@ export default function AdminPanel() {
 
   const handleEditUser = async () => {
     setEditSaving(true);
-    const org = organizations.find(o => o.id === editFields.organization_id);
-    const updates = {
-      role: editFields.role,
-      phone: editFields.phone,
-      active_status: editFields.active_status,
-      organization_id: editFields.organization_id || null,
-      organization_name: org?.name || null,
-      scope_state: editFields.scope_state || null,
-    };
-    await base44.entities.User.update(editUser.id, updates);
-    setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...updates } : u));
-    setEditSaving(false);
-    setEditUser(null);
+    try {
+      const orgId = editFields.organization_id && editFields.organization_id !== '__none__' ? editFields.organization_id : null;
+      const org = organizations.find(o => o.id === orgId);
+      const updates = {
+        role: editFields.role,
+        phone: editFields.phone || null,
+        active_status: editFields.active_status,
+        organization_id: orgId,
+        organization_name: org?.name || null,
+        scope_state: editFields.scope_state || null,
+      };
+      await base44.entities.User.update(editUser.id, updates);
+      setUsers(prev => prev.map(u => u.id === editUser.id ? { ...u, ...updates } : u));
+      setEditUser(null);
+    } catch (err) {
+      console.error('Edit user error:', err);
+      alert('Failed to save changes. Please try again.');
+    } finally {
+      setEditSaving(false);
+    }
   };
 
   const handleBulkAction = async () => {
@@ -158,7 +165,7 @@ export default function AdminPanel() {
     setResetSending(true);
     await base44.integrations.Core.SendEmail({
       to: resetTarget.email,
-      subject: 'GMT Portal – Password Reset Request',
+      subject: 'GMT Portal â€“ Password Reset Request',
       body: `Hello ${resetTarget.full_name || resetTarget.email},\n\nAn administrator has requested a password reset for your account.\n\nPlease visit the GMT Portal login page and use the "Forgot Password" option to reset your password.\n\nIf you did not request this, please contact your administrator.\n\nGMT Portal Team`,
     });
     setResetSending(false);
@@ -214,7 +221,7 @@ export default function AdminPanel() {
     adminUsers: users.filter(u => u.role === 'admin').length,
   };
 
-  // no local label/badge needed — using RoleBadge component
+  // no local label/badge needed â€” using RoleBadge component
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -276,29 +283,29 @@ export default function AdminPanel() {
                   </SelectContent>
                 </Select>
               </div>
-              {/* State scope — shown for state-level roles */}
+              {/* State scope â€” shown for state-level roles */}
               {['admin', 'reviewer'].includes(inviteRole) && (
                 <div className="w-44">
                   <Label className="text-xs">State Scope</Label>
                   <Select value={inviteScopeState} onValueChange={setInviteScopeState}>
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select state…" /></SelectTrigger>
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select stateâ€¦" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {grantees.filter(g => g.is_active).map(g => (
-                        <SelectItem key={g.id} value={g.state_code}>{g.state_code} — {g.name}</SelectItem>
+                        <SelectItem key={g.id} value={g.state_code}>{g.state_code} â€” {g.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               )}
-              {/* Org — shown for subrecipient users */}
+              {/* Org â€” shown for subrecipient users */}
               {inviteRole === 'user' && (
                 <div className="w-52">
                   <Label className="text-xs">Organization (optional)</Label>
                   <Select value={inviteOrgId} onValueChange={setInviteOrgId}>
                     <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value={null}>None</SelectItem>
+                      <SelectItem value="__none__">None</SelectItem>
                       {organizations.map(o => (
                         <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
                       ))}
@@ -307,7 +314,7 @@ export default function AdminPanel() {
                 </div>
               )}
               <Button onClick={handleInvite} disabled={inviting || !inviteEmail} className="mb-0.5">
-                {inviting ? 'Sending…' : 'Send Invite'}
+                {inviting ? 'Sendingâ€¦' : 'Send Invite'}
               </Button>
               {inviteSuccess && (
                 <span className="text-xs text-green-600 flex items-center gap-1 mb-0.5">
@@ -322,7 +329,7 @@ export default function AdminPanel() {
             <div className="p-3 border-b space-y-3">
               <div className="flex flex-wrap gap-3 items-center">
                 <Input
-                  placeholder="Search by name or email…"
+                  placeholder="Search by name or emailâ€¦"
                   value={searchUsers}
                   onChange={e => setSearchUsers(e.target.value)}
                   className="max-w-xs"
@@ -381,7 +388,7 @@ export default function AdminPanel() {
                   )}
                   {bulkValue && (
                     <Button size="sm" className="h-7" onClick={handleBulkAction} disabled={bulkProcessing}>
-                      {bulkProcessing ? 'Processing…' : 'Apply'}
+                      {bulkProcessing ? 'Processingâ€¦' : 'Apply'}
                     </Button>
                   )}
                   <Button size="sm" variant="ghost" className="h-7 ml-auto" onClick={() => { setSelectedUsers(new Set()); setBulkAction(null); setBulkValue(''); }}>
@@ -430,7 +437,7 @@ export default function AdminPanel() {
                               {u.full_name?.split(' ').map(n => n[0]).join('').toUpperCase() || u.email?.[0].toUpperCase()}
                             </AvatarFallback>
                           </Avatar>
-                          <span>{u.full_name || '—'}</span>
+                          <span>{u.full_name || 'â€”'}</span>
                         </div>
                       </td>
                       <td className="p-3 text-muted-foreground">{u.email}</td>
@@ -439,7 +446,7 @@ export default function AdminPanel() {
                         {u.scope_state && (
                           <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-primary/10 text-primary font-mono font-bold mr-1">{u.scope_state}</span>
                         )}
-                        {u.organization_name || (!u.scope_state && '—')}
+                        {u.organization_name || (!u.scope_state && 'â€”')}
                       </td>
                       <td className="p-3 text-xs text-muted-foreground">{formatDateShort(u.last_activity || u.created_date)}</td>
                       <td className="p-3 flex items-center gap-1.5">
@@ -497,7 +504,7 @@ export default function AdminPanel() {
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div>
-              <p className="text-sm font-medium">{editUser?.full_name || '—'}</p>
+              <p className="text-sm font-medium">{editUser?.full_name || 'â€”'}</p>
               <p className="text-xs text-muted-foreground">{editUser?.email}</p>
             </div>
             <div>
@@ -518,11 +525,11 @@ export default function AdminPanel() {
               <div>
                 <Label>State Scope <span className="text-muted-foreground text-xs font-normal">(limits visibility to this state)</span></Label>
                 <Select value={editFields.scope_state} onValueChange={v => setEditFields(f => ({ ...f, scope_state: v }))}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select state…" /></SelectTrigger>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select stateâ€¦" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value={null}>No restriction (federal-level access)</SelectItem>
                     {grantees.filter(g => g.is_active).map(g => (
-                      <SelectItem key={g.id} value={g.state_code}>{g.state_code} — {g.name}</SelectItem>
+                      <SelectItem key={g.id} value={g.state_code}>{g.state_code} â€” {g.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -535,7 +542,7 @@ export default function AdminPanel() {
                 <Select value={editFields.organization_id} onValueChange={v => setEditFields(f => ({ ...f, organization_id: v }))}>
                   <SelectTrigger className="mt-1"><SelectValue placeholder="None" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value={null}>None</SelectItem>
+                    <SelectItem value="__none__">None</SelectItem>
                     {organizations.map(o => (
                       <SelectItem key={o.id} value={o.id}>{o.name} {o.state ? `(${o.state})` : ''}</SelectItem>
                     ))}
@@ -565,7 +572,7 @@ export default function AdminPanel() {
             </div>
             <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>Cancel</Button>
-            <Button onClick={handleEditUser} disabled={editSaving}>{editSaving ? 'Saving…' : 'Save Changes'}</Button>
+            <Button onClick={handleEditUser} disabled={editSaving}>{editSaving ? 'Saving...' : 'Save Changes'}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -588,7 +595,7 @@ export default function AdminPanel() {
             {!resetDone && (
               <Button onClick={handlePasswordReset} disabled={resetSending}>
                 <KeyRound className="h-3.5 w-3.5 mr-1.5" />
-                {resetSending ? 'Sending…' : 'Send Reset Email'}
+                {resetSending ? 'Sendingâ€¦' : 'Send Reset Email'}
               </Button>
             )}
           </DialogFooter>
@@ -608,7 +615,7 @@ export default function AdminPanel() {
             <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
             <Button variant="destructive" onClick={handleDeleteUser} disabled={deleting}>
               <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-              {deleting ? 'Removing…' : 'Remove User'}
+              {deleting ? 'Removingâ€¦' : 'Remove User'}
             </Button>
           </DialogFooter>
         </DialogContent>
