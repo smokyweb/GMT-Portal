@@ -221,6 +221,18 @@ export default function NewApplication() {
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
+  // Block if user has no organization assigned (and this is a new application, not editing existing)
+  if (!appId && !org && user?.role === 'user') return (
+    <div className="max-w-xl mx-auto mt-16 text-center space-y-4">
+      <div className="h-16 w-16 rounded-full bg-amber-100 flex items-center justify-center mx-auto">
+        <svg className="h-8 w-8 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+      </div>
+      <h2 className="text-xl font-semibold">Organization Required</h2>
+      <p className="text-muted-foreground">Please contact your administrator to assign your organization before creating an application.</p>
+      <button onClick={() => navigate(-1)} className="text-sm text-primary hover:underline">← Go Back</button>
+    </div>
+  );
+
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div>

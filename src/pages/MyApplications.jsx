@@ -296,7 +296,14 @@ export default function MyApplications() {
           <h1 className="text-2xl font-bold tracking-tight">My Applications</h1>
           <p className="text-muted-foreground text-sm mt-1">{apps.length} applications</p>
         </div>
-        <Link to="/browse-nofos"><Button>New Application</Button></Link>
+        {user?.organization_id ? (
+          <Link to="/browse-nofos"><Button>New Application</Button></Link>
+        ) : (
+          <div className="text-right">
+            <Button disabled title="Organization required">New Application</Button>
+            <p className="text-xs text-amber-600 mt-1">Contact admin to assign your organization first</p>
+          </div>
+        )}
       </div>
 
       <div className="bg-card rounded-xl border overflow-hidden">

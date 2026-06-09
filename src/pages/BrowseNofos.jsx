@@ -9,6 +9,7 @@ export default function BrowseNofos() {
   const [nofos, setNofos] = useState([]);
   const [ineligibleCount, setIneligibleCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [hasOrg, setHasOrg] = useState(true);
 
   useEffect(() => {
     const load = async () => {
@@ -20,6 +21,7 @@ export default function BrowseNofos() {
       // Load user's organization to get its type
       let orgType = null;
       const orgId = user?.organization_id;
+      setHasOrg(!!orgId);
       if (orgId) {
         try {
           const orgs = await base44.entities.Organization.filter({ id: orgId });
@@ -140,11 +142,18 @@ export default function BrowseNofos() {
                   </div>
                 </div>
               )}
-              <Link to={`/new-application?nofo=${nofo.id}`}>
-                <Button className="w-full">
-                  Start Application <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
-              </Link>
+              {hasOrg ? (
+                <Link to={`/new-application?nofo=${nofo.id}`}>
+                  <Button className="w-full">
+                    Start Application <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </Link>
+              ) : (
+                <div>
+                  <Button className="w-full" disabled>Start Application</Button>
+                  <p className="text-xs text-amber-600 text-center mt-1">Please contact admin to assign your organization before creating an application.</p>
+                </div>
+              )}
             </div>
           ))}
         </div>
