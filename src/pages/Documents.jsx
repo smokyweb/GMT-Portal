@@ -135,9 +135,15 @@ export default function Documents() {
         receivedList = receivedList.filter(gd => orgIds.includes(gd.organization_id));
       } else if (u.role === 'user' && u.organization_id) {
         // Subrecipient: see only their organization's docs
-        docList = await base44.entities.Document.filter({ organization_id: u.organization_id }, '-uploaded_at', 200);
-        appList = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50);
-        receivedList = await base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at', 100);
+        [docList, appList, receivedList] = await Promise.all([
+          base44.entities.Document.filter({ organization_id: u.organization_id }, '-uploaded_at', 200).catch(() => []),
+          base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
+          base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at', 100).catch(() => []),
+        ]);
+        // Load their org so uploads get correct organization_name
+        const userOrgList = await base44.entities.Organization.list('-created_date', 500).catch(() => []);
+        const userOrg = userOrgList.find(o => o.id === u.organization_id);
+        if (userOrg) setOrgs([userOrg]);
       } else {
         // admin without scope_state: see all docs
         docList = await base44.entities.Document.list('-uploaded_at', 200);

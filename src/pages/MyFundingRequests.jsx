@@ -325,7 +325,7 @@ export default function MyFundingRequests() {
                   <td className="p-3 font-mono text-xs">{req.request_number}</td>
                   <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{req.request_type}</span></td>
                   <td className="p-3 text-xs">{req.application_number}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} â€“ {formatDateShort(req.period_end)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} — {formatDateShort(req.period_end)}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><StatusBadge status={req.status} /></td>
                   <td className="p-3">{req.request_type !== 'Modification' ? <PaymentBadge status={req.payment_status} /> : <span className="text-xs text-muted-foreground">N/A</span>}</td>
@@ -357,7 +357,7 @@ export default function MyFundingRequests() {
                   <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{viewRequest.request_type}</p></div>
                   <div><p className="text-xs text-muted-foreground">Grant</p><p className="font-medium">{viewRequest.application_number}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewRequest.status} /></div>
-                  <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} â€“ {formatDateShort(viewRequest.period_end)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} — {formatDateShort(viewRequest.period_end)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Amount Requested</p><p className="font-semibold">{formatCurrency(viewRequest.amount_requested)}</p></div>
                   {viewRequest.amount_approved != null && <div><p className="text-xs text-muted-foreground">Amount Approved</p><p className="font-semibold text-green-700">{formatCurrency(viewRequest.amount_approved)}</p></div>}
                   {viewRequest.request_type !== 'Modification' && (
