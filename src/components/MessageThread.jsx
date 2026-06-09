@@ -23,6 +23,7 @@ function MessageBubble({ msg, user, replies, getReplies, onReply, topicColors, d
     const newMsg = await base44.entities.Message.create({
       application_id: msg.application_id,
       application_number: msg.application_number,
+      organization_id: msg.organization_id || user?.organization_id,
       organization_name: msg.organization_name,
       thread_id: msg.thread_id || msg.id,
       parent_id: msg.id,
@@ -134,7 +135,8 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
     await base44.entities.Message.create({
       application_id: app.id,
       application_number: app.application_number,
-      organization_name: app.organization_name,
+      organization_id: app.organization_id || user?.organization_id,
+      organization_name: app.organization_name || user?.organization_name,
       thread_id: null,
       parent_id: null,
       sender_email: user.email,
