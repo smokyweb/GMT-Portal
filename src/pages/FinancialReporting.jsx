@@ -7,6 +7,14 @@ import {
 import { DollarSign, CheckCircle, Clock, AlertCircle, TrendingUp } from 'lucide-react';
 import { formatCurrency } from '../lib/helpers';
 
+// Compact currency formatter for KPI cards
+const fmtCompact = (v) => {
+  const n = Number(v) || 0;
+  if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
+  if (n >= 1_000) return `$${(n / 1_000).toFixed(1)}K`;
+  return formatCurrency(n);
+};
+
 const PROGRAM_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
 
 const fmt = (v) => { const n = Number(v) || 0; if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(1)}M`; if (n >= 1_000) return `$${(n/1_000).toFixed(0)}K`; return `$${n}`; };
@@ -34,7 +42,7 @@ function KPICard({ label, value, sub, icon: IconComp, accent }) {
 }
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">—</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">â€”</span>;
   const cfg = PAYMENT_LABELS[status] || PAYMENT_LABELS.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -50,12 +58,22 @@ export default function FinancialReporting() {
   const [filterProgram, setFilterProgram] = useState('all');
   const [filterPayment, setFilterPayment] = useState('all');
 
+  const loadData = async () => {
+    try {
+      const data = await base44.entities.FundingRequest.list('-created_date', 500);
+      setRequests((data || []).filter(r => r.status === 'Approved'));
+    } catch (err) {
+      console.error('FinancialReporting load error:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    base44.entities.FundingRequest.list('-created_date', 200)
-      .then(data => {
-        setRequests(data.filter(r => r.status === 'Approved'));
-        setLoading(false);
-      });
+    loadData();
+    // Auto-refresh every 60 seconds
+    const interval = setInterval(loadData, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const programs = useMemo(() =>
@@ -67,7 +85,7 @@ export default function FinancialReporting() {
     return matchProg && matchPay;
   }), [requests, filterProgram, filterPayment]);
 
-  // KPIs — all use amount_approved as the base amount
+  // KPIs â€” all use amount_approved as the base amount
   // Total Approved = sum of all approved FR amounts
   const totalApproved = filtered.reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
   // Total Paid = sum where payment_status is Paid
@@ -119,7 +137,11 @@ export default function FinancialReporting() {
           <h1 className="text-2xl font-bold">Financial Reporting</h1>
           <p className="text-muted-foreground text-sm mt-1">Track approved funding requests, off-portal payments, and spending trends</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 items-center">
+          <button onClick={loadData} className="h-9 px-3 rounded-md border border-input bg-transparent text-sm hover:bg-muted/50 flex items-center gap-1.5" title="Refresh data">
+            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+            Refresh
+          </button>
           <select
             value={filterProgram}
             onChange={e => setFilterProgram(e.target.value)}
@@ -144,10 +166,10 @@ export default function FinancialReporting() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Total Approved" value={fmt(totalApproved)} sub={`${filtered.length} approved requests`} icon={DollarSign} />
-        <KPICard label="Total Paid" value={fmt(totalPaid)} sub={`${filtered.filter(r => r.payment_status === 'Paid').length} requests disbursed`} icon={CheckCircle} accent="border-green-200" />
-        <KPICard label="Pending Disbursement" value={fmt(totalPending)} sub={`Approved minus paid (${filtered.filter(r => r.payment_status !== 'Paid').length} unpaid)`} icon={Clock} accent="border-slate-200" />
-        <KPICard label="Payment Failed" value={fmt(totalFailed)} sub={`${filtered.filter(r => r.payment_status === 'PaymentFailed').length} requests`} icon={AlertCircle} accent={totalFailed > 0 ? 'border-red-200 bg-red-50/30' : ''} />
+        <KPICard label="Total Approved" value={fmtCompact(totalApproved)} sub={`${filtered.length} approved requests`} icon={DollarSign} />
+        <KPICard label="Total Paid" value={fmtCompact(totalPaid)} sub={`${filtered.filter(r => r.payment_status === 'Paid').length} requests disbursed`} icon={CheckCircle} accent="border-green-200" />
+        <KPICard label="Pending Disbursement" value={fmtCompact(totalPending)} sub={`Approved minus paid (${filtered.filter(r => r.payment_status !== 'Paid').length} unpaid)`} icon={Clock} accent="border-slate-200" />
+        <KPICard label="Payment Failed" value={fmtCompact(totalFailed)} sub={`${filtered.filter(r => r.payment_status === 'PaymentFailed').length} requests`} icon={AlertCircle} accent={totalFailed > 0 ? 'border-red-200 bg-red-50/30' : ''} />
       </div>
 
       {/* Approved vs Paid by Program */}
@@ -247,15 +269,15 @@ export default function FinancialReporting() {
             <tbody>
               {filtered.map((r, i) => (
                 <tr key={i} className="border-b last:border-0 hover:bg-muted/20 transition">
-                  <td className="p-3 font-mono text-xs">{r.request_number || '—'}</td>
-                  <td className="p-3">{r.organization_name || '—'}</td>
+                  <td className="p-3 font-mono text-xs">{r.request_number || 'â€”'}</td>
+                  <td className="p-3">{r.organization_name || 'â€”'}</td>
                   <td className="p-3">
-                    <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{r.program_code || '—'}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{r.program_code || 'â€”'}</span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(r.amount_approved)}</td>
                   <td className="p-3"><PaymentBadge status={r.payment_status} /></td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{r.payment_reference || '—'}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{r.payment_date || '—'}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{r.payment_reference || 'â€”'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.payment_date || 'â€”'}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
