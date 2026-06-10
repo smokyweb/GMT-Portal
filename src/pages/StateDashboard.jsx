@@ -118,21 +118,33 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
 
   const recentApps = displayApps.slice(0, 8);
 
-  const handleExportCsv = async () => {
+  const handleExportCsv = () => {
     try {
-      const response = await base44.functions.invoke('exportDashboardCsv', {
-        applications: displayApps,
-      });
-      const csv = response.data;
+      // Build CSV client-side — no server function needed
+      const headers = ['App #', 'Organization', 'Program', 'NOFO', 'Status', 'Requested ($)', 'Awarded ($)', 'Expended ($)', 'Remaining ($)', 'Perf Start', 'Perf End'];
+      const toCsvField = (v) => { const s = String(v ?? ''); return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s; };
+      const rows = displayApps.map(a => [
+        a.application_number, a.organization_name, a.program_code, a.nofo_title,
+        a.status,
+        Number(a.requested_amount || 0).toFixed(2),
+        Number(a.awarded_amount || 0).toFixed(2),
+        Number(a.total_expended || 0).toFixed(2),
+        Number(a.remaining_balance || 0).toFixed(2),
+        a.performance_start || '', a.performance_end || '',
+      ].map(toCsvField).join(','));
+      const csv = [headers.join(','), ...rows].join('\n');
       const blob = new Blob([csv], { type: 'text/csv' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
       a.download = `dashboard-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
       a.click();
+      document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Export failed:', error);
+    } catch (err) {
+      console.error('Export failed:', err);
+      alert('Export failed. Please try again.');
     }
   };
 
