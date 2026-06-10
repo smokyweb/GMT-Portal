@@ -104,14 +104,17 @@ export default function ApplicationAuditTab({ applicationId }) {
   useEffect(() => {
     if (!applicationId) return;
     Promise.all([
-      base44.entities.AuditLog.filter({ entity_id: applicationId }, '-created_date', 100),
-      base44.entities.FundingRequest.filter({ application_id: applicationId }, '-created_date', 50),
-      base44.entities.ReportSchedule.filter({ application_id: applicationId }, '-created_date', 50),
-    ]).then(([logs, fundingRequests, reports]) => {
+      base44.entities.AuditLog.filter({ entity_id: applicationId }, '-created_date', 100).catch(() => []),
+      base44.entities.FundingRequest.filter({ application_id: applicationId }, '-created_date', 50).catch(() => []),
+      base44.entities.ReportSchedule.filter({ application_id: applicationId }, '-created_date', 50).catch(() => []),
+      base44.entities.ReviewComment.filter({ entity_id: applicationId }, '-created_date', 100).catch(() => []),
+    ]).then(([logs, fundingRequests, reports, comments]) => {
       const timeline = [
         ...logs.map(l => ({ ...l, _type: 'audit', _date: l.created_date })),
         ...fundingRequests.map(r => ({ ...r, _type: 'funding', _date: r.created_date })),
         ...reports.map(r => ({ ...r, _type: 'report', _date: r.created_date })),
+        // Show payment and RFI comments inline
+        ...(Array.isArray(comments) ? comments : []).map(c => ({ ...c, _type: 'comment', _date: c.created_date })),
       ].sort((a, b) => new Date(b._date) - new Date(a._date));
       setItems(timeline);
       setLoading(false);
@@ -177,6 +180,38 @@ export default function ApplicationAuditTab({ applicationId }) {
                   </span>
                 </div>
                 <ReportCard report={item} />
+              </div>
+            </div>
+          );
+        }
+
+        // ReviewComment (payment updates, RFI logs, etc.)
+        if (item._type === 'comment') {
+          const isPayment = item.action === 'PaymentUpdated';
+          const isRFI = item.action === 'RFICreated';
+          const dotColor = isPayment ? 'bg-green-500' : isRFI ? 'bg-amber-500' : 'bg-slate-400';
+          const actionLabel = isPayment ? 'Payment Updated' : isRFI ? 'RFI Created' : (item.action?.replace(/([A-Z])/g, ' $1').trim() || 'Note');
+          return (
+            <div key={`cmt-${item.id}`} className="flex gap-3 items-start py-3 border-b last:border-0">
+              <div className="flex flex-col items-center mt-1">
+                <div className={`w-2 h-2 rounded-full ${dotColor} flex-shrink-0`} />
+                {idx < items.length - 1 && <div className="w-px flex-1 bg-border mt-1 min-h-[20px]" />}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${isPayment ? 'bg-green-100 text-green-700' : isRFI ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}`}>
+                    {actionLabel}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1">
+                    <User className="h-3 w-3" />
+                    {item.reviewer_name || item.reviewer_email || 'System'}
+                  </span>
+                  <span className="text-xs text-muted-foreground flex items-center gap-1 ml-auto">
+                    <Clock className="h-3 w-3" />
+                    {moment(item._date).format('MMM DD, YYYY h:mm A')}
+                  </span>
+                </div>
+                {item.comment && <p className="text-xs text-muted-foreground mt-1">{item.comment}</p>}
               </div>
             </div>
           );

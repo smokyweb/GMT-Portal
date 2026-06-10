@@ -456,6 +456,30 @@ export default function FundingRequestReview() {
                           if (paymentReference) updates.payment_reference = paymentReference;
                           if (paymentDate) updates.payment_date = paymentDate;
                           await base44.entities.FundingRequest.update(fr.id, updates);
+
+                          // Log to audit trail
+                          const paymentLabel = { PendingDisbursement: 'Pending Disbursement', SubmittedToFinance: 'Submitted to Finance', Paid: 'Paid', PaymentFailed: 'Payment Failed' }[paymentAction] || paymentAction;
+                          const auditMsg = `Payment status updated to "${paymentLabel}" for ${fr.request_number}${paymentReference ? ` (Ref: ${paymentReference})` : ''}${paymentDate ? ` on ${paymentDate}` : ''}`;
+
+                          // Log to AuditLog (shows in app audit trail)
+                          logAudit(base44, user, 'PaymentUpdated', 'FundingRequest', fr.id, auditMsg).catch(() => {});
+
+                          // Also log to AuditLog against the application for the app audit trail
+                          if (fr.application_id) {
+                            logAudit(base44, user, 'PaymentUpdated', 'Application', fr.application_id,
+                              `${fr.request_number}: ${auditMsg}`).catch(() => {});
+                          }
+
+                          // Log to ReviewComment for inline display
+                          base44.entities.ReviewComment.create({
+                            entity_type: 'Application',
+                            entity_id: fr.application_id || fr.id,
+                            reviewer_email: user?.email,
+                            reviewer_name: user?.full_name || user?.email,
+                            comment: auditMsg,
+                            action: 'PaymentUpdated',
+                          }).catch(() => {});
+
                           setRequests(prev => prev.map(r => r.id === fr.id ? { ...r, ...updates } : r));
                           setViewReq(null);
                           setPaymentAction('');
