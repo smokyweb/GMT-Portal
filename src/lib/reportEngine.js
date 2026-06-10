@@ -189,11 +189,13 @@ export function exportToCSV(rows, selectedFields, reportName) {
       }).join(',')
     ),
   ];
-  const blob = new Blob([lines.join('\n')], { type: 'text/csv' });
+  const blob = new Blob([lines.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
+  a.style.display = 'none';
   a.href = url;
-  a.download = `${reportName || 'report'}_${new Date().toISOString().slice(0,10)}.csv`;
+  a.setAttribute('download', `${reportName || 'report'}_${new Date().toISOString().slice(0,10)}.csv`);
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }

@@ -22,14 +22,16 @@ function toCsvRow(fields) {
   }).join(',');
 }
 
-function downloadText(filename, content, mime = 'text/csv') {
+function downloadText(filename, content, mime = 'text/csv;charset=utf-8;') {
   const blob = new Blob([content], { type: mime });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
+  a.style.display = 'none';
   a.href = url;
-  a.download = filename;
+  a.setAttribute('download', filename);
+  document.body.appendChild(a);
   a.click();
-  URL.revokeObjectURL(url);
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
 }
 
 export default function DashboardExportButton({ filteredApps }) {
