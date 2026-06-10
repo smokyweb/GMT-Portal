@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { CheckCircle, User, Building2, Mail, Shield } from 'lucide-react';
+import { CheckCircle, User, Building2, Mail, Shield, AlertCircle } from 'lucide-react';
 
 export default function UserProfile() {
   const [user, setUser] = useState(null);
@@ -12,6 +12,7 @@ export default function UserProfile() {
   const [form, setForm] = useState({ full_name: '', phone: '', title: '', department: '' });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -24,19 +25,35 @@ export default function UserProfile() {
         department: u.department || '',
       });
       if (u.organization_id) {
-        const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
-        if (orgs.length) setOrg(orgs[0]);
+        const allOrgs = await base44.entities.Organization.list('-created_date', 500).catch(() => []);
+        const found = allOrgs.find(o => o.id === u.organization_id);
+        if (found) setOrg(found);
       }
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   const handleSave = async () => {
     setSaving(true);
-    await base44.auth.updateMe({ phone: form.phone, title: form.title, department: form.department });
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setSaveError('');
+    try {
+      // Use User entity update — auth.updateMe() is not supported on this backend
+      await base44.entities.User.update(user.id, {
+        full_name: form.full_name,
+        phone: form.phone || null,
+        title: form.title || null,
+        department: form.department || null,
+      });
+      // Update local user state so avatar initial updates
+      setUser(prev => ({ ...prev, full_name: form.full_name, phone: form.phone, title: form.title, department: form.department }));
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error('Profile save error:', err);
+      setSaveError('Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const roleLabel = (role) => {
@@ -84,8 +101,7 @@ export default function UserProfile() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <Label>Full Name</Label>
-            <Input className="mt-1" value={form.full_name} disabled placeholder="—" />
-            <p className="text-xs text-muted-foreground mt-1">Managed by your account provider.</p>
+            <Input className="mt-1" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} placeholder="Your full name" />
           </div>
           <div>
             <Label>Email</Label>
@@ -105,12 +121,17 @@ export default function UserProfile() {
           </div>
         </div>
         <div className="flex items-center gap-3 pt-2">
-          <Button onClick={handleSave} disabled={saving}>
+          <Button onClick={handleSave} disabled={saving || !form.full_name}>
             {saving ? 'Saving…' : 'Save Changes'}
           </Button>
           {saved && (
             <span className="text-sm text-green-600 flex items-center gap-1.5">
               <CheckCircle className="h-4 w-4" /> Saved successfully
+            </span>
+          )}
+          {saveError && (
+            <span className="text-sm text-red-600 flex items-center gap-1.5">
+              <AlertCircle className="h-4 w-4" /> {saveError}
             </span>
           )}
         </div>
