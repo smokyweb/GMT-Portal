@@ -9,7 +9,7 @@ import { formatCurrency } from '../lib/helpers';
 
 const PROGRAM_COLORS = ['#3b82f6', '#22c55e', '#f59e0b', '#a855f7', '#ef4444', '#06b6d4', '#f97316', '#84cc16'];
 
-const fmt = (v) => { const n = Number(v) || 0; return n >= 1_000_000 ? "\$${(n/1_000_000).toFixed(1)}M" : n >= 1_000 ? "\$${(n/1_000).toFixed(0)}K" : "\$${n}"; };
+const fmt = (v) => { const n = Number(v) || 0; if (n >= 1_000_000) return `$${(n/1_000_000).toFixed(1)}M`; if (n >= 1_000) return `$${(n/1_000).toFixed(0)}K`; return `$${n}`; };
 
 
 
