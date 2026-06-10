@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
+import { appMatchesFY, deriveFYOptions } from '../hooks/useDateRangeFilter';
 import {
   BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
@@ -50,24 +51,9 @@ function EmptyChart({ height = 160 }) {
  *   organizationId  — if provided, scope to a single org (subrecipient view)
  *                     if null/undefined, show portfolio-wide view (state admin)
  */
-function fyMatch(app, fy) {
-  if (fy === 'All') return true;
-  const year = fy.replace('FY', '');
-  return (app.performance_start || '').startsWith(year) || (app.performance_end || '').startsWith(year);
-}
-
-function deriveFyOptions(apps) {
-  const years = new Set();
-  apps.forEach(a => {
-    ['performance_start', 'performance_end'].forEach(field => {
-      const val = a[field];
-      if (val) { const yr = parseInt(val.slice(0, 4), 10); if (yr >= 2020 && yr <= 2040) years.add(yr); }
-    });
-  });
-  const now = new Date().getFullYear();
-  years.add(now); years.add(now + 1);
-  return ['All', ...[...years].sort((a, b) => b - a).map(y => `FY${y}`)];
-}
+// Use shared standardized federal FY logic (Oct 1 – Sep 30)
+const fyMatch = appMatchesFY;
+const deriveFyOptions = deriveFYOptions;
 
 function FilterBar({ filters, setFilters, programs, nofos, grants, isStateView, fyOptions }) {
   const hasActive = Object.values(filters).some(v => v !== 'All');

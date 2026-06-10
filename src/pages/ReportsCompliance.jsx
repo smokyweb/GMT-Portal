@@ -185,10 +185,7 @@ export default function ReportsCompliance() {
              <Select value={dateFilter.fiscalYear} onValueChange={dateFilter.setFiscalYear}>
                <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
                <SelectContent>
-                 {Array.from({ length: 5 }, (_, i) => {
-                   const year = new Date().getFullYear() - i;
-                   return <SelectItem key={year} value={year.toString()}>{`FY ${year}-${year + 1}`}</SelectItem>;
-                 })}
+                 {(dateFilter.fyYearOptions || []).map(fy => <SelectItem key={fy} value={fy}>{fy}</SelectItem>)}
                </SelectContent>
              </Select>
            )}

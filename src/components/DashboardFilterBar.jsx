@@ -1,33 +1,13 @@
 import { Filter, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { appMatchesFY, deriveFYOptions } from '../hooks/useDateRangeFilter';
 
 export const DEFAULT_FILTERS = { fy: 'All', program: 'All', nofo: 'All', status: 'All' };
 
-/** Derive fiscal year options from actual app data */
-function deriveFyOptions(apps) {
-  const years = new Set();
-  apps.forEach(a => {
-    ['performance_start', 'performance_end'].forEach(field => {
-      const val = a[field];
-      if (val) {
-        const yr = parseInt(val.slice(0, 4), 10);
-        if (yr >= 2020 && yr <= 2040) years.add(yr);
-      }
-    });
-  });
-  // Always include the current + next year even if no data yet
-  const now = new Date().getFullYear();
-  years.add(now);
-  years.add(now + 1);
-  return ['All', ...[...years].sort((a, b) => b - a).map(y => `FY${y}`)];
-}
-
 export function applyDashboardFilters(apps, filters) {
   return apps.filter(a => {
-    if (filters.fy !== 'All') {
-      const year = filters.fy.replace('FY', '');
-      if (!(a.performance_start || '').startsWith(year) && !(a.performance_end || '').startsWith(year)) return false;
-    }
+    // Use standardized federal FY logic (Oct 1 – Sep 30)
+    if (filters.fy !== 'All' && !appMatchesFY(a, filters.fy)) return false;
     if (filters.program !== 'All' && a.program_code !== filters.program) return false;
     if (filters.nofo !== 'All' && a.nofo_title !== filters.nofo) return false;
     if (filters.status !== 'All' && a.status !== filters.status) return false;
@@ -38,7 +18,7 @@ export function applyDashboardFilters(apps, filters) {
 export default function DashboardFilterBar({ apps, filters, setFilters, isStateView = true, children }) {
   const programs  = [...new Set(apps.map(a => a.program_code).filter(Boolean))].sort();
   const nofos     = [...new Set(apps.map(a => a.nofo_title).filter(Boolean))].sort();
-  const fyOptions = deriveFyOptions(apps);
+  const fyOptions = deriveFYOptions(apps);
   const hasActive = Object.values(filters).some(v => v !== 'All');
 
   return (

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { getFYDateRange } from '../hooks/useDateRangeFilter';
 import { base44 } from '@/api/base44Client';
 import { Eye, Search, FileText, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -248,8 +249,8 @@ export default function ApplicationReviewQueue() {
 
   const getEffectiveDateRange = () => {
     if (dateMode === 'fiscal') {
-      const fy = parseInt(fiscalYear);
-      return { start: `${fy}-10-01`, end: `${fy + 1}-09-30` };
+      // Use shared federal FY logic (Oct 1 – Sep 30)
+      return getFYDateRange(`FY${fiscalYear}`);
     } else if (dateMode === 'custom') {
       return { start: dateStart, end: dateEnd };
     }

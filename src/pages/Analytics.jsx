@@ -17,7 +17,7 @@ const PROGRAM_COLORS = {
 const STATUS_ORDER = ['Draft', 'Submitted', 'PendingReview', 'UnderReview', 'RevisionRequested', 'Approved', 'Denied'];
 const STATUS_COLORS = ['#94a3b8', '#3b82f6', '#8b5cf6', '#f59e0b', '#f97316', '#10b981', '#ef4444'];
 
-const FISCAL_YEARS = ['All', 'FY2025', 'FY2024', 'FY2023'];
+import { appMatchesFY, deriveFYOptions } from '../hooks/useDateRangeFilter';
 
 export default function Analytics() {
    const [applications, setApplications] = useState([]);
@@ -82,9 +82,7 @@ export default function Analytics() {
   const filtered = useMemo(() => {
     return applications.filter(a => {
       const matchProgram = programFilter === 'All' || a.program_code === programFilter;
-      const matchFY = fyFilter === 'All' || (fyFilter === 'FY2025' && a.performance_start?.startsWith('2025'))
-        || (fyFilter === 'FY2024' && a.performance_start?.startsWith('2024'))
-        || (fyFilter === 'FY2023' && a.performance_start?.startsWith('2023'));
+      const matchFY = appMatchesFY(a, fyFilter);
       return matchProgram && matchFY;
     });
   }, [applications, fyFilter, programFilter]);
@@ -216,7 +214,7 @@ export default function Analytics() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {FISCAL_YEARS.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+              {deriveFYOptions(applications).map(y => <SelectItem key={y} value={y}>{y === 'All' ? 'All Years' : y}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={programFilter} onValueChange={setProgramFilter}>
