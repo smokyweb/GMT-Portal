@@ -65,11 +65,11 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       }
     });
     Promise.all([
-      base44.entities.Application.list('-created_date', 50),
-      base44.entities.Organization.list(),
-      base44.entities.ComplianceFlag.filter({ is_resolved: false }),
-      base44.entities.FundingRequest.list('-created_date', 50),
-      base44.entities.ReportSchedule.filter({ status: 'Overdue' }, '-due_date', 100),
+      base44.entities.Application.list('-created_date', 500),
+      base44.entities.Organization.list('-created_date', 500),
+      base44.entities.ComplianceFlag.filter({ is_resolved: false }, '-created_date', 500),
+      base44.entities.FundingRequest.list('-created_date', 500),
+      base44.entities.ReportSchedule.filter({ status: 'Overdue' }, '-due_date', 200),
       base44.entities.Task.list('-created_date', 200),
     ]).then(([a, o, f, fr, rs, t]) => {
       setApps(a);
@@ -98,8 +98,16 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
      : orgs.filter(o => o.is_active !== false);
    const activeOrgs = scopedOrgs.length;
 
-   const pendingReviews = displayApps.filter(a => ['Submitted', 'PendingReview', 'UnderReview'].includes(a.status)).length
-     + fundingReqs.filter(fr => ['Submitted', 'UnderReview'].includes(fr.status)).length;
+   // Separate app reviews from FR reviews (do NOT combine)
+   const PENDING_APP_STATUSES = ['Submitted', 'PendingReview', 'UnderReview', 'RevisionRequested'];
+   const PENDING_FR_STATUSES = ['Submitted', 'UnderReview', 'AdditionalInfoRequested'];
+   const pendingAppReviews = displayApps.filter(a => PENDING_APP_STATUSES.includes(a.status)).length;
+   const pendingFRReviews = fundingReqs.filter(fr => PENDING_FR_STATUSES.includes(fr.status)).length;
+   const pendingReviews = pendingAppReviews + pendingFRReviews;
+
+   // Draft counts (separate from pending)
+   const draftApps = displayApps.filter(a => a.status === 'Draft').length;
+
    const highFlags = flags.filter(f => f.severity === 'High' || f.severity === 'Critical').length;
 
   // Expenditure by program
@@ -167,7 +175,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <KPICard title="Total Grants Awarded" value={formatCurrency(totalAwarded)} icon={DollarSign} />
           <KPICard title="Active Subrecipients" value={activeOrgs} subtitle={`${orgs.length} total registered`} icon={Users} />
-          <KPICard title="Pending Reviews" value={pendingReviews} subtitle="Applications + Funding requests" icon={ClipboardList} />
+          <KPICard title="Apps Pending Review" value={pendingAppReviews} subtitle={`${pendingFRReviews} funding requests pending`} icon={ClipboardList} />
           <KPICard title="Open Compliance Flags" value={flags.length} subtitle={`${highFlags} high/critical`} icon={Shield} />
         </div>
       )}
