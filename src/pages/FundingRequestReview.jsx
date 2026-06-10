@@ -405,6 +405,72 @@ export default function FundingRequestReview() {
               {viewReq.reviewer_notes && (
                 <div><Label className="text-muted-foreground text-xs">Reviewer Notes</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewReq.reviewer_notes}</p></div>
               )}
+              {/* Payment status update section - accessible directly from View dialog */}
+              {viewReq.status === 'Approved' && viewReq.request_type !== 'Modification' && (
+                <div className="border-t pt-4 space-y-3">
+                  <p className="font-semibold text-sm">Update Payment Status</p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">New Payment Status</Label>
+                      <select
+                        className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none"
+                        value={paymentAction}
+                        onChange={e => setPaymentAction(e.target.value)}
+                      >
+                        <option value="">Select status...</option>
+                        <option value="PendingDisbursement">Pending Disbursement</option>
+                        <option value="SubmittedToFinance">Submitted to Finance</option>
+                        <option value="Paid">Paid</option>
+                        <option value="PaymentFailed">Payment Failed</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Payment Reference (optional)</Label>
+                      <input
+                        className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none"
+                        placeholder="e.g. ACH-2026-001"
+                        value={paymentReference}
+                        onChange={e => setPaymentReference(e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Payment Date (optional)</Label>
+                      <input
+                        type="date"
+                        className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none"
+                        value={paymentDate}
+                        onChange={e => setPaymentDate(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium disabled:opacity-50"
+                      disabled={!paymentAction}
+                      onClick={async () => {
+                        if (!paymentAction) return;
+                        // Temporarily set selected to viewReq for handlePaymentUpdate
+                        const fr = viewReq;
+                        try {
+                          const updates = { payment_status: paymentAction };
+                          if (paymentReference) updates.payment_reference = paymentReference;
+                          if (paymentDate) updates.payment_date = paymentDate;
+                          await base44.entities.FundingRequest.update(fr.id, updates);
+                          setRequests(prev => prev.map(r => r.id === fr.id ? { ...r, ...updates } : r));
+                          setViewReq(null);
+                          setPaymentAction('');
+                          setPaymentReference('');
+                          setPaymentDate('');
+                        } catch (err) {
+                          alert('Failed to update: ' + (err?.detail || err?.message || 'Please try again.'));
+                        }
+                      }}
+                    >
+                      Save Payment Status
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </DialogContent>
