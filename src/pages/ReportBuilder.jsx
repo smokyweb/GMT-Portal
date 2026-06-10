@@ -71,10 +71,16 @@ export default function ReportBuilder() {
   const runPreview = useCallback(async (cfg = config, u = user) => {
     if (!cfg.data_source || !cfg.selected_fields.length) return;
     setPreviewLoading(true);
-    const orgFilter = isSubrecipient(u?.role) ? u?.organization_id : null;
-    const rows = await runReport(cfg, orgFilter);
-    setPreviewRows(rows);
-    setPreviewLoading(false);
+    try {
+      const orgFilter = isSubrecipient(u?.role) ? u?.organization_id : null;
+      const rows = await runReport(cfg, orgFilter);
+      setPreviewRows(Array.isArray(rows) ? rows : []);
+    } catch (err) {
+      console.error('Preview error:', err);
+      setPreviewRows([]);
+    } finally {
+      setPreviewLoading(false);
+    }
   }, [config, user]);
 
   const handleSave = async (saveAs = false) => {
@@ -113,16 +119,29 @@ export default function ReportBuilder() {
   };
 
   const handleRunFull = async () => {
-    const orgFilter = isSub ? user?.organization_id : null;
-    const rows = await runReport(config, orgFilter);
-    // Update last run
-    if (savedId) {
-      await base44.entities.SavedReport.update(savedId, {
-        last_run_at: new Date().toISOString(),
-        last_run_row_count: rows.length,
-      });
+    if (!config.data_source || !config.selected_fields.length) {
+      alert('Please select a data source and at least one field before running.');
+      return;
     }
-    setPreviewRows(rows);
+    setPreviewLoading(true);
+    try {
+      const orgFilter = isSub ? user?.organization_id : null;
+      const rows = await runReport(config, orgFilter);
+      setPreviewRows(Array.isArray(rows) ? rows : []);
+      // Update last run
+      if (savedId) {
+        base44.entities.SavedReport.update(savedId, {
+          last_run_at: new Date().toISOString(),
+          last_run_row_count: rows.length,
+        }).catch(() => {});
+      }
+    } catch (err) {
+      console.error('Run report error:', err);
+      alert('Failed to run report: ' + (err?.message || 'Unknown error'));
+      setPreviewRows([]);
+    } finally {
+      setPreviewLoading(false);
+    }
   };
 
   // Step completion checks
@@ -155,8 +174,8 @@ export default function ReportBuilder() {
           <Button variant="outline" size="sm" onClick={() => handleSave(true)}>
             <Copy className="h-3.5 w-3.5 mr-1" /> Save As
           </Button>
-          <Button size="sm" onClick={handleRunFull} disabled={!step1Done || !step2Done}>
-            <Play className="h-3.5 w-3.5 mr-1" /> Run Report
+          <Button size="sm" onClick={handleRunFull} disabled={previewLoading}>
+            {previewLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" /> Running...</> : <><Play className="h-3.5 w-3.5 mr-1" /> Run Report</>}
           </Button>
           <Button variant="outline" size="sm" onClick={() => exportToCSV(previewRows, config.selected_fields, config.report_name)} disabled={!previewRows.length}>
             <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
