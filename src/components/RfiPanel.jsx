@@ -41,37 +41,53 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
 
   const openCount = tasks.filter(t => !['Resolved', 'Cancelled'].includes(t.status)).length;
 
+  const [createError, setCreateError] = useState('');
+  const [createSuccess, setCreateSuccess] = useState(false);
+
   const handleCreate = async () => {
+    if (!form.title.trim()) { setCreateError('Title is required.'); return; }
     setSaving(true);
-    const task = await base44.entities.Task.create({
-      ...form,
-      application_id: applicationId,
-      application_number: applicationNumber,
-      organization_name: organizationName,
-      type: 'RFI',
-      status: 'Open',
-      created_by: user.email,
-    });
-    await base44.integrations.Core.SendEmail({
-      to: form.assigned_to,
-      subject: `Action Required: RFI for Application ${applicationNumber}`,
-      body: `A Request for Information (RFI) has been issued for your application ${applicationNumber}.\n\nTitle: ${form.title}\nDetails: ${form.description}\nDue: ${form.due_date || 'No deadline specified'}\n\nPlease log in to the GMT Portal to respond to this RFI. Approval of your application is pending resolution of all open RFIs.`,
-    }).catch(() => {});
-    await logAudit(base44, user, 'RFICreated', 'Application', applicationId,
-      `RFI issued: "${form.title}" — assigned to ${form.assigned_to}`);
-    // Log RFI in Review History
-    await base44.entities.ReviewComment.create({
-      entity_type: 'Application',
-      entity_id: applicationId,
-      reviewer_email: user.email,
-      reviewer_name: user.full_name || user.email,
-      comment: `RFI issued: "${form.title}" — assigned to ${form.assigned_to}. ${form.description || ''}`.trim(),
-      action: 'RFICreated',
-    }).catch(() => {});
-    setTasks(prev => [task, ...prev]);
-    setShowCreate(false);
-    setForm({ title: '', description: '', priority: 'High', due_date: '', assigned_to: submittedBy || '' });
-    setSaving(false);
+    setCreateError('');
+    setCreateSuccess(false);
+    try {
+      const task = await base44.entities.Task.create({
+        ...form,
+        application_id: applicationId,
+        application_number: applicationNumber,
+        organization_name: organizationName,
+        type: 'RFI',
+        status: 'Open',
+        created_by: user.email,
+      });
+      // Fire-and-forget: don't block on email/audit
+      base44.integrations.Core.SendEmail({
+        to: form.assigned_to,
+        subject: `Action Required: RFI for Application ${applicationNumber}`,
+        body: `An RFI has been issued for application ${applicationNumber}.\n\nTitle: ${form.title}\nDetails: ${form.description}\nDue: ${form.due_date || 'No deadline specified'}\n\nLog in to the GMT Portal to respond.`,
+      }).catch(() => {});
+      logAudit(base44, user, 'RFICreated', 'Application', applicationId,
+        `RFI issued: "${form.title}" — assigned to ${form.assigned_to}`).catch(() => {});
+      base44.entities.ReviewComment.create({
+        entity_type: 'Application',
+        entity_id: applicationId,
+        reviewer_email: user.email,
+        reviewer_name: user.full_name || user.email,
+        comment: `RFI issued: "${form.title}" — assigned to ${form.assigned_to}. ${form.description || ''}`.trim(),
+        action: 'RFICreated',
+      }).catch(() => {});
+      setTasks(prev => [task, ...prev]);
+      setCreateSuccess(true);
+      setTimeout(() => {
+        setShowCreate(false);
+        setCreateSuccess(false);
+        setForm({ title: '', description: '', priority: 'High', due_date: '', assigned_to: submittedBy || '' });
+      }, 1500);
+    } catch (err) {
+      console.error('RFI create error:', err);
+      setCreateError('Failed to create RFI: ' + (err?.message || err?.detail || 'Please try again.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleResolve = async () => {
@@ -208,9 +224,15 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
               <Input className="mt-1" type="email" placeholder="subrecipient@org.gov" value={form.assigned_to} onChange={e => setForm(p => ({ ...p, assigned_to: e.target.value }))} />
             </div>
           </div>
+          {createError && (
+            <div className="mx-6 mb-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{createError}</div>
+          )}
+          {createSuccess && (
+            <div className="mx-6 mb-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">✓ RFI created successfully!</div>
+          )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowCreate(false)}>Cancel</Button>
-            <Button onClick={handleCreate} disabled={saving || !form.title}>
+            <Button variant="outline" onClick={() => { setShowCreate(false); setCreateError(''); }}>Cancel</Button>
+            <Button onClick={handleCreate} disabled={saving || !form.title || createSuccess}>
               {saving ? 'Creating…' : 'Create RFI'}
             </Button>
           </DialogFooter>
