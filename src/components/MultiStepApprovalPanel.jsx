@@ -36,17 +36,31 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    await base44.functions.invoke('approveFundingRequestStep', {
-      funding_request_id: selected.id,
-      step: actionStep === 'pm' ? 'program_manager' : 'finance_officer',
-      action: actionType,
-      notes,
-    });
-    setActionStep(null);
-    setNotes('');
-    setActionType('');
-    setSubmitting(false);
-    onComplete();
+    try {
+      const now = new Date().toISOString();
+      const updates = {};
+      if (actionStep === 'pm') {
+        updates.pm_approved_by = user?.email;
+        updates.pm_approved_at = now;
+        updates.pm_approval_notes = notes;
+        updates.payment_status = actionType === 'Approved' ? 'PendingFOApproval' : 'PaymentFailed';
+      } else if (actionStep === 'fo') {
+        updates.fo_approved_by = user?.email;
+        updates.fo_approved_at = now;
+        updates.fo_approval_notes = notes;
+        updates.payment_status = actionType === 'Approved' ? 'Paid' : 'PaymentFailed';
+      }
+      await base44.entities.FundingRequest.update(selected.id, updates);
+    } catch (err) {
+      console.error('MultiStep approval error:', err);
+      alert('Failed to save approval: ' + (err?.detail || err?.message || 'Please try again.'));
+    } finally {
+      setActionStep(null);
+      setNotes('');
+      setActionType('');
+      setSubmitting(false);
+      onComplete();
+    }
   };
 
   return (

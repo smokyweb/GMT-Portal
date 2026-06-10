@@ -137,6 +137,7 @@ export default function FundingRequestReview() {
   };
 
   const handlePaymentUpdate = async () => {
+    try {
     const updates = { payment_status: paymentAction };
     if (paymentReference) updates.payment_reference = paymentReference;
     if (paymentDate) updates.payment_date = paymentDate;
@@ -149,15 +150,25 @@ export default function FundingRequestReview() {
       `Payment Status Updated: ${label}`,
       `The payment status for your funding request ${selected.request_number} has been updated to "${label}".`,
       'fr_payment', 'FundingRequest', selected.id, '/my-funding-requests');
+    // Update local state immediately for instant UI refresh
+    setRequests(prev => prev.map(req => req.id === selected.id ? { ...req, ...updates } : req));
     setSelected(null);
-    const r = await base44.entities.FundingRequest.list('-created_date', 200);
-    let visible = r;
-    if (user?.scope_state) {
-      const orgs = await base44.entities.Organization.filter({ state: user.scope_state });
-      const orgIds = new Set(orgs.map(o => o.id));
-      visible = r.filter(req => orgIds.has(req.organization_id));
+    // Reload in background
+    base44.entities.FundingRequest.list('-created_date', 200).then(r => {
+      let visible = r;
+      if (user?.scope_state) {
+        base44.entities.Organization.filter({ state: user.scope_state }).then(orgs => {
+          const orgIds = new Set(orgs.map(o => o.id));
+          setRequests(r.filter(req => orgIds.has(req.organization_id)));
+        }).catch(() => setRequests(r));
+      } else {
+        setRequests(r);
+      }
+    }).catch(() => {});
+    } catch (err) {
+      console.error('Payment update error:', err);
+      alert('Failed to update payment status: ' + (err?.detail || err?.message || 'Please try again.'));
     }
-    setRequests(visible);
   };
 
   const handleRequestInfo = async () => {
