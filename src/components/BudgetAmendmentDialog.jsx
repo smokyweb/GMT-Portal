@@ -72,6 +72,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
   const [proposedLines, setProposedLines] = useState([]);
   const [form, setForm] = useState({ justification: '', impact_on_scope: '', impact_on_timeline: '' });
   const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -359,7 +360,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
             )}
             {step === 3 && (
               <Button onClick={handleSubmit} disabled={submitting}>
-                {submitting ? 'Submitting…' : 'Submit Amendment'}
+                {submitting ? 'Submitting...' : 'Submit Amendment'}
               </Button>
             )}
           </div>
