@@ -67,10 +67,14 @@ export default function FinancialReporting() {
     return matchProg && matchPay;
   }), [requests, filterProgram, filterPayment]);
 
-  // KPIs
+  // KPIs — all use amount_approved as the base amount
+  // Total Approved = sum of all approved FR amounts
   const totalApproved = filtered.reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
+  // Total Paid = sum where payment_status is Paid
   const totalPaid = filtered.filter(r => r.payment_status === 'Paid').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
-  const totalPending = filtered.filter(r => !r.payment_status || r.payment_status === 'PendingDisbursement').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
+  // Pending Disbursement = Total Approved minus Total Paid (includes SubmittedToFinance + PendingDisbursement)
+  const totalPending = totalApproved - totalPaid;
+  // Payment Failed = sum of failed payment amounts
   const totalFailed = filtered.filter(r => r.payment_status === 'PaymentFailed').reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
 
   // Approved vs Paid by Program
@@ -140,9 +144,9 @@ export default function FinancialReporting() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <KPICard label="Total Approved" value={fmt(totalApproved)} sub={`${filtered.length} requests`} icon={DollarSign} />
-        <KPICard label="Total Paid" value={fmt(totalPaid)} sub={`${filtered.filter(r => r.payment_status === 'Paid').length} requests`} icon={CheckCircle} accent="border-green-200" />
-        <KPICard label="Pending Disbursement" value={fmt(totalPending)} sub={`${filtered.filter(r => !r.payment_status || r.payment_status === 'PendingDisbursement').length} requests`} icon={Clock} accent="border-slate-200" />
+        <KPICard label="Total Approved" value={fmt(totalApproved)} sub={`${filtered.length} approved requests`} icon={DollarSign} />
+        <KPICard label="Total Paid" value={fmt(totalPaid)} sub={`${filtered.filter(r => r.payment_status === 'Paid').length} requests disbursed`} icon={CheckCircle} accent="border-green-200" />
+        <KPICard label="Pending Disbursement" value={fmt(totalPending)} sub={`Approved minus paid (${filtered.filter(r => r.payment_status !== 'Paid').length} unpaid)`} icon={Clock} accent="border-slate-200" />
         <KPICard label="Payment Failed" value={fmt(totalFailed)} sub={`${filtered.filter(r => r.payment_status === 'PaymentFailed').length} requests`} icon={AlertCircle} accent={totalFailed > 0 ? 'border-red-200 bg-red-50/30' : ''} />
       </div>
 
