@@ -78,7 +78,7 @@ const stateNavGroups = [
   label: 'FINANCIALS',
   items: [
   { label: 'Financial Overview', icon: DollarSign, path: '/financials' },
-  { label: 'Financial Reporting', icon: FileSearch, path: '/financial-reporting' },
+
   { label: 'Budget Tracker', icon: BarChart3, path: '/budget-tracker' },
   { label: 'Budget Amendments', icon: FilePen, path: '/budget-amendments' },
   { label: 'Credits', icon: BadgeDollarSign, path: '/credits' }]
