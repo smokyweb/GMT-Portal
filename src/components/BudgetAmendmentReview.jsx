@@ -103,7 +103,7 @@ function LineItemComparison({ original, proposed, title, colorClass }) {
 }
 
 // Full review dialog for admins
-export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onActioned }) {
+export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onActioned, isAdmin = false }) {
   const [notes, setNotes] = useState('');
   const [actioning, setActioning] = useState(null);
   const [user, setUser] = useState(null);
@@ -115,20 +115,59 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
 
   const action = async (newStatus) => {
     setActioning(newStatus);
-    await base44.entities.BudgetAmendment.update(amendment.id, {
-      status: newStatus,
-      reviewer_notes: notes,
-      reviewed_by: user?.email,
-      reviewed_at: new Date().toISOString(),
-    });
-    setActioning(null);
-    onActioned?.();
-    onClose();
+    try {
+      await base44.entities.BudgetAmendment.update(amendment.id, {
+        status: newStatus,
+        reviewer_notes: notes,
+        reviewed_by: user?.email,
+        reviewed_at: new Date().toISOString(),
+      });
+      // If approved: update the actual ApplicationBudget records with proposed lines
+      if (newStatus === 'Approved' && amendment.proposed_budget_lines?.length > 0) {
+        try {
+          // Delete existing budget lines
+          const existing = await base44.entities.ApplicationBudget.filter({ application_id: amendment.application_id }).catch(() => []);
+          await Promise.all((existing || []).map(b => base44.entities.ApplicationBudget.delete(b.id).catch(() => {})));
+          // Create new budget lines from proposed
+          const lines = Array.isArray(amendment.proposed_budget_lines)
+            ? amendment.proposed_budget_lines
+            : JSON.parse(amendment.proposed_budget_lines || '[]');
+          await Promise.all(lines.map(l => base44.entities.ApplicationBudget.create({
+            application_id: amendment.application_id,
+            budget_category: l.budget_category,
+            line_description: l.line_description,
+            amount_requested: Number(l.amount_requested) || 0,
+            amount_match: Number(l.amount_match) || 0,
+            is_allowable: true,
+          })));
+          // Update application awarded_amount if net_change exists
+          if (amendment.net_change && amendment.net_change !== 0) {
+            const apps = await base44.entities.Application.filter({ id: amendment.application_id }).catch(() => []);
+            if (apps?.[0]) {
+              const currentAwarded = Number(apps[0].awarded_amount) || 0;
+              await base44.entities.Application.update(amendment.application_id, {
+                awarded_amount: currentAwarded + Number(amendment.net_change),
+              }).catch(() => {});
+            }
+          }
+        } catch (budgetErr) {
+          console.error('Budget update after approval failed:', budgetErr);
+        }
+      }
+    } catch (err) {
+      console.error('Amendment action error:', err);
+      alert('Failed to save: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setActioning(null);
+      onActioned?.();
+      onClose();
+    }
   };
 
   if (!amendment) return null;
 
   const isPending = ['Submitted', 'UnderReview'].includes(amendment.status);
+  const isRevisionRequested = amendment.status === 'RevisionRequested';
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -199,17 +238,51 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
             )}
           </div>
 
-          {/* Prior reviewer notes if already actioned */}
-          {amendment.reviewer_notes && !isPending && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
-              <p className="text-xs font-semibold text-amber-700 mb-1">Reviewer Notes</p>
-              <p className="text-sm text-amber-800">{amendment.reviewer_notes}</p>
-              <p className="text-xs text-amber-600 mt-1">— {amendment.reviewed_by} · {formatDateShort(amendment.reviewed_at)}</p>
+          {/* Reviewer notes - always show if present */}
+          {amendment.reviewer_notes && (
+            <div className={`border rounded-lg p-3 ${isRevisionRequested ? 'bg-orange-50 border-orange-200' : 'bg-amber-50 border-amber-200'}`}>
+              <p className={`text-xs font-semibold mb-1 ${isRevisionRequested ? 'text-orange-700' : 'text-amber-700'}`}>
+                {isRevisionRequested ? 'Revision Requested — Reviewer Notes' : 'Reviewer Notes'}
+              </p>
+              <p className={`text-sm ${isRevisionRequested ? 'text-orange-800' : 'text-amber-800'}`}>{amendment.reviewer_notes}</p>
+              <p className={`text-xs mt-1 ${isRevisionRequested ? 'text-orange-600' : 'text-amber-600'}`}>— {amendment.reviewed_by} · {formatDateShort(amendment.reviewed_at)}</p>
             </div>
           )}
 
-          {/* Admin action area */}
-          {isPending && (
+          {/* Subrecipient resubmit when revision is requested */}
+          {isRevisionRequested && !isAdmin && (
+            <div className="border border-orange-200 rounded-lg p-4 space-y-3 bg-orange-50">
+              <p className="text-sm font-semibold text-orange-800">Action Required: Please revise and resubmit your amendment</p>
+              <Textarea
+                rows={3}
+                placeholder="Describe the revisions you made…"
+                value={notes}
+                onChange={e => setNotes(e.target.value)}
+              />
+              <Button
+                className="bg-orange-600 hover:bg-orange-700"
+                disabled={!!actioning}
+                onClick={async () => {
+                  setActioning('Resubmit');
+                  try {
+                    await base44.entities.BudgetAmendment.update(amendment.id, {
+                      status: 'Submitted',
+                      justification: (amendment.justification || '') + (notes ? '\n\n[Revision]: ' + notes : ''),
+                      submitted_at: new Date().toISOString(),
+                    });
+                    onActioned?.();
+                    onClose();
+                  } catch(e) { alert('Resubmit failed.'); }
+                  finally { setActioning(null); }
+                }}
+              >
+                {actioning === 'Resubmit' ? 'Resubmitting…' : 'Resubmit Amendment'}
+              </Button>
+            </div>
+          )}
+
+          {/* Admin action area - only shown for admins */}
+          {isPending && isAdmin && (
             <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
               <Label>Reviewer Notes (optional)</Label>
               <Textarea
@@ -241,7 +314,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
 }
 
 // List widget for embedding in pages
-export default function BudgetAmendmentReview({ applicationId, isAdmin = false }) {
+export default function BudgetAmendmentReview({ applicationId, isAdmin = false, user: propUser }) {
   const [amendments, setAmendments] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -288,6 +361,7 @@ export default function BudgetAmendmentReview({ applicationId, isAdmin = false }
         open={!!selected}
         onClose={() => setSelected(null)}
         onActioned={() => { setSelected(null); load(); }}
+        isAdmin={isAdmin}
       />
     </div>
   );

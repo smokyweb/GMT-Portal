@@ -19,10 +19,25 @@ export default function ApplicationDocumentsStep({ nofo, app, user, org, onSaveD
     }
   }, [app?.id]);
 
+  const uploadFileToServer = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('gmt_token');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) { const data = await res.json(); return data.url || ''; }
+    } catch (e) { clearTimeout(timeoutId); console.warn('Upload failed:', e.message); }
+    return '';
+  };
+
   const handleUploadRequired = async (doc, file) => {
     setUploading(u => ({ ...u, [doc.name]: true }));
-    if (!app?.id) await onSaveDraft();
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    try {
+      if (!app?.id) await onSaveDraft();
+      const file_url = await uploadFileToServer(file);
     const created = await base44.entities.Document.create({
       name: doc.name,
       doc_type: 'Other',
@@ -34,16 +49,22 @@ export default function ApplicationDocumentsStep({ nofo, app, user, org, onSaveD
       organization_name: org?.name || app?.organization_name,
       uploaded_at: new Date().toISOString(),
     });
-    setUploadedDocs(prev => [...prev.filter(d => d.name !== doc.name), created]);
-    setUploading(u => ({ ...u, [doc.name]: false }));
+      setUploadedDocs(prev => [...prev.filter(d => d.name !== doc.name), created]);
+    } catch (err) {
+      console.error('Required doc upload error:', err);
+      alert('Upload failed: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setUploading(u => ({ ...u, [doc.name]: false }));
+    }
   };
 
   const handleUploadGeneral = async (file, tempKey) => {
     setUploading(u => ({ ...u, [tempKey]: true }));
-    if (!app?.id) await onSaveDraft();
-    const name = docNames[tempKey] || file.name;
-    const docType = docTypes[tempKey] || 'Other';
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    try {
+      if (!app?.id) await onSaveDraft();
+      const name = docNames[tempKey] || file.name;
+      const docType = docTypes[tempKey] || 'Other';
+      const file_url = await uploadFileToServer(file);
     const created = await base44.entities.Document.create({
       name,
       doc_type: docType,
@@ -55,8 +76,13 @@ export default function ApplicationDocumentsStep({ nofo, app, user, org, onSaveD
       organization_name: org?.name || app?.organization_name,
       uploaded_at: new Date().toISOString(),
     });
-    setUploadedDocs(prev => [...prev, created]);
-    setUploading(u => ({ ...u, [tempKey]: false }));
+      setUploadedDocs(prev => [...prev, created]);
+    } catch (err) {
+      console.error('Supporting doc upload error:', err);
+      alert('Upload failed: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setUploading(u => ({ ...u, [tempKey]: false }));
+    }
   };
 
   const handleDelete = async (docId) => {

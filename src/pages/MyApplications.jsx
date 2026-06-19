@@ -252,23 +252,21 @@ export default function MyApplications() {
     setCopying(true);
     const nofo = nofos.find(n => n.id === targetNofoId);
     // Create new draft application copying all fields
+    // Copy all fields from source application, override NOFO-specific ones
+    const { id: _id, created_date: _cd, updated_date: _ud, status: _st, application_number: _an,
+      submitted_at: _sa, awarded_amount: _aw, total_expended: _te, remaining_balance: _rb,
+      expenditure_rate: _er, reviewer_score: _rs, reviewer_notes: _rn, reviewer_email: _re,
+      reviewed_at: _rat, is_locked: _il, lock_reason: _lr, ...copyFields } = copySource;
     const newApp = await base44.entities.Application.create({
+      ...copyFields,
       nofo_id: nofo.id,
       nofo_title: nofo.title,
-      organization_id: copySource.organization_id,
-      organization_name: copySource.organization_name,
-      submitted_by: copySource.submitted_by,
-      project_title: copySource.project_title,
-      project_narrative: copySource.project_narrative,
-      work_plan: copySource.work_plan,
-      risk_assessment: copySource.risk_assessment,
-      requested_amount: copySource.requested_amount,
-      match_amount: copySource.match_amount,
       program_code: nofo.program_code || copySource.program_code,
       program_name: nofo.program_name || copySource.program_name,
       grant_number: nofo.grant_number || '',
       status: 'Draft',
       version: 1,
+      application_number: null,
     });
     // Copy budget items
     const budgetItems = await base44.entities.ApplicationBudget.filter({ application_id: copySource.id });

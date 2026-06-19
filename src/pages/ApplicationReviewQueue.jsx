@@ -156,39 +156,51 @@ export default function ApplicationReviewQueue() {
         comment: reviewNotes, action: 'Approved',
       }).catch(() => {});
     }
-    // Create report schedules
+    // Create report schedules - only within the grant performance period
     if (selected.performance_start && selected.performance_end) {
-      let current = moment(selected.performance_start);
+      const start = moment(selected.performance_start);
       const end = moment(selected.performance_end);
+      const grantMonths = end.diff(start, 'months');
+      // Only generate quarterly reports that fit within the performance period
+      // e.g. 12-month grant = 4 quarters; 24-month = 8 quarters
+      let current = start.clone();
       let qNum = 0;
       while (current.isBefore(end)) {
         const periodStart = current.format('YYYY-MM-DD');
-        current.add(3, 'months');
-        const periodEnd = current.isAfter(end) ? end.format('YYYY-MM-DD') : current.format('YYYY-MM-DD');
-        qNum++;
+        const nextQ = current.clone().add(3, 'months');
+        const periodEnd = nextQ.isAfter(end) ? end.format('YYYY-MM-DD') : nextQ.format('YYYY-MM-DD');
+        // Only create if this period actually falls within the grant
+        if (moment(periodStart).isBefore(end)) {
+          qNum++;
+          await base44.entities.ReportSchedule.create({
+            application_id: selected.id,
+            application_number: selected.application_number,
+            organization_name: selected.organization_name,
+            program_code: selected.program_code,
+            report_type: 'Quarterly',
+            period_start: periodStart,
+            period_end: periodEnd,
+            due_date: moment(periodEnd).add(30, 'days').format('YYYY-MM-DD'),
+            status: 'Pending',
+          });
+        }
+        current = nextQ.isAfter(end) ? end.clone() : nextQ;
+        if (current.isSameOrAfter(end)) break;
+      }
+      // Annual report only if grant is >= 1 year
+      if (grantMonths >= 12) {
         await base44.entities.ReportSchedule.create({
           application_id: selected.id,
           application_number: selected.application_number,
           organization_name: selected.organization_name,
           program_code: selected.program_code,
-          report_type: 'Quarterly',
-          period_start: periodStart,
-          period_end: periodEnd,
-          due_date: moment(periodEnd).add(30, 'days').format('YYYY-MM-DD'),
+          report_type: 'Annual',
+          period_start: selected.performance_start,
+          period_end: selected.performance_end,
+          due_date: moment(selected.performance_end).add(60, 'days').format('YYYY-MM-DD'),
           status: 'Pending',
         });
       }
-      await base44.entities.ReportSchedule.create({
-        application_id: selected.id,
-        application_number: selected.application_number,
-        organization_name: selected.organization_name,
-        program_code: selected.program_code,
-        report_type: 'Annual',
-        period_start: selected.performance_start,
-        period_end: selected.performance_end,
-        due_date: moment(selected.performance_end).add(60, 'days').format('YYYY-MM-DD'),
-        status: 'Pending',
-      });
     }
     await createNotification(base44, selected.submitted_by, 'Application Approved',
       `Your application ${selected.application_number} has been approved for ${formatCurrency(awarded)}.`,
