@@ -257,13 +257,13 @@ export default function Analytics() {
           {portfolioData.length === 0 ? (
             <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
           ) : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={portfolioData} margin={{ top: 4, right: 16, left: 0, bottom: 30 }}>
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={portfolioData} margin={{ top: 8, right: 16, left: 0, bottom: 55 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="program" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" interval={0} height={50} />
+                <XAxis dataKey="program" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
                 <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(v) => formatCurrency(v)} />
-                <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} verticalAlign="top" />
                 <Bar dataKey="awarded" name="Awarded" radius={[3, 3, 0, 0]}>
                   {portfolioData.map((entry) => (
                     <Cell key={entry.program} fill={PROGRAM_COLORS[entry.program] || '#64748b'} />
@@ -310,10 +310,10 @@ export default function Analytics() {
         {trendData.length === 0 ? (
           <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No expenditure data available</div>
         ) : (
-          <ResponsiveContainer width="100%" height={220}>
-            <LineChart data={trendData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+          <ResponsiveContainer width="100%" height={260}>
+            <LineChart data={trendData} margin={{ top: 8, right: 16, left: 0, bottom: 20 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="label" tick={{ fontSize: 11 }} />
+              <XAxis dataKey="label" tick={{ fontSize: 11 }} angle={-15} textAnchor="end" height={40} />
               <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
               <Tooltip formatter={(v) => formatCurrency(v)} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
@@ -330,10 +330,10 @@ export default function Analytics() {
         {countyAwardedData.length === 0 ? (
           <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
         ) : (
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={countyAwardedData} margin={{ top: 4, right: 16, left: 0, bottom: 70 }}>
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={countyAwardedData} margin={{ top: 8, right: 16, left: 0, bottom: 80 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="county" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
+              <XAxis dataKey="county" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={70} />
               <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
               <Tooltip formatter={(v) => formatCurrency(v)} />
               <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />

@@ -7,17 +7,33 @@ import { Upload, FileText, Trash2, Check } from 'lucide-react';
 
 const DOC_TYPES = ['BudgetJustification', 'Contract', 'Invoice', 'MatchDocumentation', 'PerformanceEvidence', 'Other'];
 
-export default function ApplicationDocumentsStep({ nofo, app, user, org, onSaveDraft }) {
+export default function ApplicationDocumentsStep({ nofo: nofoProp, app, user, org, onSaveDraft }) {
   const [uploadedDocs, setUploadedDocs] = useState([]);
   const [uploading, setUploading] = useState({});
   const [docNames, setDocNames] = useState({});
   const [docTypes, setDocTypes] = useState({});
+  const [loadedNofo, setLoadedNofo] = useState(null);
+
+  // Use prop NOFO or load from app's nofo_id if not provided
+  const nofo = nofoProp || loadedNofo;
 
   useEffect(() => {
     if (app?.id) {
-      base44.entities.Document.filter({ application_id: app.id }).then(setUploadedDocs);
+      base44.entities.Document.filter({ application_id: app.id }).then(setUploadedDocs).catch(() => {});
     }
-  }, [app?.id]);
+    // Load NOFO if not provided but app has nofo_id
+    if (!nofoProp && app?.nofo_id) {
+      base44.entities.Nofo.filter({ id: app.nofo_id }).then(results => {
+        if (results?.[0]) setLoadedNofo(results[0]);
+      }).catch(() => {
+        // Fallback: list all and find by id
+        base44.entities.Nofo.list('-created_date', 200).then(all => {
+          const found = (all || []).find(n => n.id === app.nofo_id);
+          if (found) setLoadedNofo(found);
+        }).catch(() => {});
+      });
+    }
+  }, [app?.id, app?.nofo_id, nofoProp]);
 
   const uploadFileToServer = async (file) => {
     const formData = new FormData();
@@ -98,7 +114,11 @@ export default function ApplicationDocumentsStep({ nofo, app, user, org, onSaveD
     input.click();
   };
 
-  const requiredDocs = nofo?.required_documents || [];
+  // Normalize required_documents - handle single object or array
+  const rawRequired = nofo?.required_documents || [];
+  const requiredDocs = Array.isArray(rawRequired)
+    ? rawRequired
+    : (rawRequired && typeof rawRequired === 'object' && rawRequired.name ? [rawRequired] : []);
   const generalDocs = uploadedDocs.filter(d => !requiredDocs.find(r => r.name === d.name));
 
   return (
