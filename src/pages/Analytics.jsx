@@ -258,9 +258,9 @@ export default function Analytics() {
             <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
           ) : (
             <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={portfolioData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
+              <BarChart data={portfolioData} margin={{ top: 4, right: 16, left: 0, bottom: 30 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="program" tick={{ fontSize: 11 }} />
+                <XAxis dataKey="program" tick={{ fontSize: 10 }} angle={-20} textAnchor="end" interval={0} height={50} />
                 <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={(v) => formatCurrency(v)} />
                 <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
@@ -331,7 +331,7 @@ export default function Analytics() {
           <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
         ) : (
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={countyAwardedData} margin={{ top: 4, right: 16, left: 0, bottom: 40 }}>
+            <BarChart data={countyAwardedData} margin={{ top: 4, right: 16, left: 0, bottom: 70 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
               <XAxis dataKey="county" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
               <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />

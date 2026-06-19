@@ -611,7 +611,7 @@ export default function SubrecipientHome() {
   const pendingFRs = fundingRequests.filter(fr => ['Submitted', 'UnderReview', 'AdditionalInfoRequested'].includes(fr.status));
   const openTasks = tasks.filter(t => t.status !== 'Resolved' && t.status !== 'Cancelled');
   const actionItems = openTasks.length + genDocs.length + overdueReports.length + flags.length;
-  const unreadMessages = messages.filter(m => m.sender_email !== user?.email);
+  const unreadMessages = messages.filter(m => m.sender_email !== user?.email); // Messages accessible via sidebar nav
   const upcomingMilestones = milestones.filter(m => {
     const d = m.due_date ? new Date(m.due_date) : null;
     return d && d >= new Date() && Math.ceil((d - new Date()) / 86400000) <= 60;
@@ -719,12 +719,7 @@ export default function SubrecipientHome() {
               <span className="ml-1 bg-amber-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{actionItems}</span>
             )}
           </TabsTrigger>
-          <TabsTrigger value="messages" className="flex items-center gap-1">
-            Messages
-            {unreadMessages.length > 0 && (
-              <span className="ml-1 bg-blue-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{unreadMessages.length}</span>
-            )}
-          </TabsTrigger>
+// Messages tab removed - accessible via sidebar nav only
           <TabsTrigger value="milestones" className="flex items-center gap-1">
             Milestones
             {overdueMilestones.length > 0 && (
@@ -849,7 +844,7 @@ export default function SubrecipientHome() {
                           <p className="text-sm font-medium truncate">{task.title}</p>
                           <p className="text-xs text-muted-foreground">{task.type} · Due {formatDateShort(task.due_date)}</p>
                         </div>
-                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${task.status === 'InProgress' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{task.status}</span>
+                        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded flex-shrink-0 ${task.status === 'InProgress' ? 'bg-blue-50 text-blue-700' : 'bg-amber-50 text-amber-700'}`}>{task.status?.replace(/([A-Z])/g, ' $1').trim()}</span>
                       </div>
                     ))}
                   </div>
@@ -1190,6 +1185,13 @@ export default function SubrecipientHome() {
                                 </span>
                               )}
                             </div>
+                            {/* RFI Response */}
+                            {task.type === 'RFI' && task.status === 'Open' && (
+                              <div className="mt-3 space-y-2">
+                                <textarea className="w-full text-sm border rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Type your response to this RFI..." id={`rfi-${task.id}`} />
+                                <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium" onClick={async()=>{const el=document.getElementById('rfi-'+task.id);const r=el?.value?.trim();if(!r){alert('Please enter a response.');return;}try{await base44.entities.Task.update(task.id,{status:'PendingAdminReview',notes:r,resolved_by:user?.email,resolved_at:new Date().toISOString()});await loadData();}catch(e){alert('Failed to submit.');}}}>Submit Response</button>
+                              </div>
+                            )}
                           </div>
                           <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${task.status === 'InProgress' ? 'bg-blue-50 text-blue-700' : task.status === 'PendingAdminReview' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'}`}>{task.status}</span>
                         </div>
@@ -1226,75 +1228,6 @@ export default function SubrecipientHome() {
         </TabsContent>
 
         {/* ── MESSAGES TAB ── */}
-        <TabsContent value="messages" className="mt-4 space-y-4">
-          {Object.keys(messagesByApp).length === 0 ? (
-            <div className="border border-dashed rounded-xl p-14 text-center text-muted-foreground">
-              <MailOpen className="h-10 w-10 mx-auto mb-3 opacity-30" />
-              <p className="font-medium">No messages yet</p>
-              <p className="text-xs mt-1">Messages from NEMA staff will appear here, organized by grant.</p>
-            </div>
-          ) : (
-            Object.entries(messagesByApp).map(([appId, msgs]) => {
-              const sortedMsgs = [...msgs].sort((a, b) => new Date(a.sent_at || a.created_date) - new Date(b.sent_at || b.created_date));
-              const appInfo = apps.find(a => a.id === appId);
-              const isExpanded = expandedThread === appId;
-              return (
-                <div key={appId} className="bg-card border rounded-xl overflow-hidden">
-                  <button
-                    className="w-full px-5 py-4 flex items-center justify-between hover:bg-muted/30 transition-colors"
-                    onClick={() => setExpandedThread(isExpanded ? null : appId)}
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <div className="h-9 w-9 rounded-lg bg-blue-50 flex items-center justify-center flex-shrink-0">
-                        <MessageSquare className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="min-w-0 text-left">
-                        <p className="font-medium text-sm">{appInfo?.project_title || appInfo?.application_number || 'Grant Thread'}</p>
-                        <p className="text-xs text-muted-foreground font-mono">{appInfo?.application_number} · {msgs.length} message{msgs.length !== 1 ? 's' : ''}</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <span className="text-xs text-muted-foreground">{formatDateShort(sortedMsgs[sortedMsgs.length - 1]?.sent_at || sortedMsgs[sortedMsgs.length - 1]?.created_date)}</span>
-                      <ChevronRight className={`h-4 w-4 text-muted-foreground transition-transform ${isExpanded ? 'rotate-90' : ''}`} />
-                    </div>
-                  </button>
-                  {isExpanded && (
-                    <div className="border-t">
-                      <div className="p-4 space-y-3 max-h-80 overflow-y-auto bg-muted/20">
-                        {sortedMsgs.map(msg => {
-                          const isMe = msg.sender_email === user?.email;
-                          return (
-                            <div key={msg.id} className={`flex gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                              <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm ${isMe ? 'bg-primary text-primary-foreground' : 'bg-card border'}`}>
-                                {!isMe && <p className="text-[10px] font-semibold mb-1 opacity-70">{msg.sender_name || msg.sender_email}</p>}
-                                <p className="leading-relaxed">{msg.body}</p>
-                                <p className={`text-[10px] mt-1 ${isMe ? 'opacity-70 text-right' : 'text-muted-foreground'}`}>{formatDateShort(msg.sent_at || msg.created_date)}</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="p-3 border-t flex gap-2">
-                        <input
-                          className="flex-1 px-3 py-2 text-sm rounded-lg border bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-                          placeholder="Type a reply…"
-                          value={replyText[appId] || ''}
-                          onChange={e => setReplyText(p => ({ ...p, [appId]: e.target.value }))}
-                          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSendReply(appId, appInfo?.application_number)}
-                        />
-                        <Button size="sm" onClick={() => handleSendReply(appId, appInfo?.application_number)} disabled={sendingReply[appId] || !replyText[appId]?.trim()}>
-                          {sendingReply[appId] ? <Loader2 className="h-4 w-4 animate-spin" /> : <Reply className="h-4 w-4" />}
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })
-          )}
-        </TabsContent>
-
-        {/* ── MILESTONES TAB ── */}
         <TabsContent value="milestones" className="mt-4 space-y-4">
           {overdueMilestones.length > 0 && (
             <div className="bg-red-50 border border-red-200 rounded-xl overflow-hidden">
@@ -1319,7 +1252,8 @@ export default function SubrecipientHome() {
             <div className="border border-dashed rounded-xl p-14 text-center text-muted-foreground">
               <Flag className="h-10 w-10 mx-auto mb-3 opacity-30" />
               <p className="font-medium">No milestones yet</p>
-              <p className="text-xs mt-1">Milestones assigned to your grants will appear here.</p>
+              <p className="text-xs mt-1">Track progress milestones for your grants.</p>
+              <Link to="/milestones"><Button className="mt-4" size="sm">Go to Milestones</Button></Link>
             </div>
           ) : (
             <div className="bg-card border rounded-xl overflow-hidden">

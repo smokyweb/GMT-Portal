@@ -116,7 +116,8 @@ const subrecipientNavGroups = [
   label: 'My Grants',
   items: [
   { label: 'My Applications', icon: ClipboardList, path: '/my-applications' },
-  { label: 'Funding Requests', icon: DollarSign, path: '/my-funding-requests' }]
+  { label: 'Funding Requests', icon: DollarSign, path: '/my-funding-requests' },
+  { label: 'My Reports', icon: FileText, path: '/my-reports' }]
 },
 {
   label: 'Tools',
