@@ -719,7 +719,7 @@ export default function SubrecipientHome() {
               <span className="ml-1 bg-amber-500 text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">{actionItems}</span>
             )}
           </TabsTrigger>
-// Messages tab removed - accessible via sidebar nav only
+{/* Messages removed from dashboard - accessible via sidebar nav */}
           <TabsTrigger value="milestones" className="flex items-center gap-1">
             Milestones
             {overdueMilestones.length > 0 && (
@@ -908,7 +908,7 @@ export default function SubrecipientHome() {
                 {[
                   { label: 'Submit Funding Request', icon: DollarSign, to: '/my-funding-requests?new=1' },
                   { label: 'Upload Document', icon: Upload, action: () => setTab('documents') },
-                  { label: 'View Messages', icon: MessageSquare, action: () => setTab('messages') },
+                  { label: 'View Messages', icon: MessageSquare, to: '/messages' },
                   { label: 'My Applications', icon: FileText, to: '/my-applications' },
                 ].map(({ label, icon: Ic, to, action }) => (
                   to ? (
@@ -1186,7 +1186,7 @@ export default function SubrecipientHome() {
                               )}
                             </div>
                             {/* RFI Response */}
-                            {task.type === 'RFI' && task.status === 'Open' && (
+                            {(task.type === 'RFI' || task.type === 'rfi' || !task.type) && (task.status === 'Open' || task.status === 'Pending') && (
                               <div className="mt-3 space-y-2">
                                 <textarea className="w-full text-sm border rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Type your response to this RFI..." id={`rfi-${task.id}`} />
                                 <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium" onClick={async()=>{const el=document.getElementById('rfi-'+task.id);const r=el?.value?.trim();if(!r){alert('Please enter a response.');return;}try{await base44.entities.Task.update(task.id,{status:'PendingAdminReview',notes:r,resolved_by:user?.email,resolved_at:new Date().toISOString()});await loadData();}catch(e){alert('Failed to submit.');}}}>Submit Response</button>
