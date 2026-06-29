@@ -398,7 +398,6 @@ export default function MyApplications() {
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="expenditures">Expenditures</TabsTrigger>
                 <TabsTrigger value="rfi">RFIs</TabsTrigger>
-                <TabsTrigger value="attachments">Attachments</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="amendments">Amendments</TabsTrigger>
@@ -452,17 +451,6 @@ export default function MyApplications() {
                   isAdmin={false}
                 />}
               </TabsContent>
-              <TabsContent value="attachments">
-                {user && selected && (
-                  <DocumentUploadPanel
-                    applicationId={selected.id}
-                    applicationNumber={selected.application_number}
-                    organizationName={selected.organization_name}
-                    organizationId={selected.organization_id}
-                    user={user}
-                  />
-                )}
-              </TabsContent>
               <TabsContent value="documents">
                 {user && <ComplianceChecklist
                   applicationId={selected.id}
@@ -471,6 +459,16 @@ export default function MyApplications() {
                   user={user}
                   canUpload={true}
                 />}
+                  <div className="mt-4">
+                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-2">Upload Additional Documents</p>
+                    <DocumentUploadPanel
+                      applicationId={selected.id}
+                      applicationNumber={selected.application_number}
+                      organizationName={selected.organization_name}
+                      organizationId={selected.organization_id}
+                      user={user}
+                    />
+                  </div>
               </TabsContent>
               <TabsContent value="messages">
                 {user && <ContextualThread
