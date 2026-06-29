@@ -287,13 +287,13 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
           </h3>
           <p className="text-xs text-muted-foreground mb-4">Compares total awarded funding against dollars spent</p>
           {spentVsAwardedData.length === 0 ? <EmptyChart /> : (
-            <ResponsiveContainer width="100%" height={220}>
-              <BarChart data={spentVsAwardedData} margin={{ top: 4, right: 8, left: 0, bottom: organizationId ? 20 : 0 }}>
+            <ResponsiveContainer width="100%" height={270}>
+              <BarChart data={spentVsAwardedData} margin={{ top: 8, right: 8, left: 0, bottom: 55 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={organizationId ? -20 : 0} textAnchor={organizationId ? 'end' : 'middle'} />
-                <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-25} textAnchor="end" interval={0} height={60} />
+                <YAxis tickFormatter={v => `${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 10 }} />
                 <Tooltip formatter={v => formatCurrency(v)} />
-                <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
+                <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} verticalAlign="top" />
                 <Bar dataKey="Awarded"  fill="#3b82f6" radius={[3, 3, 0, 0]} />
                 <Bar dataKey="Expended" fill="#10b981" radius={[3, 3, 0, 0]} />
               </BarChart>

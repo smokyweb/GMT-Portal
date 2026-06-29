@@ -330,7 +330,7 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-                  <XAxis dataKey="month" tick={{ fontSize: 10 }} />
+                  <XAxis dataKey="month" tick={{ fontSize: 10 }} angle={-15} textAnchor="end" height={35} />
                   <YAxis domain={[0, 100]} tickFormatter={v => `${v}%`} tick={{ fontSize: 10 }} />
                   <Tooltip content={<CustomTooltip formatter={v => `${v}%`} />} />
                   <Area type="monotone" dataKey="Rate (%)" stroke="#3b82f6" strokeWidth={2} fill="url(#rateGrad)" dot={{ r: 3 }} activeDot={{ r: 5 }} />
