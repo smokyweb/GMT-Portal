@@ -152,7 +152,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
     const newItems = files.map(f => ({ file: f, uploading: true, url: null, name: f.name }));
     setAttachments(prev => [...prev, ...newItems]);
     for (const item of newItems) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+      const file_url = await uploadFileToServer(item.file);
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
     e.target.value = '';
@@ -375,7 +375,11 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
     if (!validate()) return;
     setUploading(true);
     setUploadProgress(20);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    let file_url = '';
+    try {
+      file_url = await uploadFileToServer(file);
+      if (!file_url) { alert('Upload failed - could not get file URL. Please try again.'); setUploading(false); setUploadProgress(0); return; }
+    } catch(uploadErr) { alert('Upload failed: ' + uploadErr.message); setUploading(false); setUploadProgress(0); return; }
     setUploadProgress(70);
     const app = apps.find(a => a.id === appId);
     await base44.entities.Document.create({
@@ -523,6 +527,20 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
+const uploadFileToServer = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = localStorage.getItem('gmt_token');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) { const data = await res.json(); return data.url || ''; }
+  } catch (e) { clearTimeout(timeoutId); console.warn('Upload failed:', e.message); }
+  return '';
+};
+
 export default function SubrecipientHome() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
