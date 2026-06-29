@@ -142,22 +142,30 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
           })));
           // Update application: awarded_amount and performance period if changed
           try {
-            const allApps = await base44.entities.Application.list('-created_date', 500).catch(() => []);
-            const targetApp = (Array.isArray(allApps) ? allApps : []).find(a => a.id === amendment.application_id);
+            // Direct fetch by ID for reliability
+            let targetApp = null;
+            try {
+              const directResult = await base44.entities.Application.filter({ id: amendment.application_id }, '-created_date', 1);
+              targetApp = Array.isArray(directResult) ? directResult[0] : null;
+            } catch {}
+            if (!targetApp) {
+              // Fallback: list and find
+              const allApps = await base44.entities.Application.list('-created_date', 1000).catch(() => []);
+              targetApp = (Array.isArray(allApps) ? allApps : []).find(a => a.id === amendment.application_id);
+            }
             if (targetApp) {
               const appUpdates = {};
-              // Update awarded_amount by net_change
-              if (amendment.net_change && Number(amendment.net_change) !== 0) {
+              // Update awarded_amount: use proposed_total directly if available, otherwise add net_change
+              if (amendment.proposed_total && Number(amendment.proposed_total) > 0) {
+                appUpdates.awarded_amount = Number(amendment.proposed_total);
+              } else if (amendment.net_change && Number(amendment.net_change) !== 0) {
                 const currentAwarded = Number(targetApp.awarded_amount) || 0;
                 appUpdates.awarded_amount = currentAwarded + Number(amendment.net_change);
               }
               // Update performance period if specified in amendment
               if (amendment.performance_start_new) appUpdates.performance_start = amendment.performance_start_new;
               if (amendment.performance_end_new) appUpdates.performance_end = amendment.performance_end_new;
-              // Also update proposed_total as the new budget total
-              if (amendment.proposed_total) {
-                appUpdates.requested_amount = Number(amendment.proposed_total);
-              }
+              // Note: requested_amount stays as original request; awarded_amount reflects the new approved total
               if (Object.keys(appUpdates).length > 0) {
                 await base44.entities.Application.update(amendment.application_id, appUpdates).catch(e => console.error('App update failed:', e));
               }
