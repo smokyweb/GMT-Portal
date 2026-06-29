@@ -256,7 +256,23 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
             <LineItemComparison proposed={amendment.proposed_budget_lines} title="Proposed Budget Lines" colorClass="border-blue-200 bg-blue-50/30" />
           </div>
 
-          {/* Justification fields */}
+                    {/* Performance Period Change (if requested) */}
+          {(amendment.performance_start_new || amendment.performance_end_new) && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">Performance Period Change Requested</p>
+              <div className="grid grid-cols-2 gap-3 text-sm">
+                {amendment.performance_start_new && (
+                  <div><p className="text-xs text-muted-foreground">New Start Date</p><p className="font-medium">{amendment.performance_start_new}</p></div>
+                )}
+                {amendment.performance_end_new && (
+                  <div><p className="text-xs text-muted-foreground">New End Date</p><p className="font-medium">{amendment.performance_end_new}</p></div>
+                )}
+              </div>
+              <p className="text-xs text-blue-600 mt-2">Approving will update the application performance period dates.</p>
+            </div>
+          )}
+
+{/* Justification fields */}
           <div className="space-y-3">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Justification</p>
