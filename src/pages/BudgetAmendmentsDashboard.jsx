@@ -138,7 +138,7 @@ export default function BudgetAmendmentsDashboard() {
             <BarChart data={chartData} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => `$${(v / 1000).toFixed(0)}k`} tick={{ fontSize: 11 }} />
+              <YAxis tickFormatter={v => { const n = Math.abs(v); if (n >= 1000000) return `$${(v/1000000).toFixed(1)}M`; if (n >= 1000) return `$${(v/1000).toFixed(0)}k`; return `$${v}`; }} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(val) => formatCurrency(val)} />
               <Legend />
               <Bar dataKey="requested" name="Requested Net Change" fill="hsl(var(--chart-3))" radius={[3,3,0,0]} />
@@ -187,9 +187,9 @@ export default function BudgetAmendmentsDashboard() {
             <tbody>
               {filtered.map(am => (
                 <tr key={am.id} className="border-b last:border-0 hover:bg-muted/30 transition">
-                  <td className="p-3 font-mono text-xs font-semibold">{am.amendment_number || '—'}</td>
-                  <td className="p-3 font-medium">{am.organization_name || '—'}</td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{am.application_number || '—'}</td>
+                  <td className="p-3 font-mono text-xs font-semibold">{am.amendment_number || 'â€”'}</td>
+                  <td className="p-3 font-medium">{am.organization_name || 'â€”'}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{am.application_number || 'â€”'}</td>
                   <td className="p-3 text-right">{formatCurrency(am.original_total)}</td>
                   <td className="p-3 text-right font-medium text-blue-700">{formatCurrency(am.proposed_total)}</td>
                   <td className={`p-3 text-right font-semibold ${(am.net_change || 0) > 0 ? 'text-amber-700' : (am.net_change || 0) < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
