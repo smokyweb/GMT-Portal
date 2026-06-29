@@ -640,6 +640,7 @@ export default function ApplicationReviewQueue() {
                   organizationName={selected.organization_name}
                   user={user}
                   canUpload={false}
+                  nofo={nofo}
                 />
               </TabsContent>
 
