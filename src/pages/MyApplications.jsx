@@ -524,11 +524,14 @@ export default function MyApplications() {
             <div>
               <Label>Select Target NOFO (New Grant Period) <span className="text-red-500">*</span></Label>
               <Select value={targetNofoId} onValueChange={setTargetNofoId}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose a published NOFO…" /></SelectTrigger>
-                <SelectContent>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose a NOFO..." /></SelectTrigger>
+                <SelectContent className="w-[520px] max-w-[90vw]">
                   {nofos.map(n => (
                     <SelectItem key={n.id} value={n.id}>
-                      {n.title} {n.program_code ? `(${n.program_code})` : ''}
+                      <span className="flex flex-col py-0.5">
+                        {n.program_code && <span className="text-[10px] font-bold text-primary uppercase tracking-wide">{n.program_code}</span>}
+                        <span className="text-sm">{n.title}</span>
+                      </span>
                     </SelectItem>
                   ))}
                 </SelectContent>
