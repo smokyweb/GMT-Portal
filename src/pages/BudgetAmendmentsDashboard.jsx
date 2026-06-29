@@ -217,6 +217,7 @@ export default function BudgetAmendmentsDashboard() {
         open={!!selected}
         onClose={() => setSelected(null)}
         onActioned={() => { setSelected(null); load(); }}
+        isAdmin={true}
       />
     </div>
   );

@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { formatCurrency, formatDateShort } from '../lib/helpers';
+import { formatCurrency, formatDateShort, createNotification } from '../lib/helpers';
 import { CheckCircle2, XCircle, Clock, FileEdit, ChevronDown, ChevronRight } from 'lucide-react';
 
 const STATUS_CONFIG = {
@@ -168,6 +168,21 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
         } catch (budgetErr) {
           console.error('Budget update after approval failed:', budgetErr);
         }
+      }
+      // Notify subrecipient of decision
+      if (amendment.submitted_by) {
+        const actionLabel = newStatus === 'Approved' ? 'Approved' : newStatus === 'Denied' ? 'Denied' : 'Revision Requested';
+        createNotification(base44, amendment.submitted_by,
+          `Budget Amendment ${actionLabel}`,
+          `Your budget amendment ${amendment.amendment_number} for ${amendment.application_number} has been ${actionLabel.toLowerCase()}.${notes ? ' Reviewer notes: ' + notes : ''}`,
+          'amendment_actioned', 'BudgetAmendment', amendment.id,
+          '/my-applications'
+        ).catch(() => {});
+        base44.integrations.Core.SendEmail({
+          to: amendment.submitted_by,
+          subject: `Budget Amendment ${actionLabel} \u2014 ${amendment.application_number}`,
+          body: `Your budget amendment (${amendment.amendment_number}) for grant ${amendment.application_number} has been ${actionLabel.toLowerCase()}.${notes ? '\n\nReviewer Notes: ' + notes : ''}\n\nLog in to the GMT Portal for details.`,
+        }).catch(() => {});
       }
     } catch (err) {
       console.error('Amendment action error:', err);

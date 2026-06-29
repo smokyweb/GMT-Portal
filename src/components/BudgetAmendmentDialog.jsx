@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrency } from '../lib/helpers';
+import { formatCurrency, createNotification } from '../lib/helpers';
 import { Plus, Trash2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 const BUDGET_CATEGORIES = ['Personnel', 'Equipment', 'Training', 'Travel', 'Contractual', 'Planning', 'Other'];
@@ -101,7 +101,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
     setSubmitting(true);
     const user = await base44.auth.me();
     const amendmentNumber = `BA-${application.application_number || application.id.slice(0, 6).toUpperCase()}-${Date.now().toString().slice(-4)}`;
-    await base44.entities.BudgetAmendment.create({
+    const createdAmendment = await base44.entities.BudgetAmendment.create({
       application_id: application.id,
       application_number: application.application_number,
       organization_id: application.organization_id,
@@ -126,6 +126,29 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
       proposed_total: proposedTotal,
       net_change: netChange,
     });
+      // Notify state admins/reviewers of new amendment submission
+      try {
+        const users = await base44.entities.User.list('-created_date', 500).catch(() => []);
+        const reviewers = (Array.isArray(users) ? users : []).filter(u =>
+          ['admin', 'reviewer', 'isc_admin', 'federal_admin'].includes(u.role)
+        );
+        for (const r of reviewers) {
+          createNotification(base44, r.email,
+            'Budget Amendment Submitted',
+            `${application.organization_name} submitted budget amendment ${amendmentNumber} for ${application.application_number}. Net change: ${netChange >= 0 ? '+' : ''}${formatCurrency(netChange)}.`,
+            'amendment_submitted', 'BudgetAmendment', createdAmendment?.id,
+            '/budget-amendments'
+          ).catch(() => {});
+          // Fire-and-forget email
+          base44.integrations.Core.SendEmail({
+            to: r.email,
+            subject: `Budget Amendment Submitted — ${application.application_number}`,
+            body: `${application.organization_name} has submitted a budget amendment (${amendmentNumber}) for grant ${application.application_number}.\n\nNet Change: ${netChange >= 0 ? '+' : ''}${formatCurrency(netChange)}\nJustification: ${form.justification}\n\nLog in to the GMT Portal to review and take action.`,
+          }).catch(() => {});
+        }
+      } catch (notifyErr) {
+        console.warn('Amendment notification failed:', notifyErr);
+      }
     setSubmitting(false);
     onSubmitted?.();
     onClose();
