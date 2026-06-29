@@ -70,7 +70,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
   const [step, setStep] = useState(1); // 1=justification, 2=proposed budget, 3=review
   const [originalBudget, setOriginalBudget] = useState([]);
   const [proposedLines, setProposedLines] = useState([]);
-  const [form, setForm] = useState({ justification: '', impact_on_scope: '', impact_on_timeline: '' });
+  const [form, setForm] = useState({ justification: '', impact_on_scope: '', impact_on_timeline: '', performance_start_new: '', performance_end_new: '' });
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState('');
   const [loading, setLoading] = useState(true);
@@ -78,7 +78,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
   useEffect(() => {
     if (!open || !application?.id) return;
     setStep(1);
-    setForm({ justification: '', impact_on_scope: '', impact_on_timeline: '' });
+    setForm({ justification: '', impact_on_scope: '', impact_on_timeline: '', performance_start_new: '', performance_end_new: '' });
     base44.entities.ApplicationBudget.filter({ application_id: application.id })
       .then(items => {
         setOriginalBudget(items);
@@ -111,6 +111,8 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
       justification: form.justification,
       impact_on_scope: form.impact_on_scope,
       impact_on_timeline: form.impact_on_timeline,
+      performance_start_new: form.performance_start_new || null,
+      performance_end_new: form.performance_end_new || null,
       status: 'Submitted',
       submitted_at: new Date().toISOString(),
       original_budget_snapshot: originalBudget.map(l => ({
@@ -196,6 +198,21 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                     value={form.impact_on_timeline}
                     onChange={e => setForm(f => ({ ...f, impact_on_timeline: e.target.value }))}
                   />
+                </div>
+
+                {/* Performance Period Change (optional) */}
+                <div className="border-t pt-3">
+                  <p className="text-sm font-medium mb-2">Performance Period Change <span className="text-xs text-muted-foreground">(optional — only if dates are changing)</span></p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label className="text-xs">New Start Date</Label>
+                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_start_new} onChange={e => setForm(f => ({ ...f, performance_start_new: e.target.value }))} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">New End Date</Label>
+                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_end_new} onChange={e => setForm(f => ({ ...f, performance_end_new: e.target.value }))} />
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
