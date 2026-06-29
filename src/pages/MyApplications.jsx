@@ -256,7 +256,7 @@ export default function MyApplications() {
     const { id: _id, created_date: _cd, updated_date: _ud, status: _st, application_number: _an,
       submitted_at: _sa, awarded_amount: _aw, total_expended: _te, remaining_balance: _rb,
       expenditure_rate: _er, reviewer_score: _rs, reviewer_notes: _rn, reviewer_email: _re,
-      reviewed_at: _rat, is_locked: _il, lock_reason: _lr, ...copyFields } = copySource;
+      reviewed_at: _rat, is_locked: _il, lock_reason: _lr, revision_notes: _rv, ...copyFields } = copySource;
     const newApp = await base44.entities.Application.create({
       ...copyFields,
       nofo_id: nofo.id,
@@ -269,8 +269,8 @@ export default function MyApplications() {
       application_number: null,
     });
     // Copy budget items
-    const budgetItems = await base44.entities.ApplicationBudget.filter({ application_id: copySource.id });
-    await Promise.all(budgetItems.map(b =>
+    const budgetItems = await base44.entities.ApplicationBudget.filter({ application_id: copySource.id }).catch(() => []);
+    await Promise.all((budgetItems || []).map(b =>
       base44.entities.ApplicationBudget.create({
         application_id: newApp.id,
         budget_category: b.budget_category,
@@ -279,6 +279,25 @@ export default function MyApplications() {
         amount_match: b.amount_match,
         is_allowable: true,
       })
+    ));
+    // Copy supporting documents (reference copies — same file_url, new application_id)
+    const sourceDocs = await base44.entities.Document.filter({ application_id: copySource.id }).catch(() => []);
+    await Promise.all((sourceDocs || []).filter(d => !d.is_template).map(d =>
+      base44.entities.Document.create({
+        name: d.name,
+        doc_type: d.doc_type,
+        file_url: d.file_url,
+        uploaded_by: d.uploaded_by,
+        organization_id: d.organization_id,
+        organization_name: d.organization_name,
+        application_id: newApp.id,
+        application_number: null, // will be set on submit
+        description: d.description,
+        tags: d.tags,
+        version: 1,
+        review_status: 'Pending',
+        uploaded_at: new Date().toISOString(),
+      }).catch(() => null)
     ));
     setCopying(false);
     setCopySource(null);
