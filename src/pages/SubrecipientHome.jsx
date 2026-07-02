@@ -706,7 +706,7 @@ export default function SubrecipientHome() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Active Grants', value: activeGrants.length, icon: CheckCircle, color: 'bg-green-50 text-green-600', border: 'border-green-100' },
-          { label: 'Total Awarded', value: formatCurrency(activeGrants.reduce((s, g) => s + (g.awarded_amount || 0), 0)), icon: DollarSign, color: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
+          { label: 'Total Awarded', value: formatCurrency(activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0)), icon: DollarSign, color: 'bg-blue-50 text-blue-600', border: 'border-blue-100' },
           { label: 'Reports Due', value: pendingReports.length, icon: FileText, color: overdueReports.length > 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600', border: overdueReports.length > 0 ? 'border-red-100' : 'border-amber-100' },
           { label: 'Pending Requests', value: pendingFRs.length, icon: Shield, color: 'bg-purple-50 text-purple-600', border: 'border-purple-100' },
         ].map(({ label, value, icon: Icon, color, border }) => (
