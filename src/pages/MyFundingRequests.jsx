@@ -550,7 +550,12 @@ export default function MyFundingRequests() {
                 {/* Line Items */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <Label>Expenditure Line Items</Label>
+                    <div>
+                      <Label>Expenditure Line Items <span className="text-red-500">*</span></Label>
+                      {form.request_type !== 'Modification' && lineItems.length === 0 && (
+                        <p className="text-xs text-red-500 mt-0.5">At least one line item is required to submit</p>
+                      )}
+                    </div>
                     <Button variant="outline" size="sm" onClick={() => setLineItems(prev => [...prev, { ...EMPTY_LINE_ITEM }])}>+ Add Item</Button>
                   </div>
                   <div className="space-y-4">
