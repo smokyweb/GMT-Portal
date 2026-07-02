@@ -13,7 +13,7 @@ import {
   Calendar, Shield, ChevronRight, Download, Plus, Eye,
   Paperclip, Building2, X, Loader2, Search, CircleDot, Inbox,
   MessageSquare, PenLine, CheckSquare, Send, ClipboardList,
-  Flag, Zap, ArrowRight, MailOpen, Reply
+  Flag, Zap, ArrowRight, MailOpen, Reply, FileEdit
 } from 'lucide-react';
 import StatusBadge from '../components/StatusBadge';
 import ExpenditureBar from '../components/ExpenditureBar';
