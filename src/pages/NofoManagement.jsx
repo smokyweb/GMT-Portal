@@ -111,12 +111,16 @@ export default function NofoManagement() {
         data.scope_states = [user.scope_state];
       }
 
+      // Strip server-managed fields before saving
+      const { id: _id, created_date: _cd, updated_date: _ud, created_by: _cb, created_by_id: _cbid,
+        is_sample: _is, published_at: _pa, reviewed_by: _rb, ...cleanData } = data;
+
       if (editing) {
-        await base44.entities.Nofo.update(editing.id, data);
-        await logAudit(base44, user, 'Updated', 'Nofo', editing.id, `Updated NOFO: ${data.title}`);
+        await base44.entities.Nofo.update(editing.id, cleanData);
+        await logAudit(base44, user, 'Updated', 'Nofo', editing.id, `Updated NOFO: ${cleanData.title}`);
       } else {
-        const created = await base44.entities.Nofo.create(data);
-        await logAudit(base44, user, 'Created', 'Nofo', created.id, `Created NOFO: ${data.title}`);
+        const created = await base44.entities.Nofo.create(cleanData);
+        await logAudit(base44, user, 'Created', 'Nofo', created.id, `Created NOFO: ${cleanData.title}`);
       }
       setOpen(false);
       loadData();
