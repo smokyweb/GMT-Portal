@@ -187,9 +187,9 @@ export default function BudgetAmendmentsDashboard() {
             <tbody>
               {filtered.map(am => (
                 <tr key={am.id} className="border-b last:border-0 hover:bg-muted/30 transition">
-                  <td className="p-3 font-mono text-xs font-semibold">{am.amendment_number || 'â€”'}</td>
-                  <td className="p-3 font-medium">{am.organization_name || 'â€”'}</td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{am.application_number || 'â€”'}</td>
+                  <td className="p-3 font-mono text-xs font-semibold">{am.amendment_number || '””'}</td>
+                  <td className="p-3 font-medium">{am.organization_name || '””'}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{am.application_number || '””'}</td>
                   <td className="p-3 text-right">{formatCurrency(am.original_total)}</td>
                   <td className="p-3 text-right font-medium text-blue-700">{formatCurrency(am.proposed_total)}</td>
                   <td className={`p-3 text-right font-semibold ${(am.net_change || 0) > 0 ? 'text-amber-700' : (am.net_change || 0) < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>

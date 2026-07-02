@@ -54,7 +54,7 @@ const PAYMENT_STATUS_CONFIG = {
 };
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">â€”</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">””</span>;
   const cfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -420,7 +420,7 @@ export default function MyFundingRequests() {
                 <Select value={form.application_id} onValueChange={v => setForm(f => ({ ...f, application_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Choose active grant" /></SelectTrigger>
                   <SelectContent>
-                    {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} â€” {a.project_title}</SelectItem>)}
+                    {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} ”” {a.project_title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -579,7 +579,7 @@ export default function MyFundingRequests() {
                                 <SelectTrigger className="mt-1"><SelectValue placeholder={li.ael_category ? 'Select AEL item' : 'Select category first'} /></SelectTrigger>
                                 <SelectContent className="max-h-60">
                                   {getAELItemsForCategory(li.ael_category).map(item => (
-                                    <SelectItem key={item.code} value={item.code}>{item.code} â€” {item.title}</SelectItem>
+                                    <SelectItem key={item.code} value={item.code}>{item.code} ”” {item.title}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -730,7 +730,7 @@ export default function MyFundingRequests() {
                 (form.request_type === 'Modification' && !form.modification_type)
               }
             >
-              {submitting ? 'Submittingâ€¦' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
+              {submitting ? 'Submitting…' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
