@@ -46,7 +46,7 @@ export default function CeoSignatureWorkflow({ application, user, onSigned }) {
     try {
       const blob = await (await fetch(capturedSig.signatureDataUrl)).blob();
       const file = new File([blob], 'signature.png', { type: 'image/png' });
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const file_url = await uploadFileToServer(file);
       signatureUrl = file_url;
     } catch (_) {
       signatureUrl = capturedSig.signatureDataUrl; // fallback: store data URL

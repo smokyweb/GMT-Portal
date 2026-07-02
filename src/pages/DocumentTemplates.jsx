@@ -101,7 +101,7 @@ export default function DocumentTemplates() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const file_url = await uploadFileToServer(file);
     setForm(f => ({ ...f, file_url, file_name: file.name }));
     setUploading(false);
   };

@@ -64,7 +64,7 @@ export default function ISCDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingLogo(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const file_url = await uploadFileToServer(file);
     setForm(f => ({ ...f, logo_url: file_url }));
     setUploadingLogo(false);
   };

@@ -145,7 +145,14 @@ export default function MyFundingRequests() {
     const newItems = files.map(f => ({ file: f, uploading: true, url: null, name: f.name, docType: attachDocType }));
     setAttachments(prev => [...prev, ...newItems]);
     for (const item of newItems) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+      let file_url = '';
+      try {
+        const formData = new FormData();
+        formData.append('file', item.file);
+        const token = localStorage.getItem('gmt_token');
+        const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (res.ok) { const data = await res.json(); file_url = data.url || ''; }
+      } catch (uploadErr) { console.warn('Upload failed:', uploadErr.message); }
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
     e.target.value = '';

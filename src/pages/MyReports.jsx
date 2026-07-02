@@ -53,7 +53,7 @@ export default function MyReports() {
     setAttachments(prev => [...prev, ...newItems]);
 
     for (const item of newItems) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+      const file_url = await uploadFileToServer(item.file);
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
     e.target.value = '';

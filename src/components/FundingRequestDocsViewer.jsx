@@ -65,7 +65,7 @@ export default function FundingRequestDocsViewer({ fundingRequest, user }) {
     if (!files.length) return;
     setUploading(true);
     for (const file of files) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file });
+      const file_url = await uploadFileToServer(file);
       await base44.entities.Document.create({
         name: file.name,
         doc_type: docType,

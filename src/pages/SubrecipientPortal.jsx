@@ -100,7 +100,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
     setAttachments(prev => [...prev, ...newItems]);
 
     for (const item of newItems) {
-      const { file_url } = await base44.integrations.Core.UploadFile({ file: item.file });
+      const file_url = await uploadFileToServer(item.file);
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
     e.target.value = '';
@@ -257,7 +257,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
   const handleUpload = async () => {
     if (!file || !appId || !docType) return;
     setUploading(true);
-    const { file_url } = await base44.integrations.Core.UploadFile({ file });
+    const file_url = await uploadFileToServer(file);
     const app = apps.find(a => a.id === appId);
     await base44.entities.Document.create({
       name: file.name,

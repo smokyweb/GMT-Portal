@@ -112,7 +112,7 @@ export default function DocumentVault() {
     let file_url = '';
 
     if (uploadFile) {
-      const result = await base44.integrations.Core.UploadFile({ file: uploadFile });
+      const result = await uploadFileToServer(uploadFile);
       file_url = result.file_url;
     }
 
