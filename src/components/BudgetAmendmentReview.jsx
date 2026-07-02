@@ -309,7 +309,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
               <p className="text-sm font-semibold text-orange-800">Action Required: Please revise and resubmit your amendment</p>
               <Textarea
                 rows={3}
-                placeholder="Describe the revisions you made…"
+                placeholder="Describe the revisions you made..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
               />
