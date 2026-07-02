@@ -54,7 +54,7 @@ const PAYMENT_STATUS_CONFIG = {
 };
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">””</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">""</span>;
   const cfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -150,9 +150,15 @@ export default function MyFundingRequests() {
         const formData = new FormData();
         formData.append('file', item.file);
         const token = localStorage.getItem('gmt_token');
-        const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 20000);
+        const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+        clearTimeout(timeoutId);
         if (res.ok) { const data = await res.json(); file_url = data.url || ''; }
-      } catch (uploadErr) { console.warn('Upload failed:', uploadErr.message); }
+      } catch (uploadErr) {
+        console.warn('Upload failed:', uploadErr.message);
+        alert('File upload failed: ' + (uploadErr.name === 'AbortError' ? 'Request timed out. Try a smaller file.' : uploadErr.message));
+      }
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
     e.target.value = '';
@@ -427,13 +433,13 @@ export default function MyFundingRequests() {
                 <Select value={form.application_id} onValueChange={v => setForm(f => ({ ...f, application_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Choose active grant" /></SelectTrigger>
                   <SelectContent>
-                    {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} ”” {a.project_title}</SelectItem>)}
+                    {apps.filter(a => a.status === 'Approved').map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} - {a.project_title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
             </div>
 
-            {/* â”€â”€ MODIFICATION FORM â”€â”€ */}
+            {/* â"€â"€ MODIFICATION FORM â"€â"€ */}
             {form.request_type === 'Modification' && (
               <div className="space-y-4">
                 <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
@@ -516,7 +522,7 @@ export default function MyFundingRequests() {
               </div>
             )}
 
-            {/* â”€â”€ REIMBURSEMENT / ADVANCE FORM â”€â”€ */}
+            {/* â"€â"€ REIMBURSEMENT / ADVANCE FORM â"€â"€ */}
             {form.request_type !== 'Modification' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
@@ -586,7 +592,7 @@ export default function MyFundingRequests() {
                                 <SelectTrigger className="mt-1"><SelectValue placeholder={li.ael_category ? 'Select AEL item' : 'Select category first'} /></SelectTrigger>
                                 <SelectContent className="max-h-60">
                                   {getAELItemsForCategory(li.ael_category).map(item => (
-                                    <SelectItem key={item.code} value={item.code}>{item.code} ”” {item.title}</SelectItem>
+                                    <SelectItem key={item.code} value={item.code}>{item.code} "" {item.title}</SelectItem>
                                   ))}
                                 </SelectContent>
                               </Select>
@@ -711,7 +717,7 @@ export default function MyFundingRequests() {
                     {a.uploading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" /> : <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                     <span className="flex-1 truncate text-xs">{a.name}</span>
                     {a.docType && <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded bg-muted">{a.docType.replace(/([A-Z])/g, ' $1').trim()}</span>}
-                    {!a.uploading && <span className="text-xs text-green-600 font-medium">âœ“</span>}
+                    {!a.uploading && <span className="text-xs text-green-600 font-medium">âœ"</span>}
                     <button onClick={() => removeAttachment(a.name)} className="text-muted-foreground hover:text-destructive transition">
                       <X className="h-3.5 w-3.5" />
                     </button>
@@ -737,7 +743,7 @@ export default function MyFundingRequests() {
                 (form.request_type === 'Modification' && !form.modification_type)
               }
             >
-              {submitting ? 'Submitting…' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
+              {submitting ? 'Submitting...' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}
             </Button>
           </DialogFooter>
         </DialogContent>
