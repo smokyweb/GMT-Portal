@@ -114,7 +114,7 @@ export default function ReviewHistory({ entityType, entityId, user, readOnly = f
           </Button>
         </div>
       ) : (
-        <p className="text-xs text-muted-foreground italic">This record is locked — no new notes can be added.</p>
+        <p className="text-xs text-muted-foreground italic">This record is locked - no new notes can be added.</p>
       )}
     </div>
   );

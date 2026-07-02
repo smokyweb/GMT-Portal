@@ -108,7 +108,7 @@ export default function DocumentsInbox() {
                   </div>
                   <div>
                     <p className="font-semibold">{doc.template_name}</p>
-                    <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || ' - '}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">Sent {moment(doc.sent_at).fromNow()} by {doc.sent_by}</p>
                   </div>
                 </div>
@@ -141,7 +141,7 @@ export default function DocumentsInbox() {
                   </div>
                   <div>
                     <p className="font-semibold">{doc.template_name}</p>
-                    <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || '—'}</p>
+                    <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || ' - '}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {doc.status === 'Signed' ? `Signed ${moment(doc.signed_at).fromNow()} by ${doc.signed_by}` : `Rejected ${moment(doc.updated_date).fromNow()}`}
                     </p>
@@ -170,7 +170,7 @@ export default function DocumentsInbox() {
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                 <span>Type: <strong>{selected.doc_type}</strong></span>
-                <span>Application: <strong>{selected.application_number || '—'}</strong></span>
+                <span>Application: <strong>{selected.application_number || ' - '}</strong></span>
                 <span>Sent: <strong>{moment(selected.sent_at).format('MMM D, YYYY')}</strong></span>
                 <StatusBadge status={selected.status} />
               </div>

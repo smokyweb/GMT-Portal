@@ -93,7 +93,7 @@ function ExpenditureHistory({ applicationId, application }) {
         <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Overall Expenditure Rate</span>
-            <span>{Math.round(application.expenditure_rate || 0)}% — {formatCurrency(application.total_expended || 0)} of {formatCurrency(application.awarded_amount)}</span>
+            <span>{Math.round(application.expenditure_rate || 0)}% - {formatCurrency(application.total_expended || 0)} of {formatCurrency(application.awarded_amount)}</span>
           </div>
           <ExpenditureBar rate={application.expenditure_rate || 0} />
         </div>
@@ -177,15 +177,15 @@ function ExpenditureHistory({ applicationId, application }) {
                             <tr key={li.id || idx} className="border-b last:border-0 hover:bg-muted/20">
                               <td className="p-2"><span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{li.budget_category}</span></td>
                               <td className="p-2 max-w-[120px]">
-                                <p className="font-medium truncate">{li.expenditure_name || '—'}</p>
+                                <p className="font-medium truncate">{li.expenditure_name || ' - '}</p>
                                 {li.ael_number && <p className="text-muted-foreground">AEL: {li.ael_number}</p>}
                                 {(li.item_manufacturer || li.item_model) && (
                                   <p className="text-muted-foreground truncate">{[li.item_manufacturer, li.item_model].filter(Boolean).join(' · ')}</p>
                                 )}
                               </td>
-                              <td className="p-2 max-w-[140px] text-muted-foreground truncate">{li.description || li.item_detail_description || '—'}</td>
-                              <td className="p-2 text-right">{li.quantity || '—'}</td>
-                              <td className="p-2 text-right">{li.unit_cost ? formatCurrency(li.unit_cost) : '—'}</td>
+                              <td className="p-2 max-w-[140px] text-muted-foreground truncate">{li.description || li.item_detail_description || ' - '}</td>
+                              <td className="p-2 text-right">{li.quantity || ' - '}</td>
+                              <td className="p-2 text-right">{li.unit_cost ? formatCurrency(li.unit_cost) : ' - '}</td>
                               <td className="p-2 text-right font-semibold">{formatCurrency(li.amount)}</td>
                             </tr>
                           ))}
@@ -280,7 +280,7 @@ export default function MyApplications() {
         is_allowable: true,
       })
     ));
-    // Copy supporting documents (reference copies — same file_url, new application_id)
+    // Copy supporting documents (reference copies - same file_url, new application_id)
     const sourceDocs = await base44.entities.Document.filter({ application_id: copySource.id }).catch(() => []);
     await Promise.all((sourceDocs || []).filter(d => !d.is_template).map(d =>
       base44.entities.Document.create({
@@ -342,9 +342,9 @@ export default function MyApplications() {
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-3 font-mono text-xs">{app.application_number || 'Draft'}</td>
                   <td className="p-3 font-medium">{app.project_title || 'Untitled'}</td>
-                  <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || '—'}</span></td>
+                  <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || ' - '}</span></td>
                   <td className="p-3 text-right">{formatCurrency(app.requested_amount)}</td>
-                  <td className="p-3 text-right font-medium">{app.awarded_amount ? formatCurrency(app.awarded_amount) : '—'}</td>
+                  <td className="p-3 text-right font-medium">{app.awarded_amount ? formatCurrency(app.awarded_amount) : ' - '}</td>
                   <td className="p-3"><StatusBadge status={app.status} /></td>
                   <td className="p-3 flex gap-1 flex-wrap">
                     {(app.status === 'Draft' || app.status === 'RevisionRequested') && (
@@ -407,18 +407,18 @@ export default function MyApplications() {
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div><p className="text-xs text-muted-foreground">Application #</p><p className="font-medium font-mono">{selected.application_number || 'Draft'}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={selected.status} /></div>
-                  <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{selected.project_title || '—'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{selected.program_code || '—'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{selected.nofo_title || '—'}</p></div>
+                  <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{selected.project_title || ' - '}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{selected.program_code || ' - '}</p></div>
+                  <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{selected.nofo_title || ' - '}</p></div>
                   {selected.grant_number && <div><p className="text-xs text-muted-foreground">Grant Number</p><p className="font-medium font-mono">{selected.grant_number}</p></div>}
                   <div><p className="text-xs text-muted-foreground">Requested Amount</p><p className="font-semibold">{formatCurrency(selected.requested_amount)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-semibold">{selected.awarded_amount ? formatCurrency(selected.awarded_amount) : '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-semibold">{selected.awarded_amount ? formatCurrency(selected.awarded_amount) : ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">Match / Cost-Share</p><p className="font-medium">{formatCurrency(selected.match_amount)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Total Expended</p><p className="font-medium">{selected.total_expended ? formatCurrency(selected.total_expended) : '—'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium">{selected.performance_start || '—'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium">{selected.performance_end || '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Total Expended</p><p className="font-medium">{selected.total_expended ? formatCurrency(selected.total_expended) : ' - '}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium">{selected.performance_start || ' - '}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium">{selected.performance_end || ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium">{formatDateShort(selected.submitted_at)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Submitted By</p><p className="font-medium">{selected.submitted_by || '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Submitted By</p><p className="font-medium">{selected.submitted_by || ' - '}</p></div>
                 </div>
                 {selected.project_narrative && (
                   <div>

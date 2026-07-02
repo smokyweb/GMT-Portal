@@ -425,11 +425,11 @@ export default function NewApplication() {
             <div className="bg-card border rounded-xl p-4 space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Organization</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{orgForm.name || org?.name || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{orgForm.type || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono">{orgForm.ein || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono">{orgForm.sam_uei || '—'}</p></div>
-                <div className="col-span-2"><p className="text-xs text-muted-foreground">Address</p><p>{[orgForm.address, orgForm.city, orgForm.state, orgForm.zip].filter(Boolean).join(', ') || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{orgForm.name || org?.name || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{orgForm.type || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono">{orgForm.ein || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono">{orgForm.sam_uei || ' - '}</p></div>
+                <div className="col-span-2"><p className="text-xs text-muted-foreground">Address</p><p>{[orgForm.address, orgForm.city, orgForm.state, orgForm.zip].filter(Boolean).join(', ') || ' - '}</p></div>
               </div>
             </div>
 
@@ -437,14 +437,14 @@ export default function NewApplication() {
             <div className="bg-card border rounded-xl p-4 space-y-3">
               <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Project Details</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
-                <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{nofo?.title || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{nofo?.program_code || app?.program_code || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{nofo?.title || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{nofo?.program_code || app?.program_code || ' - '}</p></div>
                 {(nofo?.grant_number || app?.grant_number) && (
                   <div><p className="text-xs text-muted-foreground">Grant Number</p><p className="font-mono">{nofo?.grant_number || app?.grant_number}</p></div>
                 )}
-                <div><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{form.project_title || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Performance Start</p><p>{form.performance_start || '—'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Performance End</p><p>{form.performance_end || '—'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{form.project_title || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance Start</p><p>{form.performance_start || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance End</p><p>{form.performance_end || ' - '}</p></div>
                 {form.project_narrative && (
                   <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Narrative</p><p className="text-xs line-clamp-3">{form.project_narrative}</p></div>
                 )}

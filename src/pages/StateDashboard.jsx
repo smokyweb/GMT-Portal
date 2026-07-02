@@ -128,7 +128,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
 
   const handleExportCsv = () => {
     try {
-      // Build CSV client-side — no server function needed
+      // Build CSV client-side - no server function needed
       const headers = ['App #', 'Organization', 'Program', 'NOFO', 'Status', 'Requested ($)', 'Awarded ($)', 'Expended ($)', 'Remaining ($)', 'Perf Start', 'Perf End'];
       const toCsvField = (v) => { const s = String(v ?? ''); return s.includes(',') || s.includes('"') ? `"${s.replace(/"/g, '""')}"` : s; };
       const rows = displayApps.map(a => [
@@ -207,11 +207,11 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
                   <tbody>
                     {recentApps.map(app => (
                       <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30 transition">
-                        <td className="p-3 font-mono text-xs">{app.application_number || '—'}</td>
-                        <td className="p-3">{app.organization_name || '—'}</td>
+                        <td className="p-3 font-mono text-xs">{app.application_number || ' - '}</td>
+                        <td className="p-3">{app.organization_name || ' - '}</td>
                         <td className="p-3">
                           <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">
-                            {app.program_code || '—'}
+                            {app.program_code || ' - '}
                           </span>
                         </td>
                         <td className="p-3 text-right font-medium">{formatCurrency(app.requested_amount)}</td>

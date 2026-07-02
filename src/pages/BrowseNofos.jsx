@@ -114,13 +114,13 @@ export default function BrowseNofos() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                   <div>
                     <p className="text-muted-foreground text-xs">Award Range</p>
-                    <p className="font-medium">{formatCurrency(nofo.min_award)} – {formatCurrency(nofo.max_award)}</p>
+                    <p className="font-medium">{formatCurrency(nofo.min_award)} - {formatCurrency(nofo.max_award)}</p>
                   </div>
                 </div>
               </div>
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />
-                <span>Application window: {formatDateShort(nofo.open_date)} – {formatDateShort(nofo.close_date)}</span>
+                <span>Application window: {formatDateShort(nofo.open_date)} - {formatDateShort(nofo.close_date)}</span>
               </div>
               {nofo.eligible_org_types?.length > 0 && (
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">

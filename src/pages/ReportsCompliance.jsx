@@ -93,7 +93,7 @@ export default function ReportsCompliance() {
       if (app?.submitted_by) {
         await base44.integrations.Core.SendEmail({
           to: app.submitted_by,
-          subject: `Progress Report ${decision} – ${selectedSchedule.application_number}`,
+          subject: `Progress Report ${decision} - ${selectedSchedule.application_number}`,
           body: `Your ${selectedSchedule.report_type} progress report for grant ${selectedSchedule.application_number} has been ${decision.toLowerCase()} by the state office.\n\n${reviewNotes ? `Reviewer notes: ${reviewNotes}` : ''}\n\nLog in to the portal for details.`,
         });
       }
@@ -218,13 +218,13 @@ export default function ReportsCompliance() {
               <tbody>
                 {filtered.map(s => (
                   <tr key={s.id} className={`border-b last:border-0 hover:bg-muted/30 transition ${s.status === 'Submitted' ? 'bg-amber-50/40' : ''}`}>
-                    <td className="p-3 font-mono text-xs">{s.application_number || '—'}</td>
-                    <td className="p-3 font-medium">{s.organization_name || '—'}</td>
+                    <td className="p-3 font-mono text-xs">{s.application_number || ' - '}</td>
+                    <td className="p-3 font-medium">{s.organization_name || ' - '}</td>
                     <td className="p-3">
-                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{s.program_code || '—'}</span>
+                      <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{s.program_code || ' - '}</span>
                     </td>
                     <td className="p-3">{s.report_type}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} – {formatDateShort(s.period_end)}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                     <td className="p-3 text-xs font-medium">{formatDateShort(s.due_date)}</td>
                     <td className="p-3"><StatusBadge status={s.status} /></td>
                     <td className="p-3">
@@ -266,7 +266,7 @@ export default function ReportsCompliance() {
               <div><span className="font-medium text-muted-foreground">Organization:</span> {selectedSchedule?.organization_name}</div>
               <div><span className="font-medium text-muted-foreground">Program:</span> {selectedSchedule?.program_code}</div>
               <div><span className="font-medium text-muted-foreground">Due Date:</span> {formatDateShort(selectedSchedule?.due_date)}</div>
-              <div><span className="font-medium text-muted-foreground">Period:</span> {formatDateShort(selectedSchedule?.period_start)} – {formatDateShort(selectedSchedule?.period_end)}</div>
+              <div><span className="font-medium text-muted-foreground">Period:</span> {formatDateShort(selectedSchedule?.period_start)} - {formatDateShort(selectedSchedule?.period_end)}</div>
               <div><span className="font-medium text-muted-foreground">Status:</span> <StatusBadge status={selectedSchedule?.status} /></div>
             </div>
 
@@ -279,7 +279,7 @@ export default function ReportsCompliance() {
               <div className="space-y-4">
                 <div>
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Progress Narrative</p>
-                  <p className="text-sm bg-muted/30 rounded-lg p-3 whitespace-pre-wrap">{progressReport.narrative || '—'}</p>
+                  <p className="text-sm bg-muted/30 rounded-lg p-3 whitespace-pre-wrap">{progressReport.narrative || ' - '}</p>
                 </div>
                 {progressReport.objectives_met && (
                   <div>
@@ -319,7 +319,7 @@ export default function ReportsCompliance() {
               </div>
             )}
 
-            {/* Review actions — only show if status is Submitted */}
+            {/* Review actions - only show if status is Submitted */}
             {selectedSchedule?.status === 'Submitted' && (
               <div className="border-t pt-4 space-y-3">
                 <div>

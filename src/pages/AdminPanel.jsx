@@ -165,7 +165,7 @@ export default function AdminPanel() {
     setResetSending(true);
     await base44.integrations.Core.SendEmail({
       to: resetTarget.email,
-      subject: 'GMT Portal — Password Reset Request',
+      subject: 'GMT Portal - Password Reset Request',
       body: `Hello ${resetTarget.full_name || resetTarget.email},\n\nAn administrator has requested a password reset for your account.\n\nPlease visit the GMT Portal login page and use the "Forgot Password" option to reset your password.\n\nIf you did not request this, please contact your administrator.\n\nGMT Portal Team`,
     });
     setResetSending(false);

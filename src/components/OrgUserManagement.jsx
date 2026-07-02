@@ -88,7 +88,7 @@ export default function OrgUserManagement({ user, org }) {
     setResetSending(true);
     await base44.integrations.Core.SendEmail({
       to: resetTarget.email,
-      subject: 'GMT Portal – Password Reset Request',
+      subject: 'GMT Portal - Password Reset Request',
       body: `Hello ${resetTarget.full_name || resetTarget.email},\n\nA team administrator has requested a password reset for your account.\n\nPlease visit the GMT Portal login page and use the "Forgot Password" option to reset your password.\n\nGMT Portal Team`,
     });
     setResetSending(false);
@@ -146,10 +146,10 @@ export default function OrgUserManagement({ user, org }) {
             <tbody>
               {orgUsers.map(u => (
                 <tr key={u.id} className="border-b last:border-0 hover:bg-muted/20">
-                  <td className="p-3 font-medium">{u.full_name || '—'}</td>
+                  <td className="p-3 font-medium">{u.full_name || ' - '}</td>
                   <td className="p-3 text-muted-foreground text-xs">{u.email}</td>
                   <td className="p-3"><RoleBadge role={u.role} /></td>
-                  <td className="p-3 text-xs text-muted-foreground">{u.phone || '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{u.phone || ' - '}</td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(u.created_date)}</td>
                   <td className="p-3">
                     {u.id !== user.id && (

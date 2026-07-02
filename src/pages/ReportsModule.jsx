@@ -116,7 +116,7 @@ export default function ReportsModule() {
                     <td className="p-3 text-xs text-muted-foreground">
                       {r.last_run_at ? (
                         <span>{moment(r.last_run_at).fromNow()} · {r.last_run_row_count ?? 0} rows</span>
-                      ) : '—'}
+                      ) : ' - '}
                     </td>
                     <td className="p-3 text-xs text-muted-foreground">{formatDateShort(r.created_date)}</td>
                     <td className="p-3">
@@ -146,7 +146,7 @@ export default function ReportsModule() {
       {/* Templates */}
       <section>
         <h2 className="text-base font-semibold mb-1">Report Templates</h2>
-        <p className="text-sm text-muted-foreground mb-4">Pre-built reports ready to run — click any to open in the builder.</p>
+        <p className="text-sm text-muted-foreground mb-4">Pre-built reports ready to run - click any to open in the builder.</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
           {templates.map(tpl => (
             <button

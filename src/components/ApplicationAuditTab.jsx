@@ -58,7 +58,7 @@ function FundingRequestCard({ req }) {
           <span>Approved: <span className="font-medium text-green-700">${(req.amount_approved || 0).toLocaleString()}</span></span>
         )}
         {(req.period_start || req.period_end) && (
-          <span>Period: <span className="font-medium text-foreground">{req.period_start} – {req.period_end}</span></span>
+          <span>Period: <span className="font-medium text-foreground">{req.period_start} - {req.period_end}</span></span>
         )}
       </div>
       {req.request_type !== 'Modification' && req.payment_status && (
@@ -87,7 +87,7 @@ function ReportCard({ report }) {
       </div>
       <div className="flex flex-wrap gap-4 text-muted-foreground">
         {(report.period_start || report.period_end) && (
-          <span>Period: <span className="font-medium text-foreground">{report.period_start} – {report.period_end}</span></span>
+          <span>Period: <span className="font-medium text-foreground">{report.period_start} - {report.period_end}</span></span>
         )}
         {report.due_date && (
           <span>Due: <span className="font-medium text-foreground">{report.due_date}</span></span>

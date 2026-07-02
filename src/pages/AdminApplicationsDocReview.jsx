@@ -28,15 +28,15 @@ export default function AdminApplicationsDocReview() {
     setApplications(prev => prev.map(a => a.id === app.id ? { ...a, status } : a));
     const emailMap = {
       Approved: {
-        subject: `Application Approved – ${app.application_number}`,
+        subject: `Application Approved - ${app.application_number}`,
         body: `Dear ${app.organization_name},\n\nYour grant application (${app.application_number}) has been APPROVED.\n\nPlease log in to the GMT Portal to view the details and next steps.\n\nGrant Management Team`,
       },
       Denied: {
-        subject: `Application Not Approved – ${app.application_number}`,
+        subject: `Application Not Approved - ${app.application_number}`,
         body: `Dear ${app.organization_name},\n\nYour grant application (${app.application_number}) has not been approved at this time.\n\nPlease log in to the GMT Portal for more information.\n\nGrant Management Team`,
       },
       RevisionRequested: {
-        subject: `Revision Requested – ${app.application_number}`,
+        subject: `Revision Requested - ${app.application_number}`,
         body: `Dear ${app.organization_name},\n\nRevisions are required for your grant application (${app.application_number}).\n\nPlease log in to the GMT Portal to review the feedback and update your application.\n\nGrant Management Team`,
       },
     };
@@ -104,8 +104,8 @@ export default function AdminApplicationsDocReview() {
                   {filteredApps.map(app => (
                     <tr key={app.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="p-3 font-mono text-xs">{app.application_number || 'Draft'}</td>
-                      <td className="p-3 font-medium">{app.organization_name || '—'}</td>
-                      <td className="p-3"><span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{app.program_code || '—'}</span></td>
+                      <td className="p-3 font-medium">{app.organization_name || ' - '}</td>
+                      <td className="p-3"><span className="text-xs px-2 py-0.5 bg-primary/10 text-primary rounded font-medium">{app.program_code || ' - '}</span></td>
                       <td className="p-3 text-right">{formatCurrency(app.requested_amount)}</td>
                       <td className="p-3"><StatusBadge status={app.status} /></td>
                       <td className="p-3 text-xs text-muted-foreground">{formatDateShort(app.submitted_at)}</td>

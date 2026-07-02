@@ -160,7 +160,7 @@ export default function NotificationRules() {
       setShowDialog(false);
       setEditingRule(null);
     } catch (err) {
-      toast.error('Failed to save rule — please try again');
+      toast.error('Failed to save rule - please try again');
       console.error(err);
     } finally {
       setSaving(false);
@@ -235,7 +235,7 @@ export default function NotificationRules() {
                     </div>
                   </td>
                   <td className="p-3 text-xs text-muted-foreground capitalize">{rule.delivery?.replace('_', ' ') || 'both'}</td>
-                  <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={rule.description}>{rule.description || '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground max-w-[200px] truncate" title={rule.description}>{rule.description || ' - '}</td>
                   <td className="p-3 text-center">
                     <Switch checked={rule.enabled !== false} onCheckedChange={() => handleToggle(rule.id)} />
                   </td>

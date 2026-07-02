@@ -98,7 +98,7 @@ export default function ComplianceTrendsDashboard() {
 
       {/* Monthly trend chart */}
       <div className="bg-card rounded-xl border p-5">
-        <h3 className="font-semibold mb-4">Open vs. Resolved Flags — Last 12 Months</h3>
+        <h3 className="font-semibold mb-4">Open vs. Resolved Flags - Last 12 Months</h3>
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={monthlyData} margin={{ top: 4, right: 16, left: 0, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />

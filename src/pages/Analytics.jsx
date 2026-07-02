@@ -87,7 +87,7 @@ export default function Analytics() {
     });
   }, [applications, fyFilter, programFilter]);
 
-  // 1. Grant Portfolio Overview — total funds by program
+  // 1. Grant Portfolio Overview - total funds by program
   const portfolioData = useMemo(() => {
     const map = {};
     filtered.forEach(a => {
@@ -197,7 +197,7 @@ export default function Analytics() {
           {scanStatus && scanStatus !== 'running' && (
             <span className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              Scan complete — {scanStatus.flagged} new flag{scanStatus.flagged !== 1 ? 's' : ''} ({scanStatus.scanned} grants checked)
+              Scan complete - {scanStatus.flagged} new flag{scanStatus.flagged !== 1 ? 's' : ''} ({scanStatus.scanned} grants checked)
             </span>
           )}
           <button
@@ -253,7 +253,7 @@ export default function Analytics() {
       <div className="grid lg:grid-cols-2 gap-6">
         {/* Grant Portfolio Overview */}
         <div className="bg-card rounded-lg border p-5">
-          <h2 className="text-sm font-semibold mb-4">Grant Portfolio Overview — Funds by Program</h2>
+          <h2 className="text-sm font-semibold mb-4">Grant Portfolio Overview - Funds by Program</h2>
           {portfolioData.length === 0 ? (
             <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
           ) : (
@@ -277,7 +277,7 @@ export default function Analytics() {
 
         {/* Application Pipeline */}
         <div className="bg-card rounded-lg border p-5">
-          <h2 className="text-sm font-semibold mb-4">Application Pipeline — Count by Status</h2>
+          <h2 className="text-sm font-semibold mb-4">Application Pipeline - Count by Status</h2>
           {pipelineData.length === 0 ? (
             <div className="h-52 flex items-center justify-center text-muted-foreground text-sm">No data</div>
           ) : (
@@ -368,7 +368,7 @@ export default function Analytics() {
                   <tr key={row.org} className="border-b last:border-0 hover:bg-muted/40">
                     <td className="py-3 pr-4 font-medium">{row.org}</td>
                     <td className="text-right py-3 px-4 text-muted-foreground">{row.applications}</td>
-                    <td className="text-right py-3 px-4 font-medium">{row.awards > 0 ? formatCurrency(row.awards) : '—'}</td>
+                    <td className="text-right py-3 px-4 font-medium">{row.awards > 0 ? formatCurrency(row.awards) : ' - '}</td>
                     <td className="py-3 px-4">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">

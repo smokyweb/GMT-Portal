@@ -136,7 +136,7 @@ export default function MyReports() {
                 <tr key={s.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-3 font-mono text-xs">{s.application_number}</td>
                   <td className="p-3">{s.report_type}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} – {formatDateShort(s.period_end)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                   <td className="p-3 text-xs font-medium">{formatDateShort(s.due_date)}</td>
                   <td className="p-3"><StatusBadge status={s.status} /></td>
                   <td className="p-3">
@@ -159,7 +159,7 @@ export default function MyReports() {
             <div className="space-y-4">
               <div className="bg-muted/50 rounded-lg p-3 text-sm">
                 <p><strong>Grant:</strong> {selected.application_number}</p>
-                <p><strong>Period:</strong> {formatDateShort(selected.period_start)} – {formatDateShort(selected.period_end)}</p>
+                <p><strong>Period:</strong> {formatDateShort(selected.period_start)} - {formatDateShort(selected.period_end)}</p>
               </div>
               <div><Label>Narrative</Label><Textarea value={form.narrative} onChange={e => setForm(f => ({ ...f, narrative: e.target.value }))} rows={4} /></div>
               <div><Label>Objectives Met</Label><Textarea value={form.objectives_met} onChange={e => setForm(f => ({ ...f, objectives_met: e.target.value }))} rows={3} /></div>

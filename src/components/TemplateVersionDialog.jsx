@@ -81,7 +81,7 @@ export default function TemplateVersionDialog({ template, onRevert, onClose }) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <History className="h-4 w-4" /> Version History — {template.name}
+            <History className="h-4 w-4" /> Version History - {template.name}
           </DialogTitle>
         </DialogHeader>
 
@@ -109,7 +109,7 @@ export default function TemplateVersionDialog({ template, onRevert, onClose }) {
                       <p className="text-sm font-medium">{v.name}</p>
                       <p className="text-xs text-muted-foreground">
                         {v.saved_by} · {moment(v.created_date).format('MMM D, YYYY [at] h:mm A')}
-                        {v.change_note && <span className="italic"> — "{v.change_note}"</span>}
+                        {v.change_note && <span className="italic"> - "{v.change_note}"</span>}
                       </p>
                     </div>
                   </div>

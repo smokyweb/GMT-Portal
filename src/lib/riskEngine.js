@@ -2,7 +2,7 @@ import { base44 } from '@/api/base44Client';
 
 /**
  * Risk Score Engine
- * Scores each subrecipient organization 0–100 based on:
+ * Scores each subrecipient organization 0 - 100 based on:
  *  - Compliance flags (weighted by severity)
  *  - Overdue reports
  *  - Expenditure variance (over/under-spending approved budget)

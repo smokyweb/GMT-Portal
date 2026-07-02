@@ -13,7 +13,7 @@ const FEMA_DEFAULTS = {
     purpose: 'Supports implementation of State Homeland Security Strategies to address identified planning, organization, equipment, training, and exercise needs to prevent, protect against, mitigate, respond to, and recover from acts of terrorism and other catastrophic events.',
     eligibility_requirements: ['State Administrative Agencies (SAAs)', 'Local governments via subgrant', 'Tribal governments via subgrant'],
     allowable_costs: ['Planning (up to 25% of total award)', 'Organization (personnel costs)', 'Equipment (FEMA-approved equipment categories)', 'Training (FEMA-approved courses)', 'Exercises (HSEEP-compliant)', 'Management & Administration (up to 5%)'],
-    compliance_requirements: ['Must align with State Preparedness Report (SPR) and THIRA', 'Biannual Strategy Implementation Report (BSIR) required', 'NIMS compliance mandatory', 'Equipment must be on FEMA Authorized Equipment List (AEL)', 'All training must be FEMA-approved or equivalent', 'Exercises must follow HSEEP', 'EEO/civil rights compliance per 2 CFR Part 200', 'EHP review required', 'Procurement must follow 2 CFR §200.317–200.326'],
+    compliance_requirements: ['Must align with State Preparedness Report (SPR) and THIRA', 'Biannual Strategy Implementation Report (BSIR) required', 'NIMS compliance mandatory', 'Equipment must be on FEMA Authorized Equipment List (AEL)', 'All training must be FEMA-approved or equivalent', 'Exercises must follow HSEEP', 'EEO/civil rights compliance per 2 CFR Part 200', 'EHP review required', 'Procurement must follow 2 CFR §200.317 - 200.326'],
     reporting_requirements: ['Biannual Performance Reports (July 30 and January 30)', 'Financial Status Reports (quarterly)', 'Final Performance Report within 90 days of period end'],
     performance_period: '36 months (with possible extension)',
     match_requirement: 'No cost-share requirement',
@@ -58,7 +58,7 @@ const FEMA_DEFAULTS = {
     purpose: 'Supports the design and construction of state and local EOCs that provide the structures, processes, and tools needed to coordinate response to disasters and emergencies.',
     eligibility_requirements: ['State governments', 'Local governments', 'Tribal governments'],
     allowable_costs: ['Construction/renovation of EOC facilities', 'EOC equipment and technology', 'Interoperable communications systems', 'Planning for EOC operations', 'Training for EOC staff'],
-    compliance_requirements: ['Must meet FEMA EOC design standards', 'EHP review required — submit early', 'Floodplain management compliance (EO 11988)', 'Construction contracts must include Davis-Bacon wage requirements', '2 CFR Part 200 compliance', 'Section 504/ADA accessibility compliance', 'Must maintain facility for minimum 10 years post-completion'],
+    compliance_requirements: ['Must meet FEMA EOC design standards', 'EHP review required - submit early', 'Floodplain management compliance (EO 11988)', 'Construction contracts must include Davis-Bacon wage requirements', '2 CFR Part 200 compliance', 'Section 504/ADA accessibility compliance', 'Must maintain facility for minimum 10 years post-completion'],
     reporting_requirements: ['Quarterly Progress Reports (construction milestones)', 'Financial Reports (quarterly)', 'Final closeout within 90 days'],
     performance_period: '48 months (construction grants)',
     match_requirement: '50% non-federal cost share required',
@@ -70,7 +70,7 @@ const FEMA_DEFAULTS = {
     compliance_requirements: ['State Cybersecurity Plan required and CISA-approved', 'Cybersecurity Planning Committee must be established', 'NIST Cybersecurity Framework alignment required', 'At least 80% of funds must be passed through to local governments', 'Cybersecurity posture assessments required', '2 CFR Part 200 compliance'],
     reporting_requirements: ['Semiannual Performance Reports', 'Quarterly Financial Reports', 'Cybersecurity Plan annual updates'],
     performance_period: '48 months',
-    match_requirement: 'No cost-share (years 1–2); 10% in year 3; 20% in year 4+',
+    match_requirement: 'No cost-share (years 1 - 2); 10% in year 3; 20% in year 4+',
   },
 };
 

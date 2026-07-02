@@ -146,7 +146,7 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <FileText className="h-5 w-5 text-primary" />
-            Bulk CSV Import — Funding Request
+            Bulk CSV Import - Funding Request
           </DialogTitle>
         </DialogHeader>
 
@@ -228,9 +228,9 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
                   ? <AlertTriangle className="h-4 w-4 text-red-600" />
                   : <CheckCircle2 className="h-4 w-4 text-green-600" />}
                 <span className={`text-sm font-medium ${exceedsCap || hasErrors ? 'text-red-700' : 'text-green-700'}`}>
-                  {hasErrors ? 'Validation errors found — fix before submitting'
+                  {hasErrors ? 'Validation errors found - fix before submitting'
                     : exceedsCap ? `Total (${formatCurrency(totalRequested)}) exceeds remaining balance (${formatCurrency(remainingBalance)})`
-                    : `${validatedRows.length} rows validated — ready to submit`}
+                    : `${validatedRows.length} rows validated - ready to submit`}
                 </span>
               </div>
               <div className="text-sm font-bold">Total: {formatCurrency(totalRequested)}</div>
@@ -254,7 +254,7 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
                       <td className="p-2 text-muted-foreground text-xs">{row._index}</td>
                       <td className="p-2">
                         <span className={`px-2 py-0.5 rounded text-xs font-medium ${VALID_CATEGORIES.includes(row.budget_category) ? 'bg-primary/10 text-primary' : 'bg-red-100 text-red-700'}`}>
-                          {row.budget_category || '—'}
+                          {row.budget_category || ' - '}
                         </span>
                       </td>
                       <td className="p-2 text-sm">{row.description || <span className="text-muted-foreground italic">empty</span>}</td>

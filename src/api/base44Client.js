@@ -12,7 +12,7 @@
  *   base44.auth.redirectToLogin(returnUrl?)
  */
 
-// Empty string = relative URLs (/api/auth/me) — correct for production Nginx setup.
+// Empty string = relative URLs (/api/auth/me) - correct for production Nginx setup.
 // Set VITE_API_URL=http://localhost:3045 for local dev.
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
@@ -85,12 +85,12 @@ function createEntityClient(entityName) {
       }).catch(e => { console.warn('[GMT] filter', entityName, e.message); return []; });
     },
 
-    /** create(data) — returns the created record */
+    /** create(data) - returns the created record */
     async create(data) {
       return api('POST', base, data);
     },
 
-    /** update(id, data) — returns the updated record */
+    /** update(id, data) - returns the updated record */
     async update(id, data) {
       return api('PUT', `${base}/${id}`, data);
     },
@@ -110,7 +110,7 @@ for (const name of ENTITY_NAMES) {
 
 // ── Auth proxy ────────────────────────────────────────────────
 // Cache the current user so repeated me() calls within one session don't
-// cause flicker — the first real request populates the cache.
+// cause flicker - the first real request populates the cache.
 let _cachedUser = null;
 function invalidateUserCache() { _cachedUser = null; }
 
@@ -143,7 +143,7 @@ const auth = {
     return result;
   },
 
-  /** Logout — clear token, clear user cache, optionally redirect */
+  /** Logout - clear token, clear user cache, optionally redirect */
   logout(redirectUrl) {
     clearToken();
     invalidateUserCache();

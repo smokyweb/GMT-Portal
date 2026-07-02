@@ -93,7 +93,7 @@ export default function CreditApplicationPanel({ organizationId, fundingRequest,
                 <div className="flex items-center gap-2">
                   <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span className="font-mono font-medium">{a.credit_number}</span>
-                  {a.note && <span className="text-xs text-muted-foreground">— {a.note}</span>}
+                  {a.note && <span className="text-xs text-muted-foreground"> - {a.note}</span>}
                 </div>
                 <span className="font-semibold text-green-700">−{formatCurrency(a.amount_applied)}</span>
               </div>
@@ -117,7 +117,7 @@ export default function CreditApplicationPanel({ organizationId, fundingRequest,
                   <div className="flex items-center gap-2">
                     <BadgeDollarSign className="h-4 w-4 text-primary flex-shrink-0" />
                     <span className="font-mono text-sm font-semibold">{c.credit_number}</span>
-                    <span className="text-xs text-muted-foreground">— {formatCurrency(c.amount_remaining)} remaining</span>
+                    <span className="text-xs text-muted-foreground"> - {formatCurrency(c.amount_remaining)} remaining</span>
                   </div>
                   {c.description && <p className="text-xs text-muted-foreground mt-0.5 ml-6">{c.description}</p>}
                   {c.expiration_date && <p className="text-xs text-amber-600 mt-0.5 ml-6">Expires {formatDateShort(c.expiration_date)}</p>}

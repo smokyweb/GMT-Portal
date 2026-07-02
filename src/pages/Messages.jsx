@@ -167,7 +167,7 @@ export default function Messages() {
                       {unread > 0 && <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" />}
                       <p className={`text-xs font-mono truncate ${unread > 0 ? 'font-bold' : 'font-semibold'}`}>{app.application_number || 'Draft'}</p>
                     </div>
-                    <p className="text-xs text-muted-foreground truncate">{app.organization_name || app.project_title || '—'}</p>
+                    <p className="text-xs text-muted-foreground truncate">{app.organization_name || app.project_title || ' - '}</p>
                     {latest && (
                       <p className="text-[10px] text-muted-foreground mt-1 truncate">{latest.body}</p>
                     )}

@@ -6,7 +6,7 @@ export const DEFAULT_FILTERS = { fy: 'All', program: 'All', nofo: 'All', status:
 
 export function applyDashboardFilters(apps, filters) {
   return apps.filter(a => {
-    // Use standardized federal FY logic (Oct 1 – Sep 30)
+    // Use standardized federal FY logic (Oct 1 - Sep 30)
     if (filters.fy !== 'All' && !appMatchesFY(a, filters.fy)) return false;
     if (filters.program !== 'All' && a.program_code !== filters.program) return false;
     if (filters.nofo !== 'All' && a.nofo_title !== filters.nofo) return false;

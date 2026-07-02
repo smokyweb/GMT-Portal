@@ -120,10 +120,10 @@ export default function Organizations() {
                   </td>
                   <td className="p-3"><span className="px-2 py-0.5 rounded bg-muted text-xs font-medium">{org.type}</span></td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {[org.city, org.state, org.county].filter(Boolean).join(', ') || '—'}
+                    {[org.city, org.state, org.county].filter(Boolean).join(', ') || ' - '}
                   </td>
-                  <td className="p-3 font-mono text-xs">{org.ein || '—'}</td>
-                  <td className="p-3 font-mono text-xs">{org.sam_uei || '—'}</td>
+                  <td className="p-3 font-mono text-xs">{org.ein || ' - '}</td>
+                  <td className="p-3 font-mono text-xs">{org.sam_uei || ' - '}</td>
                   <td className="p-3 text-center"><Switch checked={org.is_active !== false} onCheckedChange={() => toggleActive(org)} /></td>
                   <td className="p-3">
                     <Button variant="ghost" size="sm" onClick={() => setEditOrg({ ...org })}>

@@ -53,14 +53,14 @@ export default function MyOrganization() {
     setError('');
     try {
       if (org) {
-        // Update existing org — only send form fields, not raw org object
+        // Update existing org - only send form fields, not raw org object
         await base44.entities.Organization.update(org.id, { ...form, is_active: true });
         setOrg(prev => ({ ...prev, ...form }));
       } else {
         // Create new org
         const newOrg = await base44.entities.Organization.create({ ...form, is_active: true });
         setOrg(newOrg);
-        // Link org to user — try updateMe, fall back to user entity update
+        // Link org to user - try updateMe, fall back to user entity update
         try {
           await base44.auth.updateMe({ organization_id: newOrg.id });
         } catch {

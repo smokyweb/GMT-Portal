@@ -168,10 +168,10 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
   }, [activeGrants]);
 
   const severityConfig = {
-    critical: { label: 'Critical — Budget Nearly Exhausted', bg: 'bg-red-50 border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700', bar: 'bg-red-500' },
-    high: { label: 'High Spend — Over 85% Used', bg: 'bg-orange-50 border-orange-200', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-700', bar: 'bg-orange-500' },
-    'low-balance': { label: 'Low Balance — Under $10k Remaining', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-400' },
-    'slow-burn': { label: 'Slow Burn — Low Spend Near Deadline', bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', bar: 'bg-blue-400' },
+    critical: { label: 'Critical - Budget Nearly Exhausted', bg: 'bg-red-50 border-red-200', text: 'text-red-700', badge: 'bg-red-100 text-red-700', bar: 'bg-red-500' },
+    high: { label: 'High Spend - Over 85% Used', bg: 'bg-orange-50 border-orange-200', text: 'text-orange-700', badge: 'bg-orange-100 text-orange-700', bar: 'bg-orange-500' },
+    'low-balance': { label: 'Low Balance - Under $10k Remaining', bg: 'bg-amber-50 border-amber-200', text: 'text-amber-700', badge: 'bg-amber-100 text-amber-700', bar: 'bg-amber-400' },
+    'slow-burn': { label: 'Slow Burn - Low Spend Near Deadline', bg: 'bg-blue-50 border-blue-200', text: 'text-blue-700', badge: 'bg-blue-100 text-blue-700', bar: 'bg-blue-400' },
   };
 
   const frStatusColors = {
@@ -267,7 +267,7 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
                   return (
                     <tr key={g.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="p-3">
-                        <p className="font-medium text-xs leading-snug">{g.project_title || '—'}</p>
+                        <p className="font-medium text-xs leading-snug">{g.project_title || ' - '}</p>
                         <p className="text-[11px] font-mono text-muted-foreground">{g.application_number} · {g.program_code}</p>
                       </td>
                       <td className="p-3 text-right text-xs font-semibold text-green-700">{formatCurrency(g.awarded_amount)}</td>

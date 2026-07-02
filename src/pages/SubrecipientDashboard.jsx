@@ -22,7 +22,7 @@ function NofoCard({ nofo, orgType, onApply }) {
         <div className="min-w-0">
           <p className="font-semibold text-sm leading-snug">{nofo.title}</p>
           <div className="flex items-center gap-2 mt-1 flex-wrap">
-            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">{nofo.program_code || '—'}</span>
+            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-bold">{nofo.program_code || ' - '}</span>
             {nofo.grant_number && <span className="text-xs font-mono text-muted-foreground">{nofo.grant_number}</span>}
           </div>
         </div>
@@ -40,11 +40,11 @@ function NofoCard({ nofo, orgType, onApply }) {
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-muted/40 rounded-lg p-2">
           <p className="text-muted-foreground">Max Award</p>
-          <p className="font-semibold">{nofo.max_award ? formatCurrency(nofo.max_award) : '—'}</p>
+          <p className="font-semibold">{nofo.max_award ? formatCurrency(nofo.max_award) : ' - '}</p>
         </div>
         <div className="bg-muted/40 rounded-lg p-2">
           <p className="text-muted-foreground">Closes</p>
-          <p className="font-semibold">{formatDateShort(nofo.close_date) || '—'}</p>
+          <p className="font-semibold">{formatDateShort(nofo.close_date) || ' - '}</p>
         </div>
       </div>
 
@@ -69,7 +69,7 @@ function FundingRequestRow({ fr }) {
   };
   return (
     <tr className="border-b last:border-0 hover:bg-muted/20 transition">
-      <td className="p-3 text-xs font-mono text-muted-foreground">{fr.request_number || '—'}</td>
+      <td className="p-3 text-xs font-mono text-muted-foreground">{fr.request_number || ' - '}</td>
       <td className="p-3 text-sm font-medium">{fr.request_type}</td>
       <td className="p-3 text-sm">{formatCurrency(fr.amount_requested)}</td>
       <td className="p-3">

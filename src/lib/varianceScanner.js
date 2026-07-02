@@ -46,7 +46,7 @@ export async function runVarianceScanner(triggeredByUser) {
       for (const admin of stateAdmins) {
         await base44.entities.Notification.create({
           user_email: admin.email,
-          title: `⚠️ Budget Variance Alert — ${app.organization_name}`,
+          title: `⚠️ Budget Variance Alert - ${app.organization_name}`,
           message: `Application ${app.application_number} shows a ${variancePct}% expenditure variance exceeding the 15% threshold. Immediate review recommended.`,
           type: 'variance_alert',
           entity_type: 'ComplianceFlag',

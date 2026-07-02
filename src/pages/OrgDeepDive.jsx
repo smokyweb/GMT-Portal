@@ -161,7 +161,7 @@ export default function OrgDeepDive() {
                   ].map(item => (
                     <div key={item.label}>
                       <p className="text-xs text-muted-foreground">{item.label}</p>
-                      <p className="font-mono text-sm">{item.value || '—'}</p>
+                      <p className="font-mono text-sm">{item.value || ' - '}</p>
                     </div>
                   ))}
                 </div>
@@ -222,7 +222,7 @@ export default function OrgDeepDive() {
                               <tr key={i} className="border-b last:border-0 hover:bg-muted/20">
                                 <td className="p-3 text-xs font-mono">{item.application_number || item.request_number || item.name || item.flag_type || item.subject || item.title}</td>
                                 <td className="p-3 text-xs">{item.status}</td>
-                                <td className="p-3 text-xs text-muted-foreground">{item.created_date || item.updated_date ? new Date(item.created_date || item.updated_date).toLocaleDateString() : '—'}</td>
+                                <td className="p-3 text-xs text-muted-foreground">{item.created_date || item.updated_date ? new Date(item.created_date || item.updated_date).toLocaleDateString() : ' - '}</td>
                               </tr>
                             ))}
                           </tbody>

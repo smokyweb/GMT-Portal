@@ -225,12 +225,12 @@ export default function Credits() {
                   <td className="p-3 font-medium">{c.organization_name}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(c.amount)}</td>
                   <td className="p-3 text-right font-semibold text-green-700">{formatCurrency(c.amount_remaining)}</td>
-                  <td className="p-3 text-xs font-mono">{c.application_number || '—'}</td>
-                  <td className="p-3 text-xs">{c.program_code || '—'}</td>
-                  <td className="p-3 text-muted-foreground max-w-[200px] truncate">{c.description || '—'}</td>
+                  <td className="p-3 text-xs font-mono">{c.application_number || ' - '}</td>
+                  <td className="p-3 text-xs">{c.program_code || ' - '}</td>
+                  <td className="p-3 text-muted-foreground max-w-[200px] truncate">{c.description || ' - '}</td>
                   <td className="p-3 text-xs text-muted-foreground">{c.issued_by}</td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(c.created_date)}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{c.expiration_date ? formatDateShort(c.expiration_date) : '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{c.expiration_date ? formatDateShort(c.expiration_date) : ' - '}</td>
                   <td className="p-3"><CreditBadge status={c.status} /></td>
                   <td className="p-3">
                     {(c.status === 'Active' || c.status === 'PartiallyUsed') && (
@@ -303,7 +303,7 @@ export default function Credits() {
                         setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`);
                       }}
                     >
-                      <span className="font-medium">{a.application_number || 'Draft'}</span> — {a.project_title || 'Untitled'}
+                      <span className="font-medium">{a.application_number || 'Draft'}</span> - {a.project_title || 'Untitled'}
                       {a.program_code && <span className="text-xs text-muted-foreground ml-1">({a.program_code})</span>}
                     </div>
                   ))}

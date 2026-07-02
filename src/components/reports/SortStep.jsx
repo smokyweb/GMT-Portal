@@ -24,7 +24,7 @@ export default function SortStep({ selectedFields, sortRules, onChange }) {
     <div className="space-y-3">
       {sortRules.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-3 border border-dashed rounded-lg">
-          No sort rules — results will appear in default order.
+          No sort rules - results will appear in default order.
         </p>
       )}
 

@@ -220,15 +220,15 @@ export default function NofoManagement() {
                       <span className="font-medium">{nofo.title}</span>
                     </div>
                   </td>
-                  <td className="p-3 text-xs font-mono text-muted-foreground">{nofo.grant_number || '—'}</td>
+                  <td className="p-3 text-xs font-mono text-muted-foreground">{nofo.grant_number || ' - '}</td>
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">
-                      {nofo.program_code || '—'}
+                      {nofo.program_code || ' - '}
                     </span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(nofo.total_funding_available)}</td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {formatDateShort(nofo.open_date)} – {formatDateShort(nofo.close_date)}
+                    {formatDateShort(nofo.open_date)} - {formatDateShort(nofo.close_date)}
                   </td>
                   <td className="p-3">
                     {(!nofo.scope_states || nofo.scope_states.length === 0) ? (

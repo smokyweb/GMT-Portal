@@ -163,7 +163,7 @@ export default function OrgAlertsPanel({ user, apps }) {
                     <p className="text-sm text-muted-foreground">{flag.description}</p>
                     <p className="text-xs text-muted-foreground mt-1">
                       Resolved by {flag.resolved_by} · {formatDateShort(flag.resolved_at)}
-                      {flag.resolution_notes && ` — "${flag.resolution_notes}"`}
+                      {flag.resolution_notes && ` - "${flag.resolution_notes}"`}
                     </p>
                   </div>
                 </div>

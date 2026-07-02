@@ -164,7 +164,7 @@ export default function PortfolioSummary() {
                   <td className="p-3 text-right font-mono">${(state.totalAwarded / 1000000).toFixed(1)}M</td>
                   <td className="p-3 text-center">{state.pendingApps}</td>
                   <td className="p-3 text-center">{state.openFlags}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{state.lastActivity ? new Date(state.lastActivity).toLocaleDateString() : '—'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{state.lastActivity ? new Date(state.lastActivity).toLocaleDateString() : ' - '}</td>
                 </tr>
               ))}
             </tbody>

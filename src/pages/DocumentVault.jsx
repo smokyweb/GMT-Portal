@@ -359,7 +359,7 @@ export default function DocumentVault() {
                       </div>
                     </td>
                     {isState && (
-                      <td className="p-3 text-xs text-muted-foreground">{doc.uploaded_by || '—'}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{doc.uploaded_by || ' - '}</td>
                     )}
                     <td className="p-3 text-xs text-muted-foreground">
                       {moment(doc.uploaded_at || doc.created_date).fromNow()}
@@ -522,7 +522,7 @@ export default function DocumentVault() {
                         }}
                       >
                         <span className="font-medium">{a.application_number || 'Draft'}</span>
-                        {' — '}{a.project_title || 'Untitled'}
+                        {' - '}{a.project_title || 'Untitled'}
                         {a.organization_name && <span className="text-xs text-muted-foreground ml-1">({a.organization_name})</span>}
                         {uploadForm.application_id === a.id && (
                           <a
@@ -538,7 +538,7 @@ export default function DocumentVault() {
                   }
                 </div>
               )}
-              {uploadForm.application_id && !appSearch.includes('—') && (
+              {uploadForm.application_id && !appSearch.includes(' - ') && (
                 <p className="text-xs text-muted-foreground mt-1">
                   Selected: {apps.find(a => a.id === uploadForm.application_id)?.application_number} - {' '}
                   {apps.find(a => a.id === uploadForm.application_id)?.project_title}
@@ -582,7 +582,7 @@ export default function DocumentVault() {
               <div className="bg-muted/40 rounded-lg p-3 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-muted-foreground">Name</span><span className="font-medium">{reviewing.name}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Type</span><span>{reviewing.doc_type?.replace(/([A-Z])/g, ' $1').trim()}</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Application</span><span>{reviewing.application_number || '—'}</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Application</span><span>{reviewing.application_number || ' - '}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Uploaded by</span><span>{reviewing.uploaded_by}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Version</span><VersionBadge version={reviewing.version} /></div>
                 {reviewing.description && <div><span className="text-muted-foreground">Description: </span>{reviewing.description}</div>}
@@ -620,7 +620,7 @@ export default function DocumentVault() {
       <Dialog open={!!versionDoc} onOpenChange={() => setVersionDoc(null)}>
         <DialogContent className="!left-auto !right-4 !translate-x-0 w-[calc(100vw-5rem)] max-w-lg max-h-[90vh] flex flex-col overflow-hidden sm:!left-[50%] sm:!right-auto sm:!translate-x-[-50%]">
           <DialogHeader>
-            <DialogTitle>Version History — {versionDoc?.name}</DialogTitle>
+            <DialogTitle>Version History - {versionDoc?.name}</DialogTitle>
           </DialogHeader>
           <div className="flex-1 overflow-y-auto space-y-2">
             {versionHistory.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No version history found.</p>}

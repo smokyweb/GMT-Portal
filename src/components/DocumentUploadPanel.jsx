@@ -19,13 +19,13 @@ const DOC_TYPES = [
 /**
  * DocumentUploadPanel
  * Props:
- *   applicationId       — required, links documents to the grant record
- *   applicationNumber   — for display / Document entity field
- *   organizationName    — for Document entity field
- *   organizationId      — for Document entity field
- *   user                — current user object
- *   fundingRequestId    — optional, for labeling docs attached to a specific FR
- *   fundingRequestNumber — optional label
+ *   applicationId - required, links documents to the grant record
+ *   applicationNumber - for display / Document entity field
+ *   organizationName - for Document entity field
+ *   organizationId - for Document entity field
+ *   user - current user object
+ *   fundingRequestId - optional, for labeling docs attached to a specific FR
+ *   fundingRequestNumber - optional label
  */
 export default function DocumentUploadPanel({
   applicationId,

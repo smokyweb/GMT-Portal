@@ -338,14 +338,14 @@ export default function FundingRequestReview() {
             <tbody>
               {filteredRequests.map(req => (
                 <tr key={req.id} className="border-b last:border-0 hover:bg-muted/30 transition">
-                  <td className="p-3 font-mono text-xs">{req.request_number || '—'}</td>
-                  <td className="p-3 font-medium">{req.organization_name || '—'}</td>
+                  <td className="p-3 font-mono text-xs">{req.request_number || ' - '}</td>
+                  <td className="p-3 font-medium">{req.organization_name || ' - '}</td>
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{req.request_type}</span>
                   </td>
-                  <td className="p-3 font-mono text-xs">{req.application_number || '—'}</td>
+                  <td className="p-3 font-mono text-xs">{req.application_number || ' - '}</td>
                   <td className="p-3 text-xs text-muted-foreground">
-                    {formatDateShort(req.period_start)} – {formatDateShort(req.period_end)}
+                    {formatDateShort(req.period_start)} - {formatDateShort(req.period_end)}
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><ExpenditureBar rate={req.expenditure_rate || 0} /></td>
@@ -383,11 +383,11 @@ export default function FundingRequestReview() {
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{viewReq.organization_name}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Type</Label><p className="font-medium">{viewReq.request_type}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Application #</Label><p className="font-mono font-medium">{viewReq.application_number || '—'}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewReq.program_code || '—'}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Application #</Label><p className="font-mono font-medium">{viewReq.application_number || ' - '}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewReq.program_code || ' - '}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Amount Requested</Label><p className="font-bold text-lg">{formatCurrency(viewReq.amount_requested)}</p></div>
                 {viewReq.amount_approved != null && <div><Label className="text-muted-foreground text-xs">Amount Approved</Label><p className="font-bold text-lg text-green-700">{formatCurrency(viewReq.amount_approved)}</p></div>}
-                <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(viewReq.period_start)} – {formatDateShort(viewReq.period_end)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(viewReq.period_start)} - {formatDateShort(viewReq.period_end)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Match Documented</Label><p className="font-medium">{formatCurrency(viewReq.match_documented)}</p></div>
               </div>
               {viewReq.modification_type && (
@@ -521,7 +521,7 @@ export default function FundingRequestReview() {
                 <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{selected.organization_name}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Type</Label><p className="font-medium">{selected.request_type}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Amount Requested</Label><p className="font-bold text-lg">{formatCurrency(selected.amount_requested)}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(selected.period_start)} – {formatDateShort(selected.period_end)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(selected.period_start)} - {formatDateShort(selected.period_end)}</p></div>
                 {selected.payment_status && (
                   <div>
                     <Label className="text-muted-foreground text-xs">Payment Status</Label>
@@ -837,7 +837,7 @@ export default function FundingRequestReview() {
                   organizationName={selected.organization_name}
                   programCode={selected.program_code}
                   user={user}
-                  contextLabel={`Messages — ${selected.request_number}`}
+                  contextLabel={`Messages - ${selected.request_number}`}
                 />
               </TabsContent>
             </Tabs>

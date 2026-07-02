@@ -130,9 +130,9 @@ export default function OrganizationProfile() {
               <tbody>
                 {applications.map(app => (
                   <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs">{app.application_number || '—'}</td>
-                    <td className="p-3 font-medium">{app.project_title || '—'}</td>
-                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || '—'}</span></td>
+                    <td className="p-3 font-mono text-xs">{app.application_number || ' - '}</td>
+                    <td className="p-3 font-medium">{app.project_title || ' - '}</td>
+                    <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || ' - '}</span></td>
                     <td className="p-3 text-right">{formatCurrency(app.awarded_amount)}</td>
                     <td className="p-3 text-right">{formatCurrency(app.total_expended)}</td>
                     <td className="p-3"><StatusBadge status={app.status} /></td>
@@ -160,9 +160,9 @@ export default function OrganizationProfile() {
               <tbody>
                 {reports.map(r => (
                   <tr key={r.id} className="border-b last:border-0 hover:bg-muted/30">
-                    <td className="p-3 font-mono text-xs">{r.application_number || '—'}</td>
+                    <td className="p-3 font-mono text-xs">{r.application_number || ' - '}</td>
                     <td className="p-3">{r.report_type}</td>
-                    <td className="p-3 text-xs text-muted-foreground">{formatDateShort(r.period_start)} – {formatDateShort(r.period_end)}</td>
+                    <td className="p-3 text-xs text-muted-foreground">{formatDateShort(r.period_start)} - {formatDateShort(r.period_end)}</td>
                     <td className="p-3 text-xs font-medium">{formatDateShort(r.due_date)}</td>
                     <td className="p-3"><StatusBadge status={r.status} /></td>
                   </tr>
@@ -238,7 +238,7 @@ export default function OrganizationProfile() {
                   <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30">
                     <td className="p-3 font-medium">{m.title}</td>
                     <td className="p-3 text-xs text-muted-foreground">{m.milestone_type?.replace(/([A-Z])/g, ' $1').trim()}</td>
-                    <td className="p-3 font-mono text-xs">{m.application_number || '—'}</td>
+                    <td className="p-3 font-mono text-xs">{m.application_number || ' - '}</td>
                     <td className="p-3 text-xs">{formatDateShort(m.due_date)}</td>
                     <td className="p-3">
                       <span className={`px-2 py-0.5 rounded text-xs font-medium ${MILESTONE_STATUS_COLORS[m.status] || 'bg-muted text-muted-foreground'}`}>
@@ -256,10 +256,10 @@ export default function OrganizationProfile() {
 
       {/* Org Details Footer */}
       <div className="bg-card border rounded-xl p-5 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-        <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono font-medium mt-0.5">{org.ein || '—'}</p></div>
-        <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono font-medium mt-0.5">{org.sam_uei || '—'}</p></div>
-        <div><p className="text-xs text-muted-foreground">Address</p><p className="font-medium mt-0.5">{org.address ? `${org.address}, ${org.city}` : '—'}</p></div>
-        <div><p className="text-xs text-muted-foreground">Zip</p><p className="font-medium mt-0.5">{org.zip || '—'}</p></div>
+        <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono font-medium mt-0.5">{org.ein || ' - '}</p></div>
+        <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono font-medium mt-0.5">{org.sam_uei || ' - '}</p></div>
+        <div><p className="text-xs text-muted-foreground">Address</p><p className="font-medium mt-0.5">{org.address ? `${org.address}, ${org.city}` : ' - '}</p></div>
+        <div><p className="text-xs text-muted-foreground">Zip</p><p className="font-medium mt-0.5">{org.zip || ' - '}</p></div>
       </div>
     </div>
   );

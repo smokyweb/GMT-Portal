@@ -62,8 +62,8 @@ export async function runReportDueDateService() {
       if (recipientEmail) {
         await base44.integrations.Core.SendEmail({
           to: recipientEmail,
-          subject: `OVERDUE: ${schedule.report_type} Report — ${appNumber}`,
-          body: `Dear ${orgName},\n\nYour ${schedule.report_type} progress report for grant application ${appNumber} was due on ${dueDate.format('MMMM DD, YYYY')} and has not been submitted.\n\nThis report is now marked OVERDUE. Please log in to the GMT Portal and submit your report immediately to avoid further compliance issues.\n\nIf you have already submitted this report, please contact your state grant manager.\n\nThank you,\nGMT Portal – Automated Compliance System`,
+          subject: `OVERDUE: ${schedule.report_type} Report - ${appNumber}`,
+          body: `Dear ${orgName},\n\nYour ${schedule.report_type} progress report for grant application ${appNumber} was due on ${dueDate.format('MMMM DD, YYYY')} and has not been submitted.\n\nThis report is now marked OVERDUE. Please log in to the GMT Portal and submit your report immediately to avoid further compliance issues.\n\nIf you have already submitted this report, please contact your state grant manager.\n\nThank you,\nGMT Portal - Automated Compliance System`,
         });
       }
 
@@ -76,8 +76,8 @@ export async function runReportDueDateService() {
 
       await base44.integrations.Core.SendEmail({
         to: recipientEmail,
-        subject: `Reminder: ${schedule.report_type} Report Due in ${daysUntilDue} Day${daysUntilDue !== 1 ? 's' : ''} — ${appNumber}`,
-        body: `Dear ${orgName},\n\nThis is a friendly reminder that your ${schedule.report_type} progress report for grant application ${appNumber} is due on ${dueDate.format('MMMM DD, YYYY')} — that is ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} from today.\n\nPlease log in to the GMT Portal to submit your report before the deadline.\n\nPerformance Period: ${schedule.period_start} to ${schedule.period_end}\n\nThank you,\nGMT Portal – Automated Reporting System`,
+        subject: `Reminder: ${schedule.report_type} Report Due in ${daysUntilDue} Day${daysUntilDue !== 1 ? 's' : ''} - ${appNumber}`,
+        body: `Dear ${orgName},\n\nThis is a friendly reminder that your ${schedule.report_type} progress report for grant application ${appNumber} is due on ${dueDate.format('MMMM DD, YYYY')} - that is ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} from today.\n\nPlease log in to the GMT Portal to submit your report before the deadline.\n\nPerformance Period: ${schedule.period_start} to ${schedule.period_end}\n\nThank you,\nGMT Portal - Automated Reporting System`,
       });
 
       await logAudit(base44, systemUser, 'NoteAdded', 'ReportSchedule', schedule.id,

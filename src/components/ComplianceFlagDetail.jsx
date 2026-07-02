@@ -49,7 +49,7 @@ export default function ComplianceFlagDetail({ flag, appMap, onClose, onResolve 
           </DetailRow>
 
           <DetailRow icon={FileText} label="Description">
-            <span className="leading-relaxed">{flag.description || '—'}</span>
+            <span className="leading-relaxed">{flag.description || ' - '}</span>
           </DetailRow>
 
           <DetailRow icon={Building2} label="Organization">
@@ -57,7 +57,7 @@ export default function ComplianceFlagDetail({ flag, appMap, onClose, onResolve 
               <Link to="/organizations" onClick={onClose} className="text-primary hover:underline inline-flex items-center gap-1">
                 {flag.organization_name} <ExternalLink className="h-3 w-3" />
               </Link>
-            ) : '—'}
+            ) : ' - '}
           </DetailRow>
 
           <DetailRow icon={FileText} label="Application #">
@@ -69,20 +69,20 @@ export default function ComplianceFlagDetail({ flag, appMap, onClose, onResolve 
               >
                 {flag.application_number} <ExternalLink className="h-3 w-3" />
               </Link>
-            ) : '—'}
+            ) : ' - '}
           </DetailRow>
 
           <DetailRow icon={Calendar} label="Created">
-            {formatDateShort(flag.created_date) || '—'}
+            {formatDateShort(flag.created_date) || ' - '}
           </DetailRow>
 
           {flag.is_resolved && (
             <>
               <DetailRow icon={User} label="Resolved By">
-                {flag.resolved_by || '—'}
+                {flag.resolved_by || ' - '}
               </DetailRow>
               <DetailRow icon={Calendar} label="Resolved On">
-                {formatDateShort(flag.resolved_at) || '—'}
+                {formatDateShort(flag.resolved_at) || ' - '}
               </DetailRow>
               {flag.resolution_notes && (
                 <DetailRow icon={FileText} label="Resolution Notes">

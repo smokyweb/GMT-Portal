@@ -79,10 +79,10 @@ export default function RiskScoreTable() {
                       <span className="text-xs font-bold w-8 text-right">{row.score}</span>
                     </div>
                   </td>
-                  <td className="p-3 text-center">{row.breakdown.flags || '—'}</td>
-                  <td className="p-3 text-center">{row.breakdown.overdueReports || '—'}</td>
-                  <td className="p-3 text-center">{row.breakdown.varianceIssues || '—'}</td>
-                  <td className="p-3 text-center">{row.breakdown.auditAnomalies || '—'}</td>
+                  <td className="p-3 text-center">{row.breakdown.flags || ' - '}</td>
+                  <td className="p-3 text-center">{row.breakdown.overdueReports || ' - '}</td>
+                  <td className="p-3 text-center">{row.breakdown.varianceIssues || ' - '}</td>
+                  <td className="p-3 text-center">{row.breakdown.auditAnomalies || ' - '}</td>
                 </tr>
               ))}
             </tbody>

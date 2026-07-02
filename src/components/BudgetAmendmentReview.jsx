@@ -58,7 +58,7 @@ function BeforeAfterTable({ original, proposed }) {
             <span className="text-right text-muted-foreground">{formatCurrency(orig)}</span>
             <span className="text-right font-medium">{formatCurrency(prop)}</span>
             <span className={`text-right font-semibold ${diff > 0 ? 'text-amber-700' : diff < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
-              {diff === 0 ? '—' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
+              {diff === 0 ? ' - ' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
             </span>
           </div>
         );
@@ -90,7 +90,7 @@ function LineItemComparison({ original, proposed, title, colorClass }) {
             {(proposed || original || []).map((l, i) => (
               <tr key={i} className="border-b last:border-0">
                 <td className="p-2"><span className="px-1.5 py-0.5 bg-muted rounded">{l.budget_category}</span></td>
-                <td className="p-2 text-muted-foreground">{l.line_description || '—'}</td>
+                <td className="p-2 text-muted-foreground">{l.line_description || ' - '}</td>
                 <td className="p-2 text-right font-medium">{formatCurrency(l.amount_requested)}</td>
                 <td className="p-2 text-right">{formatCurrency(l.amount_match)}</td>
               </tr>
@@ -212,7 +212,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between pr-8">
-            <span>Budget Amendment — {amendment.amendment_number}</span>
+            <span>Budget Amendment - {amendment.amendment_number}</span>
             <AmendmentStatusBadge status={amendment.status} />
           </DialogTitle>
           <p className="text-sm text-muted-foreground">
@@ -276,7 +276,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
           <div className="space-y-3">
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-1">Justification</p>
-              <div className="bg-muted/40 rounded-lg p-3 text-sm whitespace-pre-wrap">{amendment.justification || '—'}</div>
+              <div className="bg-muted/40 rounded-lg p-3 text-sm whitespace-pre-wrap">{amendment.justification || ' - '}</div>
             </div>
             {amendment.impact_on_scope && (
               <div>
@@ -296,10 +296,10 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
           {amendment.reviewer_notes && (
             <div className={`border rounded-lg p-3 ${isRevisionRequested ? 'bg-orange-50 border-orange-200' : 'bg-amber-50 border-amber-200'}`}>
               <p className={`text-xs font-semibold mb-1 ${isRevisionRequested ? 'text-orange-700' : 'text-amber-700'}`}>
-                {isRevisionRequested ? 'Revision Requested — Reviewer Notes' : 'Reviewer Notes'}
+                {isRevisionRequested ? 'Revision Requested - Reviewer Notes' : 'Reviewer Notes'}
               </p>
               <p className={`text-sm ${isRevisionRequested ? 'text-orange-800' : 'text-amber-800'}`}>{amendment.reviewer_notes}</p>
-              <p className={`text-xs mt-1 ${isRevisionRequested ? 'text-orange-600' : 'text-amber-600'}`}>— {amendment.reviewed_by} · {formatDateShort(amendment.reviewed_at)}</p>
+              <p className={`text-xs mt-1 ${isRevisionRequested ? 'text-orange-600' : 'text-amber-600'}`}> - {amendment.reviewed_by} · {formatDateShort(amendment.reviewed_at)}</p>
             </div>
           )}
 

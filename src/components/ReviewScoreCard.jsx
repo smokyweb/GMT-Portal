@@ -68,7 +68,7 @@ export default function ReviewScoreCard({ programCode, scores, notes, onChange }
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-semibold text-sm">Scoring Rubric</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">Score each criterion 0–100. Weighted total score is calculated automatically.</p>
+          <p className="text-xs text-muted-foreground mt-0.5">Score each criterion 0 - 100. Weighted total score is calculated automatically.</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-muted-foreground">Weighted Total</p>
@@ -122,7 +122,7 @@ export default function ReviewScoreCard({ programCode, scores, notes, onChange }
         <Star className={`h-5 w-5 flex-shrink-0 ${scoreColor(weightedTotal)}`} />
         <div>
           <p className={`font-semibold text-sm ${scoreColor(weightedTotal)}`}>
-            {weightedTotal >= 70 ? 'Recommended for Approval' : weightedTotal >= 50 ? 'Marginal — Review Required' : 'Not Recommended'}
+            {weightedTotal >= 70 ? 'Recommended for Approval' : weightedTotal >= 50 ? 'Marginal - Review Required' : 'Not Recommended'}
           </p>
           <p className="text-xs text-muted-foreground">Weighted score: {weightedTotal.toFixed(1)} / 100</p>
         </div>

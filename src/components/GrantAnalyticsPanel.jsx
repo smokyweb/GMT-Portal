@@ -48,10 +48,10 @@ function EmptyChart({ height = 160 }) {
  * GrantAnalyticsPanel
  *
  * Props:
- *   organizationId  — if provided, scope to a single org (subrecipient view)
+ *   organizationId - if provided, scope to a single org (subrecipient view)
  *                     if null/undefined, show portfolio-wide view (state admin)
  */
-// Use shared standardized federal FY logic (Oct 1 – Sep 30)
+// Use shared standardized federal FY logic (Oct 1 - Sep 30)
 const fyMatch = appMatchesFY;
 const deriveFyOptions = deriveFYOptions;
 
@@ -187,7 +187,7 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
     if (organizationId) {
       // Per-grant view for subrecipient
       return approvedApps.slice(0, 8).map(a => ({
-        name: a.application_number || a.project_title?.slice(0, 12) || '—',
+        name: a.application_number || a.project_title?.slice(0, 12) || ' - ',
         Awarded:  a.awarded_amount || 0,
         Expended: a.total_expended || 0,
       }));
@@ -283,7 +283,7 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
         {/* Spent vs Awarded */}
         <div className="bg-card rounded-xl border p-5">
           <h3 className="text-sm font-semibold mb-1">
-            {organizationId ? 'Awarded vs. Expended — Per Grant' : 'Awarded vs. Expended — By Program'}
+            {organizationId ? 'Awarded vs. Expended - Per Grant' : 'Awarded vs. Expended - By Program'}
           </h3>
           <p className="text-xs text-muted-foreground mb-4">Compares total awarded funding against dollars spent</p>
           {spentVsAwardedData.length === 0 ? <EmptyChart /> : (

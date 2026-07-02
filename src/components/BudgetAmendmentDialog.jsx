@@ -142,7 +142,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
           // Fire-and-forget email
           base44.integrations.Core.SendEmail({
             to: r.email,
-            subject: `Budget Amendment Submitted — ${application.application_number}`,
+            subject: `Budget Amendment Submitted - ${application.application_number}`,
             body: `${application.organization_name} has submitted a budget amendment (${amendmentNumber}) for grant ${application.application_number}.\n\nNet Change: ${netChange >= 0 ? '+' : ''}${formatCurrency(netChange)}\nJustification: ${form.justification}\n\nLog in to the GMT Portal to review and take action.`,
           }).catch(() => {});
         }
@@ -225,7 +225,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
 
                 {/* Performance Period Change (optional) */}
                 <div className="border-t pt-3">
-                  <p className="text-sm font-medium mb-2">Performance Period Change <span className="text-xs text-muted-foreground">(optional — only if dates are changing)</span></p>
+                  <p className="text-sm font-medium mb-2">Performance Period Change <span className="text-xs text-muted-foreground">(optional - only if dates are changing)</span></p>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">New Start Date</Label>
@@ -262,7 +262,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                           : originalBudget.map((l, i) => (
                             <tr key={i} className="border-b last:border-0">
                               <td className="p-2"><span className="px-1.5 py-0.5 bg-muted rounded text-xs">{l.budget_category}</span></td>
-                              <td className="p-2 text-muted-foreground">{l.line_description || '—'}</td>
+                              <td className="p-2 text-muted-foreground">{l.line_description || ' - '}</td>
                               <td className="p-2 text-right font-medium">{formatCurrency(l.amount_requested)}</td>
                               <td className="p-2 text-right">{formatCurrency(l.amount_match)}</td>
                             </tr>
@@ -332,7 +332,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                                 <span className="text-right text-muted-foreground">{formatCurrency(orig)}</span>
                                 <span className="text-right text-muted-foreground">{formatCurrency(prop)}</span>
                                 <span className={`text-right font-semibold ${diff > 0 ? 'text-amber-700' : diff < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
-                                  {diff === 0 ? '—' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
+                                  {diff === 0 ? ' - ' : `${diff > 0 ? '+' : ''}${formatCurrency(diff)}`}
                                 </span>
                               </div>
                             );

@@ -203,15 +203,15 @@ export default function ISCDashboard() {
                   </div>
                   <div>
                     <p className="text-muted-foreground">Max Users</p>
-                    <p className="font-medium">{g.max_users || '—'}</p>
+                    <p className="font-medium">{g.max_users || ' - '}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Contact</p>
-                    <p className="font-medium truncate">{g.contact_name || '—'}</p>
+                    <p className="font-medium truncate">{g.contact_name || ' - '}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Email</p>
-                    <p className="truncate">{g.contact_email || '—'}</p>
+                    <p className="truncate">{g.contact_email || ' - '}</p>
                   </div>
                 </div>
 

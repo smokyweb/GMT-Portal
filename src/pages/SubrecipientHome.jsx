@@ -35,7 +35,7 @@ function NofoCard({ nofo, orgType, onApply }) {
         <div className="min-w-0">
           <p className="font-semibold text-sm leading-snug">{nofo.title}</p>
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
-            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-bold tracking-wide">{nofo.program_code || '—'}</span>
+            <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-bold tracking-wide">{nofo.program_code || ' - '}</span>
             {nofo.grant_number && <span className="text-xs font-mono text-muted-foreground">{nofo.grant_number}</span>}
           </div>
         </div>
@@ -49,11 +49,11 @@ function NofoCard({ nofo, orgType, onApply }) {
       <div className="grid grid-cols-2 gap-2 text-xs">
         <div className="bg-muted/50 rounded-xl p-2.5">
           <p className="text-muted-foreground text-[11px] uppercase tracking-wide font-medium">Max Award</p>
-          <p className="font-bold text-sm mt-0.5">{nofo.max_award ? formatCurrency(nofo.max_award) : '—'}</p>
+          <p className="font-bold text-sm mt-0.5">{nofo.max_award ? formatCurrency(nofo.max_award) : ' - '}</p>
         </div>
         <div className="bg-muted/50 rounded-xl p-2.5">
           <p className="text-muted-foreground text-[11px] uppercase tracking-wide font-medium">Closes</p>
-          <p className="font-bold text-sm mt-0.5">{formatDateShort(nofo.close_date) || '—'}</p>
+          <p className="font-bold text-sm mt-0.5">{formatDateShort(nofo.close_date) || ' - '}</p>
         </div>
       </div>
       {nofo.federal_agency && (
@@ -116,13 +116,13 @@ function AllocationCard({ grant, onViewDetails }) {
           <span className={`font-semibold ${highSpend ? 'text-amber-600' : 'text-foreground'}`}>{Math.round(expRate)}%</span>
         </div>
         <ExpenditureBar rate={expRate} />
-        {highSpend && <p className="text-[11px] text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> High spend rate — review budget</p>}
+        {highSpend && <p className="text-[11px] text-amber-600 flex items-center gap-1"><AlertTriangle className="h-3 w-3" /> High spend rate - review budget</p>}
       </div>
 
       <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          {formatDateShort(grant.performance_start)} – {formatDateShort(grant.performance_end)}
+          {formatDateShort(grant.performance_start)} - {formatDateShort(grant.performance_end)}
         </span>
         {daysLeft !== null && (
           <span className={`flex items-center gap-1 font-semibold ${nearExpiry ? 'text-amber-600' : 'text-muted-foreground'}`}>
@@ -207,7 +207,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900 grid grid-cols-2 gap-2">
             <div><span className="font-medium">Grant:</span> {schedule?.application_number}</div>
             <div><span className="font-medium">Program:</span> {schedule?.program_code}</div>
-            <div><span className="font-medium">Period:</span> {formatDateShort(schedule?.period_start)} – {formatDateShort(schedule?.period_end)}</div>
+            <div><span className="font-medium">Period:</span> {formatDateShort(schedule?.period_start)} - {formatDateShort(schedule?.period_end)}</div>
             <div><span className="font-medium">Due:</span> {formatDateShort(schedule?.due_date)}</div>
           </div>
           <div>
@@ -313,7 +313,7 @@ function AllocationDetailDialog({ grant, onClose }) {
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted/40 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className={`font-bold text-sm ${color}`}>{value || '—'}</p>
+                  <p className={`font-bold text-sm ${color}`}>{value || ' - '}</p>
                 </div>
               ))}
             </div>
@@ -497,7 +497,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
                   <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/20">
                     <td className="p-3 font-medium max-w-[180px] truncate">{doc.name}</td>
                     <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700">{doc.doc_type}</span></td>
-                    <td className="p-3 text-xs font-mono text-muted-foreground">{doc.application_number || '—'}</td>
+                    <td className="p-3 text-xs font-mono text-muted-foreground">{doc.application_number || ' - '}</td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         doc.review_status === 'Approved' ? 'bg-green-50 text-green-700' :
@@ -978,7 +978,7 @@ export default function SubrecipientHome() {
                     {apps.filter(a => a.status !== 'Approved').map(app => (
                       <tr key={app.id} className="border-b last:border-0 hover:bg-muted/20">
                         <td className="p-3 font-mono text-xs">{app.application_number || 'Draft'}</td>
-                        <td className="p-3 font-medium">{app.project_title || '—'}</td>
+                        <td className="p-3 font-medium">{app.project_title || ' - '}</td>
                         <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code}</span></td>
                         <td className="p-3 text-right">{formatCurrency(app.requested_amount)}</td>
                         <td className="p-3"><StatusBadge status={app.status} /></td>
@@ -1018,7 +1018,7 @@ export default function SubrecipientHome() {
                       const payStatusColor = fr.payment_status === 'Paid' ? 'bg-green-50 text-green-700' : fr.payment_status === 'PaymentFailed' ? 'bg-red-50 text-red-700' : 'bg-blue-50 text-blue-700';
                       return (
                         <tr key={fr.id} className="border-b last:border-0 hover:bg-muted/20">
-                          <td className="p-3 font-mono text-xs">{fr.request_number || '—'}</td>
+                          <td className="p-3 font-mono text-xs">{fr.request_number || ' - '}</td>
                           <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{fr.request_type}</span></td>
                           <td className="p-3 text-right font-semibold">{formatCurrency(fr.amount_requested)}</td>
                           <td className="p-3"><StatusBadge status={fr.status} /></td>
@@ -1054,7 +1054,7 @@ export default function SubrecipientHome() {
                 {overdueReports.map(s => (
                   <div key={s.id} className="flex items-center justify-between p-4">
                     <div>
-                      <p className="text-sm font-medium text-red-800">{s.report_type} Report — {s.application_number}</p>
+                      <p className="text-sm font-medium text-red-800">{s.report_type} Report - {s.application_number}</p>
                       <p className="text-xs text-red-600">Was due {formatDateShort(s.due_date)}</p>
                     </div>
                     <Button size="sm" variant="destructive" onClick={() => setSelectedSchedule(s)}>Submit Now</Button>
@@ -1082,7 +1082,7 @@ export default function SubrecipientHome() {
                     <tr key={s.id} className={`border-b last:border-0 ${s.status === 'Overdue' ? 'bg-red-50/50' : 'hover:bg-muted/20'}`}>
                       <td className="p-3 font-mono text-xs">{s.application_number}</td>
                       <td className="p-3 font-medium">{s.report_type}</td>
-                      <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} – {formatDateShort(s.period_end)}</td>
+                      <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                       <td className={`p-3 text-xs font-medium ${s.status === 'Overdue' ? 'text-red-600' : ''}`}>{formatDateShort(s.due_date)}</td>
                       <td className="p-3"><StatusBadge status={s.status} /></td>
                       <td className="p-3">
@@ -1240,7 +1240,7 @@ export default function SubrecipientHome() {
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <p className="font-medium text-sm">{am.amendment_number}</p>
-                        <p className="text-xs text-muted-foreground">{am.application_number} — Net change: {am.net_change >= 0 ? '+' : ''}{formatCurrency(Number(am.net_change) || 0)}</p>
+                        <p className="text-xs text-muted-foreground">{am.application_number} - Net change: {am.net_change >= 0 ? '+' : ''}{formatCurrency(Number(am.net_change) || 0)}</p>
                       </div>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium flex-shrink-0">Revision Requested</span>
                     </div>
@@ -1334,7 +1334,7 @@ export default function SubrecipientHome() {
                             <p className="font-medium">{m.title}</p>
                             {m.notes && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{m.notes}</p>}
                           </td>
-                          <td className="p-3 text-xs font-mono text-muted-foreground">{m.application_number || '—'}</td>
+                          <td className="p-3 text-xs font-mono text-muted-foreground">{m.application_number || ' - '}</td>
                           <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">{m.milestone_type?.replace(/([A-Z])/g, ' $1').trim() || 'Custom'}</span></td>
                           <td className={`p-3 text-xs font-medium ${m.status === 'Overdue' ? 'text-red-600' : isNear ? 'text-amber-700' : ''}`}>
                             {formatDateShort(m.due_date)}

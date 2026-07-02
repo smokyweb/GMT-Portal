@@ -366,7 +366,7 @@ export default function GrantTimeline() {
           </div>
           <Button variant="outline" size="sm" onClick={() => {
             setShowSync(true);
-            toast.success('Calendar sync initiated — events will appear in your connected calendar within a few minutes');
+            toast.success('Calendar sync initiated - events will appear in your connected calendar within a few minutes');
           }}>
             <RefreshCw className="h-3.5 w-3.5 mr-1.5" /> Sync to Calendar
           </Button>

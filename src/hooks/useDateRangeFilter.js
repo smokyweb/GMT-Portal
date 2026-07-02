@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
-// Federal fiscal year: Oct 1 – Sep 30
-// FY2026 = Oct 1, 2025 – Sep 30, 2026
+// Federal fiscal year: Oct 1 - Sep 30
+// FY2026 = Oct 1, 2025 - Sep 30, 2026
 export function getFYDateRange(fyString) {
   // fyString like "FY2026" or "2026"
   const yr = parseInt(String(fyString).replace('FY', ''), 10);

@@ -86,7 +86,7 @@ export default function DashboardExportButton({ filteredApps }) {
     // Title
     doc.setFontSize(16);
     doc.setFont('helvetica', 'bold');
-    doc.text('GMT Portal — Dashboard Export', 14, 16);
+    doc.text('GMT Portal - Dashboard Export', 14, 16);
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.text(`Generated: ${date}  ·  ${filteredApps.length} applications  ·  ${frs.length} funding requests`, 14, 22);
@@ -131,8 +131,8 @@ export default function DashboardExportButton({ filteredApps }) {
     };
 
     const appRows = filteredApps.map(a => [
-      a.application_number || '—', (a.organization_name || '').slice(0, 18),
-      a.program_code || '—', a.status || '—',
+      a.application_number || ' - ', (a.organization_name || '').slice(0, 18),
+      a.program_code || ' - ', a.status || ' - ',
       formatCurrency(a.requested_amount), formatCurrency(a.awarded_amount),
       formatCurrency(a.total_expended), `${a.expenditure_rate ?? 0}%`,
     ]);
@@ -143,9 +143,9 @@ export default function DashboardExportButton({ filteredApps }) {
     if (frs.length > 0) {
       if (nextY > 160) { doc.addPage(); nextY = 14; }
       const frRows = frs.map(r => [
-        r.request_number || '—', r.application_number || '—',
-        (r.organization_name || '').slice(0, 18), r.request_type || '—',
-        r.status || '—', r.period_start || '—', r.period_end || '—',
+        r.request_number || ' - ', r.application_number || ' - ',
+        (r.organization_name || '').slice(0, 18), r.request_type || ' - ',
+        r.status || ' - ', r.period_start || ' - ', r.period_end || ' - ',
         formatCurrency(r.amount_requested), formatCurrency(r.amount_approved),
       ]);
       drawTable(nextY, 'Funding Requests', ['Req #', 'App #', 'Organization', 'Type', 'Status', 'Period Start', 'Period End', 'Requested', 'Approved'], frRows);

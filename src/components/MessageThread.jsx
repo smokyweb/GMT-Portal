@@ -46,7 +46,7 @@ function MessageBubble({ msg, user, replies, getReplies, onReply, topicColors, d
     } finally {
       setSending(false);
     }
-    // Email — fire and forget
+    // Email - fire and forget
     try {
       base44.integrations.Core.SendEmail({
         to: isOwn ? msg.application_number : msg.sender_email,
@@ -164,7 +164,7 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
     } finally {
       setSending(false);
     }
-    // Email notification — fire and forget, don't block
+    // Email notification - fire and forget, don't block
     try {
       const recipientEmail = isStateUser(user?.role) ? app.submitted_by : null;
       if (recipientEmail) {

@@ -131,7 +131,7 @@ export default function SubrecipientDocumentsInbox() {
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground mt-0.5">
-                      Application: <span className="font-mono">{doc.application_number || '—'}</span>
+                      Application: <span className="font-mono">{doc.application_number || ' - '}</span>
                       {doc.doc_type && ` · ${doc.doc_type}`}
                     </p>
                     <p className="text-xs text-muted-foreground mt-0.5">
@@ -157,7 +157,7 @@ export default function SubrecipientDocumentsInbox() {
                     </Button>
                   ) : (
                     <span className="text-xs text-muted-foreground px-2">
-                      {doc.status === 'Signed' ? `Signed by ${doc.signed_by || '—'}` : doc.status}
+                      {doc.status === 'Signed' ? `Signed by ${doc.signed_by || ' - '}` : doc.status}
                     </span>
                   )}
                 </div>
@@ -196,7 +196,7 @@ export default function SubrecipientDocumentsInbox() {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-sm text-blue-600 hover:underline border rounded-lg px-3 py-2"
               >
-                <ExternalLink className="h-4 w-4" /> Open attached document — {signingDoc.file_name || 'View file'}
+                <ExternalLink className="h-4 w-4" /> Open attached document - {signingDoc.file_name || 'View file'}
               </a>
             )}
 

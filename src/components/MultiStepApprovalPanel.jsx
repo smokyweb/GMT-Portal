@@ -75,7 +75,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            Step 1 — Program Manager
+            Step 1 - Program Manager
           </div>
           <StepBadge status={selected.pm_approval_status || 'Pending'} />
         </div>
@@ -83,7 +83,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
           <p className="text-xs text-muted-foreground">
             By <span className="font-medium text-foreground">{selected.pm_approved_by}</span>
             {selected.pm_approved_at && ` on ${new Date(selected.pm_approved_at).toLocaleDateString()}`}
-            {selected.pm_notes && ` — ${selected.pm_notes}`}
+            {selected.pm_notes && ` - ${selected.pm_notes}`}
           </p>
         )}
         {canActPM && !actionStep && (
@@ -103,7 +103,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
         <div className="flex items-center justify-between flex-wrap gap-2">
           <div className="flex items-center gap-2 text-sm font-medium">
             <Users className="h-3.5 w-3.5 text-muted-foreground" />
-            Step 2 — Finance Officer
+            Step 2 - Finance Officer
           </div>
           <StepBadge status={selected.fo_approval_status || 'Pending'} />
         </div>
@@ -111,7 +111,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
           <p className="text-xs text-muted-foreground">
             By <span className="font-medium text-foreground">{selected.fo_approved_by}</span>
             {selected.fo_approved_at && ` on ${new Date(selected.fo_approved_at).toLocaleDateString()}`}
-            {selected.fo_notes && ` — ${selected.fo_notes}`}
+            {selected.fo_notes && ` - ${selected.fo_notes}`}
           </p>
         )}
         {canActFO && !actionStep && (

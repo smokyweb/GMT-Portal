@@ -16,9 +16,9 @@ async function sha256(str) {
  *
  * Props:
  *  - onSave(result): called with { signatureDataUrl, documentHash, signedAt, signerName }
- *  - documentContent: string — the document text/JSON to hash at signing time
- *  - signerName: string — display name of the person signing
- *  - label: string — optional label override
+ *  - documentContent: string - the document text/JSON to hash at signing time
+ *  - signerName: string - display name of the person signing
+ *  - label: string - optional label override
  *  - disabled: bool
  */
 export default function SignaturePad({ onSave, documentContent = '', signerName = '', label, disabled = false }) {

@@ -204,7 +204,7 @@ export default function ApplicationReviewQueue() {
       'app_approved', 'Application', selected.id, '/my-applications');
     await base44.integrations.Core.SendEmail({
       to: selected.submitted_by,
-      subject: `Application Approved – ${selected.application_number}`,
+      subject: `Application Approved - ${selected.application_number}`,
       body: `Dear ${selected.organization_name},\n\nWe are pleased to inform you that your grant application (${selected.application_number}) for the ${selected.program_name || selected.program_code} program has been APPROVED.\n\nAwarded Amount: ${formatCurrency(awarded)}\n\nPlease log in to the GMT Portal to view the full details and next steps.\n\nThank you,\nGrant Management Team`,
     });
     await logAudit(base44, user, 'Approved', 'Application', selected.id,
@@ -224,7 +224,7 @@ export default function ApplicationReviewQueue() {
       'app_denied', 'Application', selected.id, '/my-applications');
     await base44.integrations.Core.SendEmail({
       to: selected.submitted_by,
-      subject: `Application Not Approved – ${selected.application_number}`,
+      subject: `Application Not Approved - ${selected.application_number}`,
       body: `Dear ${selected.organization_name},\n\nAfter careful review, your grant application (${selected.application_number}) for the ${selected.program_name || selected.program_code} program has not been approved at this time.\n\n${reviewNotes ? `Reviewer Notes: ${reviewNotes}\n\n` : ''}Please log in to the GMT Portal for more information.\n\nThank you,\nGrant Management Team`,
     });
     await logAudit(base44, user, 'Denied', 'Application', selected.id, `Denied application ${selected.application_number}`);
@@ -243,7 +243,7 @@ export default function ApplicationReviewQueue() {
       'revision_requested', 'Application', selected.id, '/my-applications');
     await base44.integrations.Core.SendEmail({
       to: selected.submitted_by,
-      subject: `Revision Requested – ${selected.application_number}`,
+      subject: `Revision Requested - ${selected.application_number}`,
       body: `Dear ${selected.organization_name},\n\nYour grant application (${selected.application_number}) for the ${selected.program_name || selected.program_code} program requires revisions before it can be processed further.\n\nRevisions Needed:\n${revisionRequest}\n\nPlease log in to the GMT Portal to update and resubmit your application.\n\nThank you,\nGrant Management Team`,
     });
     await logAudit(base44, user, 'RevisionRequested', 'Application', selected.id, `Requested revision on ${selected.application_number}`);
@@ -258,7 +258,7 @@ export default function ApplicationReviewQueue() {
 
   const getEffectiveDateRange = () => {
     if (dateMode === 'fiscal') {
-      // Use shared federal FY logic (Oct 1 – Sep 30)
+      // Use shared federal FY logic (Oct 1 - Sep 30)
       return getFYDateRange(`FY${fiscalYear}`);
     } else if (dateMode === 'custom') {
       return { start: dateStart, end: dateEnd };
@@ -377,12 +377,12 @@ export default function ApplicationReviewQueue() {
             <tbody>
               {filtered.map(app => (
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30 transition">
-                  <td className="p-3 font-mono text-xs">{app.application_number || '—'}</td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{app.grant_number || '—'}</td>
-                  <td className="p-3 font-medium">{app.organization_name || '—'}</td>
-                  <td className="p-3 max-w-[200px] truncate">{app.project_title || '—'}</td>
+                  <td className="p-3 font-mono text-xs">{app.application_number || ' - '}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{app.grant_number || ' - '}</td>
+                  <td className="p-3 font-medium">{app.organization_name || ' - '}</td>
+                  <td className="p-3 max-w-[200px] truncate">{app.project_title || ' - '}</td>
                   <td className="p-3">
-                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || '—'}</span>
+                    <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || ' - '}</span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(app.requested_amount)}</td>
                   <td className="p-3"><StatusBadge status={app.status} /></td>
@@ -422,7 +422,7 @@ export default function ApplicationReviewQueue() {
                 {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Grant Number</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
                 <div><Label className="text-muted-foreground text-xs">Requested Amount</Label><p className="font-bold text-lg">{formatCurrency(viewApp.requested_amount)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Match Commitment</Label><p className="font-medium">{formatCurrency(viewApp.match_amount)}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Performance Period</Label><p className="font-medium">{formatDateShort(viewApp.performance_start)} – {formatDateShort(viewApp.performance_end)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Performance Period</Label><p className="font-medium">{formatDateShort(viewApp.performance_start)} - {formatDateShort(viewApp.performance_end)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Submitted</Label><p className="font-medium">{formatDateShort(viewApp.submitted_at)}</p></div>
               </div>
               <div><Label className="text-muted-foreground text-xs">Project Title</Label><p className="font-medium">{viewApp.project_title}</p></div>
@@ -498,7 +498,7 @@ export default function ApplicationReviewQueue() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs">Performance Period</Label>
-                    <p className="font-medium">{formatDateShort(selected.performance_start)} – {formatDateShort(selected.performance_end)}</p>
+                    <p className="font-medium">{formatDateShort(selected.performance_start)} - {formatDateShort(selected.performance_end)}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs">Status</Label>
@@ -526,7 +526,7 @@ export default function ApplicationReviewQueue() {
                 {selected.ehp_status && selected.ehp_status !== 'NotRequired' && (
                   <div className="p-3 rounded-lg border border-amber-200 bg-amber-50">
                     <p className="text-xs font-semibold text-amber-800">EHP Review Required</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Status: {selected.ehp_status} {selected.ehp_notes && `— ${selected.ehp_notes}`}</p>
+                    <p className="text-xs text-amber-700 mt-0.5">Status: {selected.ehp_status} {selected.ehp_notes && ` - ${selected.ehp_notes}`}</p>
                   </div>
                 )}
 
@@ -560,7 +560,7 @@ export default function ApplicationReviewQueue() {
                   <div>
                     <Label className="text-muted-foreground text-xs">Procurement Method</Label>
                     <p className="text-sm font-medium">{selected.procurement_method}
-                      {selected.procurement_amount ? ` — ${formatCurrency(selected.procurement_amount)}` : ''}
+                      {selected.procurement_amount ? ` - ${formatCurrency(selected.procurement_amount)}` : ''}
                     </p>
                     {selected.procurement_justification && (
                       <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap bg-muted/50 p-2 rounded-lg">{selected.procurement_justification}</p>
@@ -665,7 +665,7 @@ export default function ApplicationReviewQueue() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Score (0–100) <span className="text-red-500">*</span></Label>
+                        <Label>Score (0 - 100) <span className="text-red-500">*</span></Label>
                         <Input
                           type="number" min={0} max={100}
                           value={reviewScore}

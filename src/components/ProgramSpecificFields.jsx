@@ -42,7 +42,7 @@ export default function ProgramSpecificFields({ programCode, form, onChange }) {
       {/* SHSP Fields */}
       {programCode === 'SHSP' && (
         <>
-          <FieldGroup title="Investment Justification (IJ)" description="Required for SHSP — describes how the project addresses a THIRA/SPR-identified gap.">
+          <FieldGroup title="Investment Justification (IJ)" description="Required for SHSP - describes how the project addresses a THIRA/SPR-identified gap.">
             <Field label="IJ Title" required><Input value={form.ij_title || ''} onChange={e => set('ij_title', e.target.value)} /></Field>
             <Field label="IJ Narrative" required><Textarea rows={4} value={form.ij_description || ''} onChange={e => set('ij_description', e.target.value)} placeholder="Describe the investment justification..." /></Field>
             <Field label="Primary Core Capability Addressed" required>
@@ -84,7 +84,7 @@ export default function ProgramSpecificFields({ programCode, form, onChange }) {
       {/* SLCGP Fields */}
       {programCode === 'SLCGP' && (
         <>
-          <FieldGroup title="Cybersecurity Plan" description="Required for SLCGP — must address the State and Local Cybersecurity Grant Program requirements.">
+          <FieldGroup title="Cybersecurity Plan" description="Required for SLCGP - must address the State and Local Cybersecurity Grant Program requirements.">
             <Field label="Cybersecurity Plan Narrative" required><Textarea rows={5} value={form.slcgp_cybersecurity_plan || ''} onChange={e => set('slcgp_cybersecurity_plan', e.target.value)} placeholder="Describe your cybersecurity plan, goals, and alignment with CISA guidance..." /></Field>
             <Field label="Project Worksheet Details" required><Textarea rows={3} value={form.slcgp_project_worksheet || ''} onChange={e => set('slcgp_project_worksheet', e.target.value)} placeholder="Summarize the project worksheet content..." /></Field>
           </FieldGroup>
@@ -101,7 +101,7 @@ export default function ProgramSpecificFields({ programCode, form, onChange }) {
         <>
           <FieldGroup title="Investment Justification (IJ)" description="NSGP requires a completed FEMA IJ PDF to be uploaded in the Documents step. Provide summary details here.">
             <Field label="IJ Title" required><Input value={form.ij_title || ''} onChange={e => set('ij_title', e.target.value)} /></Field>
-            <Field label="IJ Narrative Summary" required><Textarea rows={4} value={form.ij_description || ''} onChange={e => set('ij_description', e.target.value)} placeholder="Summarize the IJ — the full FEMA IJ PDF must also be uploaded..." /></Field>
+            <Field label="IJ Narrative Summary" required><Textarea rows={4} value={form.ij_description || ''} onChange={e => set('ij_description', e.target.value)} placeholder="Summarize the IJ - the full FEMA IJ PDF must also be uploaded..." /></Field>
           </FieldGroup>
 
           <FieldGroup title="Vulnerability Assessment" description="All NSGP applicants must have a completed vulnerability assessment.">
@@ -118,7 +118,7 @@ export default function ProgramSpecificFields({ programCode, form, onChange }) {
       {/* EOC Fields */}
       {programCode === 'EOC' && (
         <>
-          <FieldGroup title="Construction Details" description="EOC projects involve construction or substantial renovation — additional compliance documentation is required.">
+          <FieldGroup title="Construction Details" description="EOC projects involve construction or substantial renovation - additional compliance documentation is required.">
             <Field label="Construction Timeline" required><Textarea rows={4} value={form.eoc_construction_timeline || ''} onChange={e => set('eoc_construction_timeline', e.target.value)} placeholder="Describe project phases, key milestones, and estimated completion..." /></Field>
             <Field label="Procurement Plan" required><Textarea rows={3} value={form.eoc_procurement_plan || ''} onChange={e => set('eoc_procurement_plan', e.target.value)} placeholder="Describe procurement method and compliance with 2 CFR 200.317-327..." /></Field>
           </FieldGroup>
@@ -141,7 +141,7 @@ export default function ProgramSpecificFields({ programCode, form, onChange }) {
       )}
 
       {/* Procurement Section (all programs) */}
-      <FieldGroup title="Procurement Method" description="All federally-funded procurement must follow 2 CFR 200.317–327.">
+      <FieldGroup title="Procurement Method" description="All federally-funded procurement must follow 2 CFR 200.317 - 327.">
         <Field label="Primary Procurement Method">
           <Select value={form.procurement_method || ''} onValueChange={v => set('procurement_method', v)}>
             <SelectTrigger><SelectValue placeholder="Select method..." /></SelectTrigger>

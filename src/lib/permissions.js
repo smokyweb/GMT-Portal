@@ -2,12 +2,12 @@
  * Central permissions module for the GMT Portal.
  *
  * ROLE HIERARCHY (highest → lowest):
- *  federal_admin    – Full system visibility; manage all states, orgs, programs
- *  federal_officer  – Read-only across all states; no write access
- *  admin            – State-scoped admin: manage orgs, apps, flags within their state
- *  reviewer         – State-scoped reviewer: review apps/reports; cannot manage orgs or users
- *  isc_admin        – ISC portal administrator
- *  user             – Organization-scoped subrecipient: own org data only
+ *  federal_admin - Full system visibility; manage all states, orgs, programs
+ *  federal_officer - Read-only across all states; no write access
+ *  admin - State-scoped admin: manage orgs, apps, flags within their state
+ *  reviewer - State-scoped reviewer: review apps/reports; cannot manage orgs or users
+ *  isc_admin - ISC portal administrator
+ *  user - Organization-scoped subrecipient: own org data only
  */
 
 // ─── Role predicates ──────────────────────────────────────────────────────────

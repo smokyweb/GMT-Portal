@@ -388,7 +388,7 @@ export default function Documents() {
                           {doc.doc_type?.replace(/([A-Z])/g, ' $1').trim()}
                         </span>
                       </td>
-                      {showOrg && <td className="p-3 text-xs text-muted-foreground">{doc.uploaded_by || '—'}</td>}
+                      {showOrg && <td className="p-3 text-xs text-muted-foreground">{doc.uploaded_by || ' - '}</td>}
                       <td className="p-3 text-xs text-muted-foreground">{moment(doc.uploaded_at || doc.created_date).fromNow()}</td>
                       <td className="p-3">
                         <ReviewBadge status={doc.review_status || 'Pending'} />
@@ -563,7 +563,7 @@ export default function Documents() {
                           </div>
                           <div>
                             <p className="font-semibold">{doc.template_name}</p>
-                            <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || ' - '}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">Sent {moment(doc.sent_at).fromNow()} by {doc.sent_by}</p>
                           </div>
                         </div>
@@ -597,7 +597,7 @@ export default function Documents() {
                           </div>
                           <div>
                             <p className="font-semibold">{doc.template_name}</p>
-                            <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || '—'}</p>
+                            <p className="text-xs text-muted-foreground">{doc.doc_type} · App {doc.application_number || ' - '}</p>
                             <p className="text-xs text-muted-foreground mt-0.5">
                               {doc.status === 'Signed' ? `Signed ${moment(doc.signed_at).fromNow()} by ${doc.signed_by}` : `Rejected ${moment(doc.updated_date).fromNow()}`}
                             </p>
@@ -721,7 +721,7 @@ export default function Documents() {
                       className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${uploadForm.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
                       onClick={() => { setUploadForm(f => ({ ...f, application_id: a.id })); setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`); }}
                     >
-                      <span className="font-medium">{a.application_number || 'Draft'}</span> — {a.project_title || 'Untitled'}
+                      <span className="font-medium">{a.application_number || 'Draft'}</span> - {a.project_title || 'Untitled'}
                       {a.organization_name && <span className="text-xs text-muted-foreground ml-1">({a.organization_name})</span>}
                     </div>
                   ))}
@@ -771,8 +771,8 @@ export default function Documents() {
             <div className="space-y-4">
               <div className="bg-muted/40 rounded-lg p-3 grid grid-cols-2 gap-2 text-sm">
                 <div><span className="text-muted-foreground text-xs">Type</span><p className="font-medium">{previewDoc.doc_type?.replace(/([A-Z])/g, ' $1').trim()}</p></div>
-                <div><span className="text-muted-foreground text-xs">Application</span><p className="font-medium font-mono">{previewDoc.application_number || '—'}</p></div>
-                <div><span className="text-muted-foreground text-xs">Uploaded by</span><p className="font-medium">{previewDoc.uploaded_by || '—'}</p></div>
+                <div><span className="text-muted-foreground text-xs">Application</span><p className="font-medium font-mono">{previewDoc.application_number || ' - '}</p></div>
+                <div><span className="text-muted-foreground text-xs">Uploaded by</span><p className="font-medium">{previewDoc.uploaded_by || ' - '}</p></div>
                 <div><span className="text-muted-foreground text-xs">Uploaded</span><p className="font-medium">{moment(previewDoc.uploaded_at || previewDoc.created_date).format('MMM D, YYYY')}</p></div>
                 {previewDoc.description && <div className="col-span-2"><span className="text-muted-foreground text-xs">Description</span><p className="font-medium">{previewDoc.description}</p></div>}
               </div>
@@ -787,7 +787,7 @@ export default function Documents() {
       {/* Version History Dialog */}
       <Dialog open={!!versionDoc} onOpenChange={() => setVersionDoc(null)}>
         <DialogContent className="max-w-lg">
-          <DialogHeader><DialogTitle>Version History — {versionDoc?.name}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>Version History - {versionDoc?.name}</DialogTitle></DialogHeader>
           <div className="space-y-2">
             {versionHistory.length === 0 && <p className="text-sm text-muted-foreground text-center py-4">No version history found.</p>}
             {versionHistory.map(v => (
@@ -844,7 +844,7 @@ export default function Documents() {
             <div className="space-y-4">
               <div className="flex items-center gap-4 text-xs text-muted-foreground flex-wrap">
                 <span>Type: <strong>{selectedReceived.doc_type}</strong></span>
-                <span>Application: <strong>{selectedReceived.application_number || '—'}</strong></span>
+                <span>Application: <strong>{selectedReceived.application_number || ' - '}</strong></span>
                 <span>Sent: <strong>{moment(selectedReceived.sent_at).format('MMM D, YYYY')}</strong></span>
                 <InboxBadge status={selectedReceived.status} />
               </div>

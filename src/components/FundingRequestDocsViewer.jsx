@@ -27,8 +27,8 @@ const STATUS_CONFIG = {
  * lets admins approve/reject each with optional notes, and upload additional files.
  *
  * Props:
- *   fundingRequest  — the full FundingRequest object
- *   user            — current admin user
+ *   fundingRequest - the full FundingRequest object
+ *   user - current admin user
  */
 export default function FundingRequestDocsViewer({ fundingRequest, user }) {
   const [docs, setDocs] = useState([]);
@@ -228,7 +228,7 @@ export default function FundingRequestDocsViewer({ fundingRequest, user }) {
                   <div className="border-t px-3 py-2 bg-muted/10">
                     <p className="text-xs text-muted-foreground">
                       <span className="font-medium">Note:</span> {doc.reviewer_notes}
-                      {doc.reviewer_email && ` — ${doc.reviewer_email}`}
+                      {doc.reviewer_email && ` - ${doc.reviewer_email}`}
                     </p>
                   </div>
                 )}

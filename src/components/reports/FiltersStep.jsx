@@ -62,7 +62,7 @@ export default function FiltersStep({ sourceKey, filters, onChange, filterLogic,
     <div className="space-y-3">
       {filters.length === 0 && (
         <p className="text-xs text-muted-foreground text-center py-3 border border-dashed rounded-lg">
-          No filters — all records will be returned.
+          No filters - all records will be returned.
         </p>
       )}
       {filters.map((filter, idx) => {

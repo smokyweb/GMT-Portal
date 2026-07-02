@@ -71,7 +71,7 @@ export default function ReportPreview({ rows, selectedFields, loading, totalRows
           <span key={t.label}>{t.label}: <span className="font-semibold text-foreground">{formatCurrency(t.sum)}</span></span>
         ))}
         {totalRows != null && totalRows > rows.length && (
-          <span className="ml-auto text-amber-600">Preview — {rows.length} of {totalRows} rows</span>
+          <span className="ml-auto text-amber-600">Preview - {rows.length} of {totalRows} rows</span>
         )}
       </div>
 
@@ -120,7 +120,7 @@ export default function ReportPreview({ rows, selectedFields, loading, totalRows
           {totalPages > 1 && (
             <div className="flex items-center justify-between px-4 py-2 border-t bg-card text-xs">
               <span className="text-muted-foreground">
-                Page {page + 1} of {totalPages} ({PAGE_SIZE * page + 1}–{Math.min(PAGE_SIZE * (page + 1), rows.length)} of {rows.length})
+                Page {page + 1} of {totalPages} ({PAGE_SIZE * page + 1} - {Math.min(PAGE_SIZE * (page + 1), rows.length)} of {rows.length})
               </span>
               <div className="flex items-center gap-1">
                 <button

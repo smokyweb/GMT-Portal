@@ -112,15 +112,15 @@ function Bubble({ msg, user, allMessages, onRefresh, depth = 0 }) {
 }
 
 /**
- * ContextualThread — embeddable chat thread for any application or funding request.
+ * ContextualThread - embeddable chat thread for any application or funding request.
  *
  * Props:
- *   applicationId        — the Application entity id
- *   applicationNumber    — e.g. "APP-2025-00001"
- *   organizationName     — org display name
- *   programCode          — e.g. "SHSP"
- *   user                 — current user object
- *   contextLabel         — optional label shown in the header (default: applicationNumber)
+ *   applicationId - the Application entity id
+ *   applicationNumber - e.g. "APP-2025-00001"
+ *   organizationName - org display name
+ *   programCode - e.g. "SHSP"
+ *   user - current user object
+ *   contextLabel - optional label shown in the header (default: applicationNumber)
  */
 export default function ContextualThread({
   applicationId,
@@ -201,7 +201,7 @@ export default function ContextualThread({
         {!loading && rootMessages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
             <MessageSquare className="h-6 w-6 mb-2 opacity-30" />
-            <p className="text-sm">No messages yet — start the conversation below.</p>
+            <p className="text-sm">No messages yet - start the conversation below.</p>
           </div>
         )}
         {rootMessages

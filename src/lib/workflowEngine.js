@@ -64,7 +64,7 @@ export async function onComplianceFlagResolved(base44, applicationId) {
     if (app.submitted_by) {
       await base44.integrations.Core.SendEmail({
         to: app.submitted_by,
-        subject: emailOvr.subject || `All compliance flags resolved — Application ${app.application_number}`,
+        subject: emailOvr.subject || `All compliance flags resolved - Application ${app.application_number}`,
         body: emailOvr.body || `Good news! All compliance flags for your application ${app.application_number} have been resolved.\n\nYour application is now back in review. You will be notified when a final decision is made.`,
       }).catch(() => {});
     }
@@ -72,14 +72,14 @@ export async function onComplianceFlagResolved(base44, applicationId) {
     await Promise.all(admins.map(admin =>
       base44.integrations.Core.SendEmail({
         to: admin.email,
-        subject: emailOvr.subject || `All flags cleared — ${app.application_number} ready for decision`,
+        subject: emailOvr.subject || `All flags cleared - ${app.application_number} ready for decision`,
         body: emailOvr.body || `All compliance flags for application ${app.application_number} (${app.organization_name}) have been resolved.\n\nThe application may now be approved. Log in to the GMT Portal to take action.`,
       }).catch(() => {})
     ));
     await base44.entities.AuditLog.create({
       user_email: 'workflow-engine@system', user_name: 'Workflow Engine',
       action: 'AllFlagsResolved', entity_type: 'Application', entity_id: applicationId,
-      description: `All compliance flags resolved for ${app.application_number} — notifications sent`,
+      description: `All compliance flags resolved for ${app.application_number} - notifications sent`,
     });
   }
 }
@@ -107,13 +107,13 @@ export async function onFundingRequestApproved(base44, fundingRequest, approvedA
     }).catch(() => {});
   }
 
-  // Check expenditure threshold — warn admins if rate > 80%
+  // Check expenditure threshold - warn admins if rate > 80%
   if (rate > 80) {
     const admins = await base44.entities.User.filter({ role: 'admin' });
     await Promise.all(admins.map(admin =>
       base44.integrations.Core.SendEmail({
         to: admin.email,
-        subject: `⚠️ High Expenditure Rate — ${app.application_number} at ${rate}%`,
+        subject: `⚠️ High Expenditure Rate - ${app.application_number} at ${rate}%`,
         body: `Application ${app.application_number} (${app.organization_name}) has reached an expenditure rate of ${rate}%.\n\nRemaining balance: $${remaining.toLocaleString()}\n\nPlease review to ensure closeout planning is underway.`,
       }).catch(() => {})
     ));
@@ -149,7 +149,7 @@ export async function onApplicationApproved(base44, application) {
     await base44.integrations.Core.SendEmail({
       to: application.submitted_by,
       subject: emailOvr.subject || `🎉 Application ${application.application_number} Approved!`,
-      body: emailOvr.body || `Congratulations! Your grant application ${application.application_number} — "${application.project_title}" — has been approved.\n\nAwarded Amount: $${(application.awarded_amount || 0).toLocaleString()}\nPerformance Period: ${application.performance_start || 'TBD'} to ${application.performance_end || 'TBD'}\n\nLog in to the GMT Portal to view your award details and begin submitting funding requests.`,
+      body: emailOvr.body || `Congratulations! Your grant application ${application.application_number} - "${application.project_title}" - has been approved.\n\nAwarded Amount: $${(application.awarded_amount || 0).toLocaleString()}\nPerformance Period: ${application.performance_start || 'TBD'} to ${application.performance_end || 'TBD'}\n\nLog in to the GMT Portal to view your award details and begin submitting funding requests.`,
     }).catch(() => {});
   }
   await base44.entities.AuditLog.create({
@@ -166,8 +166,8 @@ export async function onApplicationDenied(base44, application, reason) {
   if (application.submitted_by) {
     await base44.integrations.Core.SendEmail({
       to: application.submitted_by,
-      subject: emailOvr.subject || `Application ${application.application_number} — Decision Notice`,
-      body: emailOvr.body || `We regret to inform you that your grant application ${application.application_number} — "${application.project_title}" — was not approved at this time.\n\nReason: ${reason || 'Please contact your program officer for details.'}\n\nYou may be eligible to reapply in future funding cycles. Log in to the GMT Portal for more information.`,
+      subject: emailOvr.subject || `Application ${application.application_number} - Decision Notice`,
+      body: emailOvr.body || `We regret to inform you that your grant application ${application.application_number} - "${application.project_title}" - was not approved at this time.\n\nReason: ${reason || 'Please contact your program officer for details.'}\n\nYou may be eligible to reapply in future funding cycles. Log in to the GMT Portal for more information.`,
     }).catch(() => {});
   }
   await base44.entities.AuditLog.create({
@@ -190,7 +190,7 @@ export async function onReportSubmitted(base44, report, schedule) {
   await Promise.all(admins.map(admin =>
     base44.integrations.Core.SendEmail({
       to: admin.email,
-      subject: emailOvr.subject || `Progress Report Submitted — ${schedule?.application_number || ''}`,
+      subject: emailOvr.subject || `Progress Report Submitted - ${schedule?.application_number || ''}`,
       body: emailOvr.body || `A ${schedule?.report_type || ''} progress report has been submitted for application ${schedule?.application_number || ''} (${schedule?.organization_name || ''}).\n\nLog in to the GMT Portal to review the report.`,
     }).catch(() => {})
   ));
@@ -277,7 +277,7 @@ export async function onComplianceFlagCreated(base44, flag) {
   await Promise.all(admins.map(admin =>
     base44.integrations.Core.SendEmail({
       to: admin.email,
-      subject: emailOvr.subject || `🚨 ${flag.severity} Compliance Flag — ${flag.application_number}`,
+      subject: emailOvr.subject || `🚨 ${flag.severity} Compliance Flag - ${flag.application_number}`,
       body: emailOvr.body || `A ${flag.severity} severity compliance flag has been created for application ${flag.application_number} (${flag.organization_name}).\n\nType: ${flag.flag_type}\nDetails: ${flag.description}\n\nLog in to the GMT Portal to review and resolve this flag.`,
     }).catch(() => {})
   ));
@@ -321,7 +321,7 @@ export async function onProcurementRiskCheck(base44, fundingRequest, lineItems =
   await base44.entities.AuditLog.create({
     user_email: 'workflow-engine@system', user_name: 'Workflow Engine',
     action: 'ProcurementRiskFlagged', entity_type: 'FundingRequest', entity_id: fundingRequest.id,
-    description: `Procurement risk flag created for ${fundingRequest.request_number} — $${total.toLocaleString()} equipment without procurement method`,
+    description: `Procurement risk flag created for ${fundingRequest.request_number} - $${total.toLocaleString()} equipment without procurement method`,
   });
 }
 
@@ -451,7 +451,7 @@ export const RULE_TEMPLATES = [
     condition: 'Always',
     action_type: 'Send Email to Admins',
     action_detail: '',
-    email_subject: 'New Funding Request Submitted — Action Required',
+    email_subject: 'New Funding Request Submitted - Action Required',
     email_body: 'A new funding request has been submitted and requires your review. Please log in to the GMT Portal to process it.',
     condition_program: '',
   },
@@ -460,7 +460,7 @@ export const RULE_TEMPLATES = [
     trigger: 'Funding Request Submitted',
     condition: 'match_documented is 0',
     action_type: 'Create Compliance Flag',
-    action_detail: 'MatchShortfall — Subrecipient submitted a funding request with no match documentation.',
+    action_detail: 'MatchShortfall - Subrecipient submitted a funding request with no match documentation.',
     email_subject: '',
     email_body: '',
   },
@@ -497,7 +497,7 @@ export const RULE_TEMPLATES = [
     condition: 'expenditure_rate > 90',
     action_type: 'Send Email to Admins',
     action_detail: '',
-    email_subject: 'Grant Closeout Planning Required — Expenditure >90%',
+    email_subject: 'Grant Closeout Planning Required - Expenditure >90%',
     email_body: 'A grant has exceeded 90% expenditure. Please initiate closeout planning and confirm the final report schedule with the subrecipient.',
   },
 ];

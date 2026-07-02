@@ -173,7 +173,7 @@ export default function AdminHub() {
                 <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
               ) : (
                 <span className="text-xs font-medium px-2.5 py-1 rounded-full bg-primary/10 text-primary">
-                  {countLabels[label] || '—'}
+                  {countLabels[label] || ' - '}
                 </span>
               )}
               <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition" />

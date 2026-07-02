@@ -108,7 +108,7 @@ export default function DocumentReviewSettings({ user }) {
             <div>
               <h3 className="text-sm font-semibold">Enable Document Review</h3>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Master switch — when off, no documents require individual review regardless of type settings.
+                Master switch - when off, no documents require individual review regardless of type settings.
               </p>
             </div>
           </div>

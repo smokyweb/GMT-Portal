@@ -68,7 +68,7 @@ function AllocationCard({ grant, onViewDetails }) {
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span className="flex items-center gap-1">
           <Calendar className="h-3 w-3" />
-          {formatDateShort(grant.performance_start)} – {formatDateShort(grant.performance_end)}
+          {formatDateShort(grant.performance_start)} - {formatDateShort(grant.performance_end)}
         </span>
         {daysLeft !== null && (
           <span className={`flex items-center gap-1 font-medium ${daysLeft < 90 ? 'text-amber-600' : 'text-muted-foreground'}`}>
@@ -168,7 +168,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-900 grid grid-cols-2 gap-2">
             <div><span className="font-medium">Grant:</span> {schedule?.application_number}</div>
             <div><span className="font-medium">Program:</span> {schedule?.program_code}</div>
-            <div><span className="font-medium">Period:</span> {formatDateShort(schedule?.period_start)} – {formatDateShort(schedule?.period_end)}</div>
+            <div><span className="font-medium">Period:</span> {formatDateShort(schedule?.period_start)} - {formatDateShort(schedule?.period_end)}</div>
             <div><span className="font-medium">Due:</span> {formatDateShort(schedule?.due_date)}</div>
           </div>
           <div>
@@ -368,7 +368,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
                   <tr key={doc.id} className="border-b last:border-0 hover:bg-muted/20">
                     <td className="p-3 font-medium max-w-[180px] truncate">{doc.name}</td>
                     <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-blue-50 text-blue-700">{doc.doc_type}</span></td>
-                    <td className="p-3 text-xs font-mono text-muted-foreground">{doc.application_number || '—'}</td>
+                    <td className="p-3 text-xs font-mono text-muted-foreground">{doc.application_number || ' - '}</td>
                     <td className="p-3">
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         doc.review_status === 'Approved' ? 'bg-green-50 text-green-700' :
@@ -459,7 +459,7 @@ function AllocationDetailDialog({ grant, onClose }) {
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted/40 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>
-                  <p className={`font-bold text-sm ${color}`}>{value || '—'}</p>
+                  <p className={`font-bold text-sm ${color}`}>{value || ' - '}</p>
                 </div>
               ))}
             </div>
@@ -474,11 +474,11 @@ function AllocationDetailDialog({ grant, onClose }) {
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-muted/40 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">Start Date</p>
-                <p className="font-medium text-sm">{formatDateShort(grant.performance_start) || '—'}</p>
+                <p className="font-medium text-sm">{formatDateShort(grant.performance_start) || ' - '}</p>
               </div>
               <div className="bg-muted/40 rounded-lg p-3">
                 <p className="text-xs text-muted-foreground">End Date</p>
-                <p className="font-medium text-sm">{formatDateShort(grant.performance_end) || '—'}</p>
+                <p className="font-medium text-sm">{formatDateShort(grant.performance_end) || ' - '}</p>
               </div>
             </div>
           </div>
@@ -526,17 +526,17 @@ function AllocationDetailDialog({ grant, onClose }) {
                             <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{li.budget_category}</span>
                           </td>
                           <td className="p-2.5 text-xs max-w-[140px]">
-                            <p className="font-medium truncate">{li.expenditure_name || li.description || '—'}</p>
+                            <p className="font-medium truncate">{li.expenditure_name || li.description || ' - '}</p>
                             {li.ael_number && <p className="text-muted-foreground">AEL: {li.ael_number}</p>}
                           </td>
                           <td className="p-2.5 text-xs text-muted-foreground">
                             {li.item_manufacturer && <span>{li.item_manufacturer}</span>}
                             {li.item_manufacturer && li.item_model && <span> · </span>}
                             {li.item_model && <span>{li.item_model}</span>}
-                            {!li.item_manufacturer && !li.item_model && '—'}
+                            {!li.item_manufacturer && !li.item_model && ' - '}
                           </td>
-                          <td className="p-2.5 text-xs text-right">{li.quantity || '—'}</td>
-                          <td className="p-2.5 text-xs text-right">{li.unit_cost ? formatCurrency(li.unit_cost) : '—'}</td>
+                          <td className="p-2.5 text-xs text-right">{li.quantity || ' - '}</td>
+                          <td className="p-2.5 text-xs text-right">{li.unit_cost ? formatCurrency(li.unit_cost) : ' - '}</td>
                           <td className="p-2.5 text-xs text-right font-semibold">{formatCurrency(li.amount)}</td>
                         </tr>
                       ))}
@@ -732,7 +732,7 @@ export default function SubrecipientPortal() {
                     {allGrants.filter(g => g.status !== 'Approved').map(app => (
                       <tr key={app.id} className="border-b last:border-0 hover:bg-muted/20">
                         <td className="p-3 font-mono text-xs">{app.application_number || 'Draft'}</td>
-                        <td className="p-3 font-medium">{app.project_title || '—'}</td>
+                        <td className="p-3 font-medium">{app.project_title || ' - '}</td>
                         <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code}</span></td>
                         <td className="p-3 text-right">{formatCurrency(app.requested_amount)}</td>
                         <td className="p-3"><StatusBadge status={app.status} /></td>
@@ -765,7 +765,7 @@ export default function SubrecipientPortal() {
                 {overdueReports.map(s => (
                   <div key={s.id} className="flex items-center justify-between p-4">
                     <div>
-                      <p className="text-sm font-medium text-red-800">{s.report_type} Report — {s.application_number}</p>
+                      <p className="text-sm font-medium text-red-800">{s.report_type} Report - {s.application_number}</p>
                       <p className="text-xs text-red-600">Was due {formatDateShort(s.due_date)} · {s.program_code}</p>
                     </div>
                     <Button size="sm" variant="destructive" onClick={() => setSelectedSchedule(s)}>Submit Now</Button>
@@ -801,7 +801,7 @@ export default function SubrecipientPortal() {
                         <td className="p-3 font-mono text-xs">{s.application_number}</td>
                         <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{s.program_code}</span></td>
                         <td className="p-3 font-medium">{s.report_type}</td>
-                        <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} – {formatDateShort(s.period_end)}</td>
+                        <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                         <td className={`p-3 text-xs font-medium ${isOverdue ? 'text-red-600' : ''}`}>{formatDateShort(s.due_date)}</td>
                         <td className="p-3"><StatusBadge status={s.status} /></td>
                         <td className="p-3">

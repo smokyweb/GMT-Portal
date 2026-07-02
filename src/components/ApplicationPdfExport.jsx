@@ -67,7 +67,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
       doc.text('Odysseus GMT Portal', margin, 11);
       doc.setFontSize(8.5);
       doc.setFont('helvetica', 'normal');
-      doc.text('Grant Application — Official Record', margin, 19);
+      doc.text('Grant Application - Official Record', margin, 19);
       doc.text(`Generated: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`, pageW - margin, 19, { align: 'right' });
     };
 
@@ -90,7 +90,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
       doc.text(label, x, y);
       doc.setTextColor(30, 30, 30);
       doc.setFont('helvetica', 'bold');
-      const lines = doc.splitTextToSize(String(value || '—'), colW - 4);
+      const lines = doc.splitTextToSize(String(value || ' - '), colW - 4);
       doc.text(lines, x, y + 4.5);
       return lines.length * 4.5 + 6;
     };
@@ -146,7 +146,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
       doc.setFontSize(7.5);
       let x = margin + 1;
       cells.forEach(({ text, w, align }) => {
-        const t = String(text || '—');
+        const t = String(text || ' - ');
         const cx = align === 'right' ? margin + contentW - (w || 0) : x;
         doc.text(t, cx, y + 4, align === 'right' ? { align: 'right' } : {});
         x += w || 30;
@@ -169,7 +169,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
     doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(100, 100, 100);
-    doc.text(`${app.project_title || 'Untitled'}  |  Status: ${app.status || '—'}  |  Program: ${app.program_code || '—'}`, margin, y);
+    doc.text(`${app.project_title || 'Untitled'}  |  Status: ${app.status || ' - '}  |  Program: ${app.program_code || ' - '}`, margin, y);
     y += 6;
     doc.setDrawColor(220, 225, 235);
     doc.setLineWidth(0.4);
@@ -192,7 +192,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
       ['Requested Amount', formatCurrency(app.requested_amount)],
       ['Awarded Amount', app.awarded_amount ? formatCurrency(app.awarded_amount) : 'Pending'],
       ['Match / Cost-Share', formatCurrency(app.match_amount)],
-      ['Total Expended', app.total_expended ? formatCurrency(app.total_expended) : '—'],
+      ['Total Expended', app.total_expended ? formatCurrency(app.total_expended) : ' - '],
       ['Performance Start', formatDateShort(app.performance_start)],
       ['Performance End', formatDateShort(app.performance_end)],
     ]);
@@ -250,7 +250,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
         doc.setFontSize(8.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(30, 30, 30);
-        doc.text(`${fr.request_number || `FR-${fi + 1}`}  —  ${fr.request_type}  |  ${formatCurrency(fr.amount_requested)}  |  Status: ${fr.status}`, margin, y);
+        doc.text(`${fr.request_number || `FR-${fi + 1}`} - ${fr.request_type}  |  ${formatCurrency(fr.amount_requested)}  |  Status: ${fr.status}`, margin, y);
         y += 5;
         if (fr.amount_approved != null) {
           doc.setFont('helvetica', 'normal');
@@ -282,11 +282,11 @@ export default function ApplicationPdfExport({ app, budgets }) {
             doc.setFontSize(7.5);
             doc.setTextColor(30, 30, 30);
             doc.text(li.budget_category || '', margin + 1, y + 4);
-            const itemLabel = [li.expenditure_name, li.description].filter(Boolean).join(' — ');
-            const itemLines = doc.splitTextToSize(itemLabel || '—', 56);
+            const itemLabel = [li.expenditure_name, li.description].filter(Boolean).join(' - ');
+            const itemLines = doc.splitTextToSize(itemLabel || ' - ', 56);
             doc.text(itemLines[0] || '', margin + 31, y + 4);
-            doc.text(String(li.quantity || '—'), pageW - margin - 44, y + 4, { align: 'right' });
-            doc.text(li.unit_cost ? formatCurrency(li.unit_cost) : '—', pageW - margin - 22, y + 4, { align: 'right' });
+            doc.text(String(li.quantity || ' - '), pageW - margin - 44, y + 4, { align: 'right' });
+            doc.text(li.unit_cost ? formatCurrency(li.unit_cost) : ' - ', pageW - margin - 22, y + 4, { align: 'right' });
             doc.text(formatCurrency(li.amount), pageW - margin, y + 4, { align: 'right' });
             doc.setDrawColor(235, 238, 245);
             doc.line(margin, y + 6, pageW - margin, y + 6);
@@ -356,7 +356,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
         doc.setFontSize(7.5);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(60, 60, 60);
-        doc.text(`${m.sender_email || m.created_by || '—'}  —  ${formatDateShort(m.created_date)}${m.topic ? `  [${m.topic}]` : ''}`, margin, y);
+        doc.text(`${m.sender_email || m.created_by || ' - '} - ${formatDateShort(m.created_date)}${m.topic ? `  [${m.topic}]` : ''}`, margin, y);
         y += 4.5;
         doc.setFont('helvetica', 'normal');
         doc.setTextColor(30, 30, 30);
@@ -381,7 +381,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
         tableRow([
           { text: a.amendment_number || `AMD-${idx + 1}`, w: 35 },
           { text: a.status, w: 30 },
-          { text: a.net_change != null ? formatCurrency(a.net_change) : '—', w: 30, align: 'right' },
+          { text: a.net_change != null ? formatCurrency(a.net_change) : ' - ', w: 30, align: 'right' },
           { text: formatDateShort(a.submitted_at), w: 30, align: 'right' },
         ], idx);
         if (a.justification) {
@@ -406,9 +406,9 @@ export default function ApplicationPdfExport({ app, budgets }) {
         checkPage(8);
         if (idx % 2 === 0) { doc.setFillColor(252, 253, 255); doc.rect(margin, y - 1, contentW, 7, 'F'); }
         doc.setFontSize(7.5); doc.setTextColor(30, 30, 30);
-        doc.text(log.action || '—', margin + 1, y + 4);
-        doc.text(log.performed_by || log.created_by || '—', margin + 36, y + 4);
-        const detail = doc.splitTextToSize(log.details || '—', 58);
+        doc.text(log.action || ' - ', margin + 1, y + 4);
+        doc.text(log.performed_by || log.created_by || ' - ', margin + 36, y + 4);
+        const detail = doc.splitTextToSize(log.details || ' - ', 58);
         doc.text(detail[0] || '', margin + 87, y + 4);
         doc.text(formatDateShort(log.created_date), pageW - margin, y + 4, { align: 'right' });
         doc.setDrawColor(235, 238, 245);

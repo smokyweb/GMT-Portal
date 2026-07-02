@@ -201,9 +201,9 @@ export default function BulkUserUpload({ onSuccess }) {
           </DialogHeader>
 
           <div className="space-y-5 py-1">
-            {/* Step 1 — Template */}
+            {/* Step 1 - Template */}
             <div className="bg-muted/40 rounded-lg p-4 space-y-2">
-              <p className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Step 1 — Download the Template</p>
+              <p className="text-sm font-semibold flex items-center gap-2"><FileText className="h-4 w-4 text-primary" /> Step 1 - Download the Template</p>
               <p className="text-xs text-muted-foreground">Use the CSV template below. Fill in user details, then upload the completed file.</p>
               <div className="bg-background border rounded text-xs font-mono p-2 overflow-x-auto whitespace-pre">{TEMPLATE_CSV.trim()}</div>
               <div className="pt-1">
@@ -213,14 +213,14 @@ export default function BulkUserUpload({ onSuccess }) {
               </div>
               <div className="text-xs text-muted-foreground pt-1 space-y-0.5">
                 <p><strong>role</strong> values: <code>user</code> (subrecipient), <code>reviewer</code>, <code>admin</code>, <code>federal_officer</code>, <code>federal_admin</code></p>
-                <p><strong>scope_state</strong> — 2-letter state code (e.g. NE) for state-scoped admins/reviewers</p>
-                <p><strong>organization_name</strong> — optional, for subrecipient users</p>
+                <p><strong>scope_state</strong> - 2-letter state code (e.g. NE) for state-scoped admins/reviewers</p>
+                <p><strong>organization_name</strong> - optional, for subrecipient users</p>
               </div>
             </div>
 
-            {/* Step 2 — Upload */}
+            {/* Step 2 - Upload */}
             <div className="space-y-2">
-              <p className="text-sm font-semibold flex items-center gap-2"><Upload className="h-4 w-4 text-primary" /> Step 2 — Upload Your CSV</p>
+              <p className="text-sm font-semibold flex items-center gap-2"><Upload className="h-4 w-4 text-primary" /> Step 2 - Upload Your CSV</p>
               <div
                 className="border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-primary/50 transition"
                 onClick={() => fileInputRef.current?.click()}

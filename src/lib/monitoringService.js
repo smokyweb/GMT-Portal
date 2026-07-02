@@ -80,9 +80,9 @@ export async function runGrantMonitor(currentUser) {
             is_resolved: false,
           });
           notifications.push({
-            adminTitle: `Low Expenditure Alert — ${app.application_number}`,
+            adminTitle: `Low Expenditure Alert - ${app.application_number}`,
             adminMsg: `${app.organization_name}: ${desc}`,
-            subTitle: `Action Required — ${app.application_number}`,
+            subTitle: `Action Required - ${app.application_number}`,
             subMsg: desc + `. Please review your spending plan.`,
             submittedBy: app.submitted_by,
             entityId: app.id,
@@ -96,7 +96,7 @@ export async function runGrantMonitor(currentUser) {
 
     // --- Check 2: High burn rate (> 90%) ---
     if (rate > THRESHOLDS.HIGH_BURN_WARNING) {
-      const desc = `Expenditure rate at ${rate.toFixed(0)}% — funds may be exhausted before period end`;
+      const desc = `Expenditure rate at ${rate.toFixed(0)}% - funds may be exhausted before period end`;
       const key = `${app.id}::FinancialDiscrepancy::${desc.slice(0, 40)}`;
       if (!existingFlagKeys.has(key)) {
         flagsToCreate.push({
@@ -109,9 +109,9 @@ export async function runGrantMonitor(currentUser) {
           is_resolved: false,
         });
         notifications.push({
-          adminTitle: `High Burn Rate Alert — ${app.application_number}`,
+          adminTitle: `High Burn Rate Alert - ${app.application_number}`,
           adminMsg: `${app.organization_name}: ${desc}`,
-          subTitle: `Funding Alert — ${app.application_number}`,
+          subTitle: `Funding Alert - ${app.application_number}`,
           subMsg: desc,
           submittedBy: app.submitted_by,
           entityId: app.id,
@@ -142,9 +142,9 @@ export async function runGrantMonitor(currentUser) {
             is_resolved: false,
           });
           notifications.push({
-            adminTitle: `Overdue Report — ${schedule.application_number}`,
+            adminTitle: `Overdue Report - ${schedule.application_number}`,
             adminMsg: `${schedule.organization_name}: ${desc}`,
-            subTitle: `Report Overdue — ${schedule.application_number}`,
+            subTitle: `Report Overdue - ${schedule.application_number}`,
             subMsg: `Your ${schedule.report_type} report was due on ${schedule.due_date} and has not been submitted.`,
             submittedBy: null, // no submitter on schedule directly
             entityId: schedule.application_id,

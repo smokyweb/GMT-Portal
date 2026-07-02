@@ -33,20 +33,20 @@ const PLACEHOLDERS = [
 ];
 
 function populateTemplate(body, app) {
-  const fmt = (n) => n ? `$${Number(n).toLocaleString()}` : '—';
+  const fmt = (n) => n ? `$${Number(n).toLocaleString()}` : ' - ';
   const map = {
-    '{{organization_name}}': app.organization_name || '—',
-    '{{application_number}}': app.application_number || '—',
-    '{{project_title}}': app.project_title || '—',
-    '{{program_code}}': app.program_code || '—',
-    '{{program_name}}': app.program_name || '—',
-    '{{nofo_title}}': app.nofo_title || '—',
+    '{{organization_name}}': app.organization_name || ' - ',
+    '{{application_number}}': app.application_number || ' - ',
+    '{{project_title}}': app.project_title || ' - ',
+    '{{program_code}}': app.program_code || ' - ',
+    '{{program_name}}': app.program_name || ' - ',
+    '{{nofo_title}}': app.nofo_title || ' - ',
     '{{requested_amount}}': fmt(app.requested_amount),
     '{{awarded_amount}}': fmt(app.awarded_amount),
     '{{match_amount}}': fmt(app.match_amount),
-    '{{performance_start}}': app.performance_start || '—',
-    '{{performance_end}}': app.performance_end || '—',
-    '{{submitted_by}}': app.submitted_by || '—',
+    '{{performance_start}}': app.performance_start || ' - ',
+    '{{performance_end}}': app.performance_end || ' - ',
+    '{{submitted_by}}': app.submitted_by || ' - ',
     '{{today_date}}': new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   };
   return body.replace(/\{\{[^}]+\}\}/g, (m) => map[m] || m);
@@ -236,7 +236,7 @@ export default function DocumentTemplates() {
                     {!t.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Inactive</span>}
                   </div>
                   {t.description && <p className="text-sm text-muted-foreground mt-0.5">{t.description}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">Created by {t.created_by_name || '—'} · {formatDateShort(t.created_date)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Created by {t.created_by_name || ' - '} · {formatDateShort(t.created_date)}</p>
                   {t.file_url && (
                     <a href={t.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
                       <ExternalLink className="h-3 w-3" /> {t.file_name || 'View uploaded file'}
@@ -310,7 +310,7 @@ export default function DocumentTemplates() {
                 className="w-full flex items-center justify-between px-3 py-2.5 bg-muted/50 text-sm font-medium hover:bg-muted/80 transition"
                 onClick={() => setShowPhHelp(v => !v)}
               >
-                <span>📋 Available Placeholders — click to insert</span>
+                <span>📋 Available Placeholders - click to insert</span>
                 {showPhHelp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
               {showPhHelp && (
@@ -371,7 +371,7 @@ export default function DocumentTemplates() {
                 <SelectContent>
                   {apps.map(a => (
                     <SelectItem key={a.id} value={a.id}>
-                      {a.application_number || 'Draft'} - {a.organization_name} ({a.program_code || '—'})
+                      {a.application_number || 'Draft'} - {a.organization_name} ({a.program_code || ' - '})
                     </SelectItem>
                   ))}
                 </SelectContent>

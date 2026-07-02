@@ -37,7 +37,7 @@ export default function UserProfile() {
     setSaving(true);
     setSaveError('');
     try {
-      // Use User entity update — auth.updateMe() is not supported on this backend
+      // Use User entity update - auth.updateMe() is not supported on this backend
       await base44.entities.User.update(user.id, {
         full_name: form.full_name,
         phone: form.phone || null,
@@ -81,7 +81,7 @@ export default function UserProfile() {
           <span className="text-2xl font-bold text-primary">{user?.full_name?.charAt(0) || 'U'}</span>
         </div>
         <div>
-          <p className="text-xl font-bold">{user?.full_name || '—'}</p>
+          <p className="text-xl font-bold">{user?.full_name || ' - '}</p>
           <p className="text-sm text-muted-foreground flex items-center gap-1.5 mt-0.5">
             <Mail className="h-3.5 w-3.5" /> {user?.email}
           </p>
@@ -143,9 +143,9 @@ export default function UserProfile() {
           <h2 className="text-sm font-semibold flex items-center gap-2"><Building2 className="h-4 w-4" /> Organization</h2>
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div><p className="text-xs text-muted-foreground">Name</p><p className="font-medium">{org.name}</p></div>
-            <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{org.type || '—'}</p></div>
-            <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-medium">{org.ein || '—'}</p></div>
-            <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-medium">{org.sam_uei || '—'}</p></div>
+            <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{org.type || ' - '}</p></div>
+            <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-medium">{org.ein || ' - '}</p></div>
+            <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-medium">{org.sam_uei || ' - '}</p></div>
             {org.city && <div><p className="text-xs text-muted-foreground">Location</p><p className="font-medium">{org.city}, {org.state}</p></div>}
           </div>
         </div>

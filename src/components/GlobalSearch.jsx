@@ -119,7 +119,7 @@ export default function GlobalSearch() {
                       </div>
                       <p className="text-xs text-muted-foreground truncate mt-0.5 flex items-center gap-1">
                         <Building2 className="h-3 w-3 flex-shrink-0" />
-                        {app.organization_name || '—'}
+                        {app.organization_name || ' - '}
                       </p>
                     </div>
                   </button>

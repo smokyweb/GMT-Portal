@@ -131,11 +131,11 @@ function DocRow({ item, uploaded, canUpload, applicationId, applicationNumber, o
  * ComplianceChecklist
  *
  * Props:
- *   applicationId       — Application entity id
- *   applicationNumber   — e.g. "APP-2025-00001"
- *   organizationName    — org display name
- *   user                — current user object
- *   canUpload           — bool: whether this user can upload docs (subrecipients = true, reviewers = false or true)
+ *   applicationId - Application entity id
+ *   applicationNumber - e.g. "APP-2025-00001"
+ *   organizationName - org display name
+ *   user - current user object
+ *   canUpload - bool: whether this user can upload docs (subrecipients = true, reviewers = false or true)
  */
 export default function ComplianceChecklist({ applicationId, applicationNumber, organizationName, user, canUpload = false, nofo: nofoProp }) {
   const [docs, setDocs] = useState([]);

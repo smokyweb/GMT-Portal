@@ -13,12 +13,12 @@ export function toNum(val) {
 }
 
 export function formatDate(date) {
-  if (!date) return '—';
+  if (!date) return ' - ';
   return moment(date).format('MMMM DD, YYYY');
 }
 
 export function formatDateShort(date) {
-  if (!date) return '—';
+  if (!date) return ' - ';
   return moment(date).format('MMM DD, YYYY');
 }
 
