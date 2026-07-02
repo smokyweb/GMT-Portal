@@ -577,10 +577,10 @@ export default function SubrecipientHome() {
       base44.entities.ComplianceFlag.list('-created_date', 50),
       base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200),
       base44.entities.Task.filter({ assigned_to: u.email }, '-created_date', 50),
-      base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
       base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20),
       base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50),
+      base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
     ]);
 
     const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
