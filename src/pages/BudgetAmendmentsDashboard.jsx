@@ -45,7 +45,10 @@ function buildChartData(amendments) {
   for (const am of amendments) {
     const month = moment(am.submitted_at || am.created_date).format('MMM YYYY');
     if (!byMonth[month]) byMonth[month] = { month, requested: 0, approved: 0 };
-    byMonth[month].requested += am.net_change || 0;
+    // Only count active/pending amendments in 'requested' (not denied/revision-only)
+    if (['Submitted', 'UnderReview', 'Approved'].includes(am.status)) {
+      byMonth[month].requested += am.net_change || 0;
+    }
     if (am.status === 'Approved') byMonth[month].approved += am.net_change || 0;
   }
   // Sort chronologically, last 12 months
@@ -138,7 +141,7 @@ export default function BudgetAmendmentsDashboard() {
             <BarChart data={chartData} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => { const n = Math.abs(v); if (n >= 1000000) return `${(v/1000000).toFixed(1)}M`; if (n >= 1000) return `${(v/1000).toFixed(0)}k`; return `${v}`; }} tick={{ fontSize: 11 }} width={70} />
+              <YAxis tickFormatter={v => { const n = Math.abs(v); if (n >= 1000000) return `$${(v/1000000).toFixed(1)}M`; if (n >= 1000) return `$${(v/1000).toFixed(0)}k`; return `$${v}`; }} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(val) => formatCurrency(val)} />
               <Legend />
               <Bar dataKey="requested" name="Requested Net Change" fill="hsl(var(--chart-3))" radius={[3,3,0,0]} />
