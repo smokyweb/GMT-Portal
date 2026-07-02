@@ -374,6 +374,19 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                       <p className="bg-muted/40 rounded-lg p-3 mt-1 text-sm whitespace-pre-wrap">{form.impact_on_timeline}</p>
                     </div>
                   )}
+                  {(form.performance_start_new || form.performance_end_new) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                      <p className="text-xs font-semibold text-blue-700 mb-2">Performance Period Change Requested</p>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        {form.performance_start_new && (
+                          <div><p className="text-xs text-muted-foreground">New Start Date</p><p className="font-medium">{form.performance_start_new}</p></div>
+                        )}
+                        {form.performance_end_new && (
+                          <div><p className="text-xs text-muted-foreground">New End Date</p><p className="font-medium">{form.performance_end_new}</p></div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center gap-2 bg-green-50 border border-green-200 rounded-lg p-3 text-sm text-green-800">
