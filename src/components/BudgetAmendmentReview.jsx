@@ -335,6 +335,14 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
             </div>
           )}
 
+          {/* Show resubmission notice when amendment was revised and resubmitted */}
+          {isPending && isAdmin && amendment.reviewer_notes && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <p className="text-xs font-semibold text-blue-700 mb-1">&#x21BA; Resubmitted After Revision</p>
+              <p className="text-xs text-blue-600">The subrecipient has addressed your revision request and resubmitted this amendment for your review.</p>
+            </div>
+          )}
+
           {/* Admin action area - only shown for admins */}
           {isPending && isAdmin && (
             <div className="border rounded-lg p-4 space-y-3 bg-muted/20">
