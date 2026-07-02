@@ -557,6 +557,7 @@ export default function SubrecipientHome() {
   const [nofoSearch, setNofoSearch] = useState('');
   const [nofoFilter, setNofoFilter] = useState('all');
   const [tasks, setTasks] = useState([]);
+  const [pendingAmendments, setPendingAmendments] = useState([]);
   const [genDocs, setGenDocs] = useState([]);
   const [messages, setMessages] = useState([]);
   const [milestones, setMilestones] = useState([]);
@@ -569,13 +570,14 @@ export default function SubrecipientHome() {
     setUser(u);
     if (!u.organization_id) { setLoading(false); return; }
 
-    const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones] = await Promise.all([
+    const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments] = await Promise.all([
       base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20),
       base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.ReportSchedule.list('-due_date', 100),
       base44.entities.ComplianceFlag.list('-created_date', 50),
       base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200),
       base44.entities.Task.filter({ assigned_to: u.email }, '-created_date', 50),
+      base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
       base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20),
       base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50),
@@ -596,6 +598,8 @@ export default function SubrecipientHome() {
     setFlags(allFlags.filter(f => appIds.has(f.application_id) && !f.is_resolved));
     setFundingRequests(allFRs);
     setTasks(myTasks.filter(t => !['Resolved', 'Cancelled'].includes(t.status)));
+    const revisionAmends = (Array.isArray(myAmendments) ? myAmendments : []).filter(a => a.status === 'RevisionRequested');
+    setPendingAmendments(revisionAmends);
     setGenDocs(myGenDocs.filter(d => ['Pending Signature', 'Sent'].includes(d.status)));
     const appIdSet = new Set(myApps.map(x => x.id));
     setMessages(myMessages.filter(m => m.application_id && appIdSet.has(m.application_id)));
@@ -628,7 +632,7 @@ export default function SubrecipientHome() {
   const overdueReports = schedules.filter(s => s.status === 'Overdue');
   const pendingFRs = fundingRequests.filter(fr => ['Submitted', 'UnderReview', 'AdditionalInfoRequested'].includes(fr.status));
   const openTasks = tasks.filter(t => t.status !== 'Resolved' && t.status !== 'Cancelled');
-  const actionItems = openTasks.length + genDocs.length + overdueReports.length + flags.length;
+  const actionItems = openTasks.length + genDocs.length + overdueReports.length + flags.length + pendingAmendments.length;
   const unreadMessages = messages.filter(m => m.sender_email !== user?.email); // Messages accessible via sidebar nav
   const upcomingMilestones = milestones.filter(m => {
     const d = m.due_date ? new Date(m.due_date) : null;
@@ -1221,6 +1225,39 @@ export default function SubrecipientHome() {
             )}
           </div>
 
+
+          {/* Amendment Revision Requests */}
+          {pendingAmendments.length > 0 && (
+            <div className="bg-card border border-orange-200 rounded-xl overflow-hidden">
+              <div className="px-4 py-3 border-b bg-orange-50 flex items-center gap-2">
+                <FileEdit className="h-4 w-4 text-orange-600" />
+                <h2 className="font-semibold text-sm text-orange-800">Amendment Revision Requested</h2>
+                <span className="text-xs font-bold bg-orange-200 text-orange-800 px-1.5 py-0.5 rounded-full">{pendingAmendments.length}</span>
+              </div>
+              <div className="divide-y">
+                {pendingAmendments.map(am => (
+                  <div key={am.id} className="px-5 py-4 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <p className="font-medium text-sm">{am.amendment_number}</p>
+                        <p className="text-xs text-muted-foreground">{am.application_number} — Net change: {am.net_change >= 0 ? '+' : ''}{formatCurrency(Number(am.net_change) || 0)}</p>
+                      </div>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-medium flex-shrink-0">Revision Requested</span>
+                    </div>
+                    {am.reviewer_notes && (
+                      <div className="bg-orange-50 border border-orange-200 rounded p-2 text-xs text-orange-800">
+                        <span className="font-semibold">Reviewer Notes: </span>{am.reviewer_notes}
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground">Go to My Applications → Amendments tab to review and resubmit.</p>
+                    <Link to="/my-applications">
+                      <button className="text-xs bg-orange-600 hover:bg-orange-700 text-white px-3 py-1.5 rounded-md font-medium">View &amp; Resubmit</button>
+                    </Link>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {/* Compliance Flags */}
           {flags.length > 0 && (
             <div className="bg-card border border-red-200 rounded-xl overflow-hidden">
