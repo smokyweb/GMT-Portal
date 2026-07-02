@@ -418,7 +418,7 @@ export default function MyFundingRequests() {
             {/* Type + Grant */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label>Request Type</Label>
+                <Label>Request Type <span className="text-red-500">*</span></Label>
                 <Select value={form.request_type} onValueChange={v => setForm(f => ({ ...f, request_type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -429,7 +429,7 @@ export default function MyFundingRequests() {
                 </Select>
               </div>
               <div>
-                <Label>Select Grant</Label>
+                <Label>Select Grant <span className="text-red-500">*</span></Label>
                 <Select value={form.application_id} onValueChange={v => setForm(f => ({ ...f, application_id: v }))}>
                   <SelectTrigger><SelectValue placeholder="Choose active grant" /></SelectTrigger>
                   <SelectContent>
@@ -526,8 +526,8 @@ export default function MyFundingRequests() {
             {form.request_type !== 'Modification' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Period Start</Label><Input type="date" value={form.period_start} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
-                  <div><Label>Period End</Label><Input type="date" value={form.period_end} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
+                  <div><Label>Period Start <span className="text-red-500">*</span></Label><Input type="date" value={form.period_start} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
+                  <div><Label>Period End <span className="text-red-500">*</span></Label><Input type="date" value={form.period_end} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
                 </div>
 
                 {form.request_type === 'Advance' && (
@@ -569,14 +569,14 @@ export default function MyFundingRequests() {
                         {/* Basic info */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <Label className="text-xs">Budget Category</Label>
+                            <Label className="text-xs">Budget Category <span className="text-red-500">*</span></Label>
                             <Select value={li.budget_category} onValueChange={v => updateLineItem(idx, 'budget_category', v)}>
                               <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                               <SelectContent>{CATEGORIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
                             </Select>
                           </div>
                           <div>
-                            <Label className="text-xs">Expenditure Name</Label>
+                            <Label className="text-xs">Expenditure Name <span className="text-red-500">*</span></Label>
                             <Input className="mt-1" placeholder="e.g. Physical Access Control System" value={li.expenditure_name} onChange={e => updateLineItem(idx, 'expenditure_name', e.target.value)} />
                           </div>
 
@@ -643,7 +643,7 @@ export default function MyFundingRequests() {
                               <Input className="mt-1" placeholder="Brief description / purpose" value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} />
                             </div>
                             <div className="flex items-center gap-2 flex-shrink-0">
-                              <Label className="text-xs font-semibold">Total ($)</Label>
+                              <Label className="text-xs font-semibold">Total ($) <span className="text-red-500">*</span></Label>
                               <Input type="number" className="text-right w-28" value={li.amount} onChange={e => updateLineItem(idx, 'amount', e.target.value)} />
                             </div>
                           </div>
