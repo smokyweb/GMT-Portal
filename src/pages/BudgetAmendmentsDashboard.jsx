@@ -59,7 +59,7 @@ export default function BudgetAmendmentsDashboard() {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
   const [filterStatus, setFilterStatus] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('--');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const load = async () => {
     const [data, u] = await Promise.all([
@@ -138,7 +138,7 @@ export default function BudgetAmendmentsDashboard() {
             <BarChart data={chartData} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
               <XAxis dataKey="month" tick={{ fontSize: 11 }} />
-              <YAxis tickFormatter={v => { const n = Math.abs(v); if (n >= 1000000) return `$${(v/1000000).toFixed(1)}M`; if (n >= 1000) return `$${(v/1000).toFixed(0)}k`; return `$${v}`; }} tick={{ fontSize: 11 }} width={70} />
+              <YAxis tickFormatter={v => { const n = Math.abs(v); if (n >= 1000000) return `${(v/1000000).toFixed(1)}M`; if (n >= 1000) return `${(v/1000).toFixed(0)}k`; return `${v}`; }} tick={{ fontSize: 11 }} width={70} />
               <Tooltip formatter={(val) => formatCurrency(val)} />
               <Legend />
               <Bar dataKey="requested" name="Requested Net Change" fill="hsl(var(--chart-3))" radius={[3,3,0,0]} />
