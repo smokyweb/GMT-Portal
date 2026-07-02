@@ -717,7 +717,7 @@ export default function MyFundingRequests() {
                     {a.uploading ? <Loader2 className="h-4 w-4 animate-spin text-muted-foreground flex-shrink-0" /> : <Paperclip className="h-4 w-4 text-muted-foreground flex-shrink-0" />}
                     <span className="flex-1 truncate text-xs">{a.name}</span>
                     {a.docType && <span className="text-xs text-muted-foreground px-1.5 py-0.5 rounded bg-muted">{a.docType.replace(/([A-Z])/g, ' $1').trim()}</span>}
-                    {!a.uploading && <span className="text-xs text-green-600 font-medium">âœ"</span>}
+                    {!a.uploading && a.url && <span className="text-xs text-green-600 font-medium">&#10003;</span>}
                     <button onClick={() => removeAttachment(a.name)} className="text-muted-foreground hover:text-destructive transition">
                       <X className="h-3.5 w-3.5" />
                     </button>
