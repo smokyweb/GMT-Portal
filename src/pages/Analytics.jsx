@@ -380,7 +380,7 @@ export default function Analytics() {
                     <td className="text-right py-3 pl-4">
                       {row.flags > 0
                         ? <span className="inline-flex items-center gap-1 text-red-600 font-medium"><AlertTriangle className="h-3 w-3" />{row.flags}</span>
-                        : <span className="text-muted-foreground">—</span>
+                        : <span className="text-muted-foreground"> - </span>
                       }
                     </td>
                   </tr>

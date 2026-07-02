@@ -47,7 +47,7 @@ function FundingRequestCard({ req }) {
   return (
     <div className="mt-2 bg-muted/40 border rounded-lg p-3 space-y-2 text-xs">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="font-semibold text-foreground">{req.request_number} — {req.request_type}</span>
+        <span className="font-semibold text-foreground">{req.request_number} - {req.request_type}</span>
         <span className={`px-2 py-0.5 rounded-full font-medium ${statusColor}`}>
           {req.status?.replace(/([A-Z])/g, ' $1').trim()}
         </span>

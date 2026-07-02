@@ -161,7 +161,7 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
                   <SelectContent>
                     {apps.map(a => (
                       <SelectItem key={a.id} value={a.id}>
-                        {a.application_number} — {a.project_title || a.organization_name}
+                        {a.application_number} - {a.project_title || a.organization_name}
                       </SelectItem>
                     ))}
                   </SelectContent>

@@ -159,7 +159,7 @@ export default function PortfolioSummary() {
             <tbody>
               {stateData.map(state => (
                 <tr key={state.state_code} className="border-b last:border-0 hover:bg-muted/20">
-                  <td className="p-3 font-semibold">{state.state_code} — {state.name}</td>
+                  <td className="p-3 font-semibold">{state.state_code} - {state.name}</td>
                   <td className="p-3 text-center">{state.subrecipients}</td>
                   <td className="p-3 text-right font-mono">${(state.totalAwarded / 1000000).toFixed(1)}M</td>
                   <td className="p-3 text-center">{state.pendingApps}</td>

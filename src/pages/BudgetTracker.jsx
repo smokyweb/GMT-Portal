@@ -246,7 +246,7 @@ export default function BudgetTracker() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Performance Period</p>
-                <p className="font-semibold">{selectedApp.performance_start} — {selectedApp.performance_end}</p>
+                <p className="font-semibold">{selectedApp.performance_start} - {selectedApp.performance_end}</p>
               </div>
             </div>
           )}

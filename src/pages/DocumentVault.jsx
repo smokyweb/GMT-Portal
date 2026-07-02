@@ -518,7 +518,7 @@ export default function DocumentVault() {
                         className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${uploadForm.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
                         onClick={() => {
                           setUploadForm(f => ({ ...f, application_id: a.id }));
-                          setAppSearch(`${a.application_number || 'Draft'} — ${a.project_title || 'Untitled'}`);
+                          setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`);
                         }}
                       >
                         <span className="font-medium">{a.application_number || 'Draft'}</span>
@@ -540,7 +540,7 @@ export default function DocumentVault() {
               )}
               {uploadForm.application_id && !appSearch.includes('—') && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Selected: {apps.find(a => a.id === uploadForm.application_id)?.application_number} —{' '}
+                  Selected: {apps.find(a => a.id === uploadForm.application_id)?.application_number} - {' '}
                   {apps.find(a => a.id === uploadForm.application_id)?.project_title}
                   {' '}<a href={`/applications/${uploadForm.application_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Open ↗</a>
                 </p>

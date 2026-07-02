@@ -16,7 +16,7 @@ const DATE_FIELDS = new Set(['submitted_at','created_date','performance_start','
 const CALC_FIELD_PREFIX = '_';
 
 function formatCell(key, value, label) {
-  if (value == null || value === '') return <span className="text-muted-foreground">—</span>;
+  if (value == null || value === '') return <span className="text-muted-foreground"> - </span>;
   if (CURRENCY_FIELDS.has(key)) return <span className="font-mono">{formatCurrency(value)}</span>;
   if (PERCENT_FIELDS.has(key)) return <span>{Number(value).toFixed(1)}%</span>;
   if (DATE_FIELDS.has(key)) return <span>{formatDateShort(value)}</span>;

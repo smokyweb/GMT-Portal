@@ -418,7 +418,7 @@ export default function ApplicationReviewQueue() {
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{viewApp.organization_name}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewApp.program_code} — {viewApp.program_name}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewApp.program_code} - {viewApp.program_name}</p></div>
                 {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Grant Number</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
                 <div><Label className="text-muted-foreground text-xs">Requested Amount</Label><p className="font-bold text-lg">{formatCurrency(viewApp.requested_amount)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Match Commitment</Label><p className="font-medium">{formatCurrency(viewApp.match_amount)}</p></div>
@@ -480,7 +480,7 @@ export default function ApplicationReviewQueue() {
                   </div>
                   <div>
                     <Label className="text-muted-foreground text-xs">Program</Label>
-                    <p className="font-medium">{selected.program_code} — {selected.program_name}</p>
+                    <p className="font-medium">{selected.program_code} - {selected.program_name}</p>
                   </div>
                   {selected.grant_number && (
                     <div className="col-span-2">

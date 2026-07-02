@@ -157,7 +157,7 @@ export default function FederalDashboard() {
                     <td className="px-4 py-2.5 text-right">
                       {row.flags > 0
                         ? <span className="text-red-600 font-semibold">{row.flags}</span>
-                        : <span className="text-muted-foreground">—</span>}
+                        : <span className="text-muted-foreground"> - </span>}
                     </td>
                   </tr>
                 ))}

@@ -300,7 +300,7 @@ export default function Credits() {
                       className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${form.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
                       onClick={() => {
                         setForm(f => ({ ...f, application_id: a.id, application_number: a.application_number || '', program_code: a.program_code || f.program_code }));
-                        setAppSearch(`${a.application_number || 'Draft'} — ${a.project_title || 'Untitled'}`);
+                        setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`);
                       }}
                     >
                       <span className="font-medium">{a.application_number || 'Draft'}</span> — {a.project_title || 'Untitled'}

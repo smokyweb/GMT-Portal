@@ -136,7 +136,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
       {actionStep && (
         <div className={`rounded-lg border p-3 space-y-3 ${actionType === 'Approved' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <p className="text-sm font-medium">
-            {actionType === 'Approved' ? '✓' : '✗'} Confirm {actionType} — {actionStep === 'pm' ? 'Program Manager' : 'Finance Officer'} Step
+            {actionType === 'Approved' ? '✓' : '✗'} Confirm {actionType} - {actionStep === 'pm' ? 'Program Manager' : 'Finance Officer'} Step
           </p>
           <div>
             <Label className="text-xs">Notes (optional)</Label>

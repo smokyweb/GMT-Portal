@@ -371,7 +371,7 @@ export default function DocumentTemplates() {
                 <SelectContent>
                   {apps.map(a => (
                     <SelectItem key={a.id} value={a.id}>
-                      {a.application_number || 'Draft'} — {a.organization_name} ({a.program_code || '—'})
+                      {a.application_number || 'Draft'} - {a.organization_name} ({a.program_code || '—'})
                     </SelectItem>
                   ))}
                 </SelectContent>

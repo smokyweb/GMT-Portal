@@ -298,7 +298,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
               <SelectContent>
                 {apps.map(a => (
                   <SelectItem key={a.id} value={a.id}>
-                    {a.application_number || 'Draft'} — {a.project_title || a.program_code}
+                    {a.application_number || 'Draft'} - {a.project_title || a.program_code}
                   </SelectItem>
                 ))}
               </SelectContent>

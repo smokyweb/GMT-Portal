@@ -416,7 +416,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
             <Select value={appId} onValueChange={v => { setAppId(v); setErrors(p => ({ ...p, appId: null })); }}>
               <SelectTrigger className={`mt-1 ${errors.appId ? 'border-red-400' : ''}`}><SelectValue placeholder="Select grant…" /></SelectTrigger>
               <SelectContent>
-                {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number || 'Draft'} — {a.project_title || a.program_code}</SelectItem>)}
+                {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number || 'Draft'} - {a.project_title || a.program_code}</SelectItem>)}
               </SelectContent>
             </Select>
             {errors.appId && <p className="text-xs text-red-500 mt-1">{errors.appId}</p>}
@@ -1025,7 +1025,7 @@ export default function SubrecipientHome() {
                           <td className="p-3">
                             {fr.payment_status ? (
                               <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${payStatusColor}`}>{fr.payment_status}</span>
-                            ) : <span className="text-xs text-muted-foreground">—</span>}
+                            ) : <span className="text-xs text-muted-foreground"> - </span>}
                           </td>
                           <td className="p-3 text-xs text-muted-foreground">{formatDateShort(fr.created_date)}</td>
                         </tr>

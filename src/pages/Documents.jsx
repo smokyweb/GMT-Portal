@@ -316,7 +316,7 @@ export default function Documents() {
         // Look up app number from the apps array since document.application_number may be blank
         const linkedApp = apps.find(a => a.id === d.application_id);
         const appLabel = linkedApp
-          ? `${linkedApp.application_number || 'Draft'} — ${linkedApp.project_title || linkedApp.organization_name || ''}`
+          ? `${linkedApp.application_number || 'Draft'} - ${linkedApp.project_title || linkedApp.organization_name || ''}`
           : (d.application_number || d.application_id ? (d.application_number || d.application_id.slice(0, 8)) : null);
         g[key] = { label: appLabel || 'Unassigned Documents', appId: d.application_id, docs: [] };
       }
@@ -719,7 +719,7 @@ export default function Documents() {
                   ).map(a => (
                     <div key={a.id}
                       className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${uploadForm.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
-                      onClick={() => { setUploadForm(f => ({ ...f, application_id: a.id })); setAppSearch(`${a.application_number || 'Draft'} — ${a.project_title || 'Untitled'}`); }}
+                      onClick={() => { setUploadForm(f => ({ ...f, application_id: a.id })); setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`); }}
                     >
                       <span className="font-medium">{a.application_number || 'Draft'}</span> — {a.project_title || 'Untitled'}
                       {a.organization_name && <span className="text-xs text-muted-foreground ml-1">({a.organization_name})</span>}
@@ -824,7 +824,7 @@ export default function Documents() {
               <Select value={assigningAppId} onValueChange={setAssigningAppId}>
                 <SelectTrigger><SelectValue placeholder="Choose application…" /></SelectTrigger>
                 <SelectContent>
-                  {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number || 'Draft'} — {a.project_title || 'Untitled'}</SelectItem>)}
+                  {apps.map(a => <SelectItem key={a.id} value={a.id}>{a.application_number || 'Draft'} - {a.project_title || 'Untitled'}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>

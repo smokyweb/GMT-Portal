@@ -116,7 +116,7 @@ export default function TemplateManager() {
                   <td className="p-3 font-medium">{template.name}</td>
                   <td className="p-3 text-xs text-muted-foreground">{template.doc_type}</td>
                   <td className="p-3 text-xs text-muted-foreground">{new Date(template.created_date).toLocaleDateString()}</td>
-                  <td className="p-3 text-center text-xs">—</td>
+                  <td className="p-3 text-center text-xs"> - </td>
                   <td className="p-3 flex items-center gap-2">
                     <Button size="sm" variant="outline" onClick={() => handleEdit(template)}><Pencil className="h-3 w-3" /></Button>
                     <Button size="sm" variant="outline" onClick={() => handleClone(template)}><Copy className="h-3 w-3" /></Button>
