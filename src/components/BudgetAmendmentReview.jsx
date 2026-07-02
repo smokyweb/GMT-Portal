@@ -330,7 +330,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
                   finally { setActioning(null); }
                 }}
               >
-                {actioning === 'Resubmit' ? 'Resubmitting…' : 'Resubmit Amendment'}
+                {actioning === 'Resubmit' ? 'Resubmitting...' : 'Resubmit Amendment'}
               </Button>
             </div>
           )}
@@ -349,19 +349,19 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
               <Label>Reviewer Notes (optional)</Label>
               <Textarea
                 rows={3}
-                placeholder="Add notes for the subrecipient explaining your decision…"
+                placeholder="Add notes for the subrecipient explaining your decision..."
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
               />
               <div className="flex gap-2 justify-end">
                 <Button variant="outline" onClick={() => action('RevisionRequested')} disabled={!!actioning}>
-                  {actioning === 'RevisionRequested' ? 'Saving…' : 'Request Revision'}
+                  {actioning === 'RevisionRequested' ? 'Saving...' : 'Request Revision'}
                 </Button>
                 <Button variant="destructive" onClick={() => action('Denied')} disabled={!!actioning}>
-                  {actioning === 'Denied' ? 'Saving…' : <><XCircle className="h-4 w-4 mr-1.5" /> Deny</>}
+                  {actioning === 'Denied' ? 'Saving...' : <><XCircle className="h-4 w-4 mr-1.5" /> Deny</>}
                 </Button>
                 <Button onClick={() => action('Approved')} disabled={!!actioning} className="bg-green-600 hover:bg-green-700">
-                  {actioning === 'Approved' ? 'Saving…' : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve</>}
+                  {actioning === 'Approved' ? 'Saving...' : <><CheckCircle2 className="h-4 w-4 mr-1.5" /> Approve</>}
                 </Button>
               </div>
             </div>
