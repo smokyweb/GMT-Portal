@@ -22,10 +22,18 @@ export default function NotificationBell({ userEmail }) {
   const [notifications, setNotifications] = useState([]);
   const [open, setOpen] = useState(false);
 
-  useEffect(() => {
+  const loadNotifications = () => {
     if (!userEmail) return;
     base44.entities.Notification.filter({ user_email: userEmail }, '-created_date', 20)
-      .then(setNotifications);
+      .then(setNotifications)
+      .catch(() => {});
+  };
+
+  useEffect(() => {
+    loadNotifications();
+    // Poll every 30 seconds for new notifications
+    const interval = setInterval(loadNotifications, 30000);
+    return () => clearInterval(interval);
   }, [userEmail]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
