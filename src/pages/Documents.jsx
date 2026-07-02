@@ -312,7 +312,14 @@ export default function Documents() {
     const g = {};
     list.forEach(d => {
       const key = d.application_id || '__none__';
-      if (!g[key]) g[key] = { label: d.application_id ? d.application_number : 'Unassigned Documents', docs: [] };
+      if (!g[key]) {
+        // Look up app number from the apps array since document.application_number may be blank
+        const linkedApp = apps.find(a => a.id === d.application_id);
+        const appLabel = linkedApp
+          ? `${linkedApp.application_number || 'Draft'} — ${linkedApp.project_title || linkedApp.organization_name || ''}`
+          : (d.application_number || d.application_id ? (d.application_number || d.application_id.slice(0, 8)) : null);
+        g[key] = { label: appLabel || 'Unassigned Documents', appId: d.application_id, docs: [] };
+      }
       g[key].docs.push(d);
     });
     return g;
