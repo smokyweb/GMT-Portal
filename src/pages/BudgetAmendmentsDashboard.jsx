@@ -47,9 +47,9 @@ function buildChartData(amendments) {
     if (!byMonth[month]) byMonth[month] = { month, requested: 0, approved: 0 };
     // Only count active/pending amendments in 'requested' (not denied/revision-only)
     if (['Submitted', 'UnderReview', 'Approved'].includes(am.status)) {
-      byMonth[month].requested += am.net_change || 0;
+      byMonth[month].requested += Number(am.net_change) || 0;
     }
-    if (am.status === 'Approved') byMonth[month].approved += am.net_change || 0;
+    if (am.status === 'Approved') byMonth[month].approved += Number(am.net_change) || 0;
   }
   // Sort chronologically, last 12 months
   return Object.values(byMonth)
@@ -105,7 +105,7 @@ export default function BudgetAmendmentsDashboard() {
   const pending = amendments.filter(a => ['Submitted', 'UnderReview'].includes(a.status));
   const approved = amendments.filter(a => a.status === 'Approved');
   const denied = amendments.filter(a => a.status === 'Denied');
-  const totalNetApproved = approved.reduce((s, a) => s + (a.net_change || 0), 0);
+  const totalNetApproved = approved.reduce((s, a) => s + (Number(a.net_change) || 0), 0);
 
   const chartData = buildChartData(amendments);
 
@@ -195,8 +195,8 @@ export default function BudgetAmendmentsDashboard() {
                   <td className="p-3 font-mono text-xs text-muted-foreground">{am.application_number || 'â€â€'}</td>
                   <td className="p-3 text-right">{formatCurrency(am.original_total)}</td>
                   <td className="p-3 text-right font-medium text-blue-700">{formatCurrency(am.proposed_total)}</td>
-                  <td className={`p-3 text-right font-semibold ${(am.net_change || 0) > 0 ? 'text-amber-700' : (am.net_change || 0) < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
-                    {(am.net_change || 0) >= 0 ? '+' : '--'}{formatCurrency(am.net_change || 0)}
+                  <td className={`p-3 text-right font-semibold ${(Number(am.net_change) || 0) > 0 ? 'text-amber-700' : (Number(am.net_change) || 0) < 0 ? 'text-green-700' : 'text-muted-foreground'}`}>
+                    {(Number(am.net_change) || 0) >= 0 ? '+' : '--'}{formatCurrency(Number(am.net_change) || 0)}
                   </td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(am.submitted_at)}</td>
                   <td className="p-3"><StatusBadge status={am.status} /></td>
