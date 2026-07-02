@@ -570,7 +570,7 @@ export default function SubrecipientHome() {
     setUser(u);
     if (!u.organization_id) { setLoading(false); return; }
 
-    const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments] = await Promise.all([
+    const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones] = await Promise.all([
       base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20),
       base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.ReportSchedule.list('-due_date', 100),
@@ -580,7 +580,6 @@ export default function SubrecipientHome() {
       base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20),
       base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100),
       base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50),
-      base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
     ]);
 
     const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
@@ -598,8 +597,13 @@ export default function SubrecipientHome() {
     setFlags(allFlags.filter(f => appIds.has(f.application_id) && !f.is_resolved));
     setFundingRequests(allFRs);
     setTasks(myTasks.filter(t => !['Resolved', 'Cancelled'].includes(t.status)));
-    const revisionAmends = (Array.isArray(myAmendments) ? myAmendments : []).filter(a => a.status === 'RevisionRequested');
-    setPendingAmendments(revisionAmends);
+    // Load amendments separately so they can't block the main dashboard
+    base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50)
+      .then(myAmendments => {
+        const revisionAmends = (Array.isArray(myAmendments) ? myAmendments : []).filter(a => a.status === 'RevisionRequested');
+        setPendingAmendments(revisionAmends);
+      })
+      .catch(() => setPendingAmendments([]));
     setGenDocs(myGenDocs.filter(d => ['Pending Signature', 'Sent'].includes(d.status)));
     const appIdSet = new Set(myApps.map(x => x.id));
     setMessages(myMessages.filter(m => m.application_id && appIdSet.has(m.application_id)));
