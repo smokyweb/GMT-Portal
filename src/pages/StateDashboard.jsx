@@ -64,6 +64,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
         } catch {}
       }
     });
+    // Load all data, then filter by scope_state for state admin users
     Promise.all([
       base44.entities.Application.list('-created_date', 500),
       base44.entities.Organization.list('-created_date', 500),
@@ -72,13 +73,33 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       base44.entities.ReportSchedule.filter({ status: 'Overdue' }, '-due_date', 200),
       base44.entities.Task.list('-created_date', 200),
     ]).then(([a, o, f, fr, rs, t]) => {
-      setApps(a);
-      setOrgs(o);
-      setFlags(f);
-      setFundingReqs(fr);
-      setReports(rs);
-      setTasks(t);
-      setLoading(false);
+      // Get the current user's scope_state from the already-set currentUser, or re-fetch
+      base44.auth.me().then(u => {
+        if (u?.scope_state && ['admin', 'reviewer'].includes(u.role)) {
+          const stateOrgs = o.filter(org => org.state === u.scope_state);
+          const stateOrgIds = new Set(stateOrgs.map(org => org.id));
+          const stateApps = a.filter(app => stateOrgIds.has(app.organization_id));
+          const stateAppIds = new Set(stateApps.map(app => app.id));
+          setApps(stateApps);
+          setOrgs(stateOrgs);
+          setFlags(f.filter(flag => stateOrgIds.has(flag.organization_id) || stateAppIds.has(flag.application_id)));
+          setFundingReqs(fr.filter(req => stateOrgIds.has(req.organization_id)));
+          setReports(rs.filter(r => stateAppIds.has(r.application_id)));
+          setTasks(t.filter(task => stateOrgIds.has(task.organization_id) || !task.organization_id));
+        } else {
+          // isc_admin / federal: see all
+          setApps(a);
+          setOrgs(o);
+          setFlags(f);
+          setFundingReqs(fr);
+          setReports(rs);
+          setTasks(t);
+        }
+        setLoading(false);
+      }).catch(() => {
+        setApps(a); setOrgs(o); setFlags(f); setFundingReqs(fr); setReports(rs); setTasks(t);
+        setLoading(false);
+      });
     });
   }, []);
 

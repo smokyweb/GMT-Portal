@@ -20,12 +20,27 @@ export default function Home() {
   useEffect(() => {
     if (!user) return;
     const isState = isStateUser(user?.role);
-    const fetchApps = isState
-      ? base44.entities.Application.list('-created_date', 200)
-      : user?.organization_id
-        ? base44.entities.Application.filter({ organization_id: user.organization_id }, '-created_date', 100)
-        : Promise.resolve([]);
-    fetchApps.then(apps => { setAllApps(apps || []); setLoading(false); }).catch(() => setLoading(false));
+    if (isState) {
+      // State admin: load all apps then filter to their scope_state via org membership
+      base44.entities.Application.list('-created_date', 500)
+        .then(async apps => {
+          if (user?.scope_state) {
+            const orgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
+            const orgIds = new Set((orgs || []).map(o => o.id));
+            setAllApps((apps || []).filter(a => orgIds.has(a.organization_id)));
+          } else {
+            setAllApps(apps || []);
+          }
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
+    } else if (user?.organization_id) {
+      base44.entities.Application.filter({ organization_id: user.organization_id }, '-created_date', 100)
+        .then(apps => { setAllApps(apps || []); setLoading(false); })
+        .catch(() => setLoading(false));
+    } else {
+      setLoading(false);
+    }
   }, [user]);
 
   const filteredApps = useMemo(() => applyDashboardFilters(allApps, filters), [allApps, filters]);
