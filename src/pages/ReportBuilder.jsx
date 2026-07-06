@@ -72,7 +72,13 @@ export default function ReportBuilder() {
     if (!cfg.data_source || !cfg.selected_fields.length) return;
     setPreviewLoading(true);
     try {
-      const orgFilter = isSubrecipient(u?.role) ? u?.organization_id : null;
+      let orgFilter = null;
+      if (isSubrecipient(u?.role)) {
+        orgFilter = u?.organization_id;
+      } else if (u?.scope_state && ['admin','reviewer'].includes(u?.role)) {
+        const stateOrgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
+        orgFilter = (stateOrgs || []).map(o => o.id);
+      }
       const rows = await runReport(cfg, orgFilter);
       setPreviewRows(Array.isArray(rows) ? rows : []);
     } catch (err) {
