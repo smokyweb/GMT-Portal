@@ -125,7 +125,13 @@ export default function ReportBuilder() {
     }
     setPreviewLoading(true);
     try {
-      const orgFilter = isSub ? user?.organization_id : null;
+      let orgFilter = null;
+      if (isSub) {
+        orgFilter = user?.organization_id;
+      } else if (user?.scope_state && ['admin','reviewer'].includes(user?.role)) {
+        const stateOrgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
+        orgFilter = (stateOrgs || []).map(o => o.id);
+      }
       const rows = await runReport(config, orgFilter);
       setPreviewRows(Array.isArray(rows) ? rows : []);
       // Update last run

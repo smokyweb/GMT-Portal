@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 /**
  * Risk Score Engine
  * Scores each subrecipient organization 0 - 100 based on:
- *  - Compliance flags (weighted by severity)
+ *  - Compliance scopedFlags (weighted by severity)
  *  - Overdue reports
  *  - Expenditure variance (over/under-spending approved budget)
  *  - Audit log anomalies (frequent status changes)
@@ -22,12 +22,25 @@ export function getRiskLevel(score) {
 }
 
 export async function computeRiskScores() {
-  const [flags, reports, applications, auditLogs] = await Promise.all([
+  const [flags, reports, allApplications, auditLogs, currentUser] = await Promise.all([
     base44.entities.ComplianceFlag.list('-created_date', 500),
     base44.entities.ReportSchedule.list('-due_date', 500),
     base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500),
     base44.entities.AuditLog.filter({ entity_type: 'Application' }, '-created_date', 500),
+    base44.auth.me().catch(() => null),
   ]);
+  // Scope to state admin's state if applicable
+  let applications = allApplications;
+  let stateOrgIds = null;
+  if (currentUser?.scope_state && ['admin','reviewer'].includes(currentUser.role)) {
+    const orgs = await base44.entities.Organization.filter({ state: currentUser.scope_state }).catch(() => []);
+    stateOrgIds = new Set((orgs || []).map(o => o.id));
+    applications = allApplications.filter(a => stateOrgIds.has(a.organization_id));
+  }
+
+  // Filter scopedFlags and reports to state scope if applicable
+  const scopedFlags = stateOrgIds ? flags.filter(f => stateOrgIds.has(f.organization_id)) : flags;
+  const scopedReports = stateOrgIds ? reports.filter(r => applications.some(a => a.id === r.application_id)) : reports;
 
   // Build org map from approved applications
   const orgMap = {}; // orgName -> { orgName, appIds, score breakdown }
@@ -73,8 +86,8 @@ export async function computeRiskScores() {
     }
   });
 
-  // Compliance flags
-  flags.forEach(flag => {
+  // Compliance flags (scoped to state if applicable)
+  scopedFlags.forEach(flag => {
     const key = flag.organization_name || 'Unknown';
     if (!orgMap[key]) return;
     if (!flag.is_resolved) {
@@ -84,8 +97,8 @@ export async function computeRiskScores() {
     }
   });
 
-  // Overdue reports
-  reports.forEach(schedule => {
+  // Overdue reports (scoped to state if applicable)
+  scopedReports.forEach(schedule => {
     if (schedule.status !== 'Overdue') return;
     const key = schedule.organization_name || 'Unknown';
     if (!orgMap[key]) return;
@@ -116,7 +129,7 @@ export async function computeRiskScores() {
         score,
         level,
         breakdown: {
-          flags: org.flagCount,
+          scopedFlags: org.flagCount,
           overdueReports: org.overdueCount,
           varianceIssues: org.varianceCount,
           auditAnomalies: org.auditAnomalies,

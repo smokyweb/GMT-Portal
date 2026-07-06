@@ -26,10 +26,15 @@ export async function fetchSourceData(sourceKey, orgFilter = null) {
     src.entities.map(async (entity) => {
       const e = base44.entities[ENTITY_MAP[entity]];
       if (!e) return;
-      if (orgFilter && entity === 'Application') {
-        fetched[entity] = await e.filter({ organization_id: orgFilter }, '-created_date', 500);
-      } else if (orgFilter && (entity === 'FundingRequest' || entity === 'ProgressReport' || entity === 'ReportSchedule')) {
-        fetched[entity] = await e.filter({ organization_id: orgFilter }, '-created_date', 500);
+      if (orgFilter && ['Application','FundingRequest','ProgressReport','ReportSchedule','ComplianceFlag'].includes(entity)) {
+        // orgFilter can be a single id (subrecipient) or an array of ids (state admin)
+        const allRows = await e.list('-created_date', 500);
+        if (Array.isArray(orgFilter)) {
+          const orgSet = new Set(orgFilter);
+          fetched[entity] = allRows.filter(r => orgSet.has(r.organization_id));
+        } else {
+          fetched[entity] = allRows.filter(r => r.organization_id === orgFilter);
+        }
       } else {
         fetched[entity] = await e.list('-created_date', 500);
       }
