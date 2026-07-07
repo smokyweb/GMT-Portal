@@ -27,11 +27,14 @@ function AmendmentStatusBadge({ status }) {
 }
 
 function BeforeAfterTable({ original, proposed }) {
-  const origBycat = (original || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
-  const propBycat = (proposed || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
+  // Parse if stored as JSON string
+  const parsedOriginal = typeof original === 'string' ? (() => { try { return JSON.parse(original); } catch { return []; } })() : (original || []);
+  const parsedProposed = typeof proposed === 'string' ? (() => { try { return JSON.parse(proposed); } catch { return []; } })() : (proposed || []);
+  const origBycat = parsedOriginal.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
+  const propBycat = parsedProposed.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
   const allCats = [...new Set([...Object.keys(origBycat), ...Object.keys(propBycat)])];
-  const origTotal = Object.values(origBycat).reduce((s, v) => s + v, 0);
-  const propTotal = Object.values(propBycat).reduce((s, v) => s + v, 0);
+  const origTotal = parsedOriginal.reduce((s, l) => s + (Number(l.amount_requested) || 0), 0);
+  const propTotal = parsedProposed.reduce((s, l) => s + (Number(l.amount_requested) || 0), 0);
   const netChange = propTotal - origTotal;
 
   return (
@@ -77,17 +80,22 @@ function BeforeAfterTable({ original, proposed }) {
 
 function LineItemComparison({ original, proposed, title, colorClass }) {
   const [expanded, setExpanded] = useState(false);
+  // Parse JSON string if needed
+  const parseLines = (v) => { if (!v) return []; if (typeof v === 'string') { try { return JSON.parse(v); } catch { return []; } } return v; };
+  const parsedOriginal = parseLines(original);
+  const parsedProposed = parseLines(proposed);
+  const displayLines = parsedProposed.length > 0 ? parsedProposed : parsedOriginal;
   return (
     <div className={`rounded-lg border overflow-hidden ${colorClass}`}>
       <button className="w-full flex items-center justify-between p-3 text-sm font-semibold hover:bg-black/5 transition" onClick={() => setExpanded(!expanded)}>
-        <span>{title} ({(proposed || original || []).length} lines)</span>
+        <span>{title} ({displayLines.length} lines)</span>
         {expanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
       </button>
       {expanded && (
         <table className="w-full text-xs border-t">
           <thead><tr className="bg-muted/40"><th className="text-left p-2 font-medium">Category</th><th className="text-left p-2 font-medium">Description</th><th className="text-right p-2 font-medium">Federal</th><th className="text-right p-2 font-medium">Match</th></tr></thead>
           <tbody>
-            {(proposed || original || []).map((l, i) => (
+            {displayLines.map((l, i) => (
               <tr key={i} className="border-b last:border-0">
                 <td className="p-2"><span className="px-1.5 py-0.5 bg-muted rounded">{l.budget_category}</span></td>
                 <td className="p-2 text-muted-foreground">{l.line_description || ' - '}</td>
@@ -186,11 +194,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
           'amendment_actioned', 'BudgetAmendment', amendment.id,
           '/my-applications'
         ).catch(() => {});
-        base44.integrations.Core.SendEmail({
-          to: amendment.submitted_by,
-          subject: `Budget Amendment ${actionLabel} \u2014 ${amendment.application_number}`,
-          body: `Your budget amendment (${amendment.amendment_number}) for grant ${amendment.application_number} has been ${actionLabel.toLowerCase()}.${notes ? '\n\nReviewer Notes: ' + notes : ''}\n\nLog in to the GMT Portal for details.`,
-        }).catch(() => {});
+        // Email notification removed - using in-app notifications instead
       }
     } catch (err) {
       console.error('Amendment action error:', err);

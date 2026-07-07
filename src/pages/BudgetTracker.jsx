@@ -47,14 +47,24 @@ export default function BudgetTracker() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
+      let appList = [];
       if (u?.organization_id) {
-        const appList = await base44.entities.Application.filter(
-          { organization_id: u.organization_id },
-          '-created_date', 50
-        );
-        setApps(appList);
-        if (appList.length > 0) setSelectedAppId(appList[0].id);
+        // Subrecipient: filter to their org
+        appList = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50);
+      } else if (['admin','reviewer','isc_admin','federal_admin'].includes(u?.role)) {
+        // State admin: filter to their scope_state orgs, or all for isc/federal
+        if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
+          const orgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
+          const orgIds = (orgs || []).map(o => o.id);
+          const all = await base44.entities.Application.list('-created_date', 200);
+          appList = (all || []).filter(a => orgIds.includes(a.organization_id) && a.status === 'Approved');
+        } else {
+          appList = await base44.entities.Application.list('-created_date', 200);
+          appList = appList.filter(a => a.status === 'Approved');
+        }
       }
+      setApps(appList);
+      if (appList.length > 0) setSelectedAppId(appList[0].id);
       setLoading(false);
     });
   }, []);
