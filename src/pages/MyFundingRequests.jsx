@@ -168,7 +168,8 @@ export default function MyFundingRequests() {
 
   const handleSubmit = async () => {
     setSubmitting(true);
-    const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000);
+    try {
+    const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000).catch(() => []);
     const reqNum = `REQ-${new Date().getFullYear()}-${String(allReqs.length + 1).padStart(5, '0')}`;
     const isModification = form.request_type === 'Modification';
 
@@ -259,6 +260,11 @@ export default function MyFundingRequests() {
     resetForm();
     toast.success(`Request ${reqNum} submitted successfully.`);
     loadData();
+    } catch (err) {
+      console.error('FR submit error:', err);
+      alert('Failed to submit funding request: ' + (err?.message || err?.detail || 'Please try again.'));
+      setSubmitting(false);
+    }
   };
 
   const filteredRequests = requests.filter(req => {

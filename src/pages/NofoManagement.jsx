@@ -74,11 +74,16 @@ export default function NofoManagement() {
   };
 
   const openEdit = (nofo) => {
+    const prog = programs.find(p => p.id === nofo.program_id);
     setForm({
       ...nofo,
       open_date: toDateInput(nofo.open_date),
       close_date: toDateInput(nofo.close_date),
       eligible_org_types: nofo.eligible_org_types || [],
+      scope_states: nofo.scope_states || (user?.scope_state ? [user.scope_state] : []),
+      // Prefill eligibility from program if not already set
+      eligibility_criteria: nofo.eligibility_criteria || prog?.eligibility_criteria || (Array.isArray(prog?.eligibility_requirements) ? prog.eligibility_requirements.join('\n') : '') || '',
+      allowable_costs: nofo.allowable_costs || prog?.allowable_costs || '',
     });
     setEditing(nofo);
     setOpen(true);
@@ -113,7 +118,15 @@ export default function NofoManagement() {
 
       // Strip server-managed fields before saving
       const { id: _id, created_date: _cd, updated_date: _ud, created_by: _cb, created_by_id: _cbid,
-        is_sample: _is, published_at: _pa, reviewed_by: _rb, ...cleanData } = data;
+        is_sample: _is, published_at: _pa, reviewed_by: _rb, attachments: _att, total_funding: _tf, ...cleanData } = data;
+      // Clean required_documents: remove any server-generated id fields from items
+      if (cleanData.required_documents) {
+        cleanData.required_documents = (cleanData.required_documents || []).map(d => ({
+          name: d.name || '',
+          mandatory: !!d.mandatory,
+          description: d.description || undefined,
+        })).filter(d => d.name.trim());
+      }
 
       if (editing) {
         await base44.entities.Nofo.update(editing.id, cleanData);
