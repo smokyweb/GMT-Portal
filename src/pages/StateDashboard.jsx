@@ -115,6 +115,12 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
 
   const totalAwarded = displayApps.filter(a => a.status === 'Approved').reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0);
 
+  // Derive filtered flags/FRs based on which apps are visible after filter
+  const displayAppIds = new Set(displayApps.map(a => a.id));
+  const displayOrgIds = new Set(displayApps.map(a => a.organization_id).filter(Boolean));
+  const displayFlags = flags.filter(f => displayAppIds.has(f.application_id) || displayOrgIds.has(f.organization_id));
+  const displayFundingReqs = fundingReqs.filter(fr => displayAppIds.has(fr.application_id) || displayOrgIds.has(fr.organization_id));
+
    // Filter active orgs by scope (state admins see only their state's orgs)
    const scopedOrgs = currentUser?.scope_state
      ? orgs.filter(o => o.state === currentUser.scope_state && o.is_active !== false)
@@ -125,13 +131,13 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
    const PENDING_APP_STATUSES = ['Submitted', 'PendingReview', 'UnderReview', 'RevisionRequested'];
    const PENDING_FR_STATUSES = ['Submitted', 'UnderReview', 'AdditionalInfoRequested'];
    const pendingAppReviews = displayApps.filter(a => PENDING_APP_STATUSES.includes(a.status)).length;
-   const pendingFRReviews = fundingReqs.filter(fr => PENDING_FR_STATUSES.includes(fr.status)).length;
+   const pendingFRReviews = displayFundingReqs.filter(fr => PENDING_FR_STATUSES.includes(fr.status)).length;
    const pendingReviews = pendingAppReviews + pendingFRReviews;
 
    // Draft counts (separate from pending)
    const draftApps = displayApps.filter(a => a.status === 'Draft').length;
 
-   const highFlags = flags.filter(f => f.severity === 'High' || f.severity === 'Critical').length;
+   const highFlags = displayFlags.filter(f => f.severity === 'High' || f.severity === 'Critical').length;
 
   // Expenditure by program
   const approvedApps = displayApps.filter(a => a.status === 'Approved');
@@ -266,7 +272,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
                 </Link>
               </div>
               <div className="p-4 space-y-3">
-                {flags.slice(0, 6).map(flag => (
+                {displayFlags.slice(0, 6).map(flag => (
                   <div key={flag.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                     <SeverityBadge severity={flag.severity} />
                     <div className="min-w-0 flex-1">
@@ -277,7 +283,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
                     </div>
                   </div>
                 ))}
-                {flags.length === 0 && (
+                {displayFlags.length === 0 && (
                   <p className="text-sm text-muted-foreground text-center py-8">No active flags</p>
                 )}
               </div>
@@ -287,7 +293,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       )}
 
       {/* Workflow Pipeline */}
-      {isVisible('workflow') && <WorkflowPipeline apps={apps} fundingReqs={fundingReqs} flags={flags} reports={reports} tasks={tasks} />}
+      {isVisible('workflow') && <WorkflowPipeline apps={displayApps} fundingReqs={displayFundingReqs} flags={displayFlags} reports={reports} tasks={tasks} />}
 
       {/* Risk Score Table */}
       {isVisible('risk_table') && <RiskScoreTable />}
