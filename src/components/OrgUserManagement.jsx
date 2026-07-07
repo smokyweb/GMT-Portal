@@ -45,27 +45,36 @@ export default function OrgUserManagement({ user, org }) {
   const handleInvite = async () => {
     if (!inviteEmail) return;
     setInviting(true);
-    await base44.users.inviteUser(inviteEmail, 'user');
-    // Poll briefly to find the new user and set their org
-    let attempts = 0;
-    while (attempts < 5) {
-      await new Promise(r => setTimeout(r, 1000));
-      const all = await base44.entities.User.list('-created_date', 200);
-      const newUser = all.find(u => u.email === inviteEmail);
-      if (newUser) {
-        await base44.entities.User.update(newUser.id, {
-          organization_id: user.organization_id,
-          organization_name: org?.name,
-        });
-        break;
+    try {
+      const tempPassword = 'GMT_Welcome_2026!';
+      await base44.auth.register(inviteEmail, tempPassword, inviteEmail.split('@')[0], 'user').catch(async () => {
+        await base44.entities.User.create({ email: inviteEmail, role: 'user', full_name: inviteEmail.split('@')[0] }).catch(() => {});
+      });
+      // Poll briefly to find the new user and set their org
+      let attempts = 0;
+      while (attempts < 5) {
+        await new Promise(r => setTimeout(r, 1000));
+        const all = await base44.entities.User.list('-created_date', 200);
+        const newUser = all.find(u => u.email === inviteEmail);
+        if (newUser) {
+          await base44.entities.User.update(newUser.id, {
+            organization_id: user.organization_id,
+            organization_name: org?.name,
+          });
+          break;
+        }
+        attempts++;
       }
-      attempts++;
+      const savedEmail = inviteEmail;
+      setInviteEmail('');
+      setInviteSuccess(savedEmail);
+      setTimeout(() => setInviteSuccess(false), 15000);
+      load();
+    } catch (err) {
+      alert('Failed to invite user: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setInviting(false);
     }
-    setInviting(false);
-    setInviteSuccess(true);
-    setInviteEmail('');
-    setTimeout(() => setInviteSuccess(false), 3000);
-    load();
   };
 
   const handleEditSave = async () => {
@@ -118,9 +127,13 @@ export default function OrgUserManagement({ user, org }) {
             {inviting ? 'Sending…' : 'Send Invite'}
           </Button>
           {inviteSuccess && (
-            <span className="text-xs text-green-600 flex items-center gap-1">
-              <CheckCircle className="h-3.5 w-3.5" /> Invite sent!
-            </span>
+            <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 space-y-1 mt-2">
+              <p className="font-semibold flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Account created!</p>
+              <p>Share these credentials with the new team member:</p>
+              <p className="font-mono bg-white border rounded px-2 py-1">Email: {inviteSuccess}</p>
+              <p className="font-mono bg-white border rounded px-2 py-1">Password: GMT_Welcome_2026!</p>
+              <p className="text-green-600">They can log in at gmt.bluesapps.com and update their profile.</p>
+            </div>
           )}
         </div>
         <p className="text-xs text-muted-foreground">Invited users will be added to your organization with subrecipient access.</p>

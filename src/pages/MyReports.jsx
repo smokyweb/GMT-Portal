@@ -21,6 +21,8 @@ export default function MyReports() {
     narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0,
   });
   const [attachments, setAttachments] = useState([]); // [{ file, uploading, url, name }]
+  const [viewReport, setViewReport] = useState(null);
+  const [viewProgress, setViewProgress] = useState(null);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -39,11 +41,31 @@ export default function MyReports() {
     setLoading(false);
   };
 
+  const openViewReport = async (schedule) => {
+    setViewReport(schedule);
+    const reports = await base44.entities.ProgressReport.filter({ schedule_id: schedule.id }, '-created_date', 1).catch(() => []);
+    setViewProgress(reports[0] || null);
+  };
+
   const openReport = (schedule) => {
     setSelected(schedule);
     setForm({ narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0 });
     setAttachments([]);
     setOpen(true);
+  };
+
+  const uploadFileToServer = async (file) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const token = localStorage.getItem('gmt_token');
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 30000);
+      const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {}, signal: controller.signal });
+      clearTimeout(timeoutId);
+      if (res.ok) { const data = await res.json(); return data.url || ''; }
+    } catch (e) { console.warn('Upload failed:', e.message); }
+    return '';
   };
 
   const handleFileAdd = async (e) => {
@@ -139,9 +161,12 @@ export default function MyReports() {
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                   <td className="p-3 text-xs font-medium">{formatDateShort(s.due_date)}</td>
                   <td className="p-3"><StatusBadge status={s.status} /></td>
-                  <td className="p-3">
+                  <td className="p-3 flex gap-2 items-center">
                     {(s.status === 'Pending' || s.status === 'Overdue') && (
                       <Button size="sm" onClick={() => openReport(s)}>Submit Report</Button>
+                    )}
+                    {['Submitted','Approved','Denied','RevisionRequested'].includes(s.status) && (
+                      <Button size="sm" variant="outline" onClick={() => openViewReport(s)}>View</Button>
                     )}
                   </td>
                 </tr>
@@ -218,6 +243,38 @@ export default function MyReports() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* View submitted report dialog */}
+      {viewReport && (
+        <Dialog open={!!viewReport} onOpenChange={o => { if (!o) { setViewReport(null); setViewProgress(null); } }}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader><DialogTitle>Report: {viewReport.report_type} - {viewReport.application_number}</DialogTitle></DialogHeader>
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-3">
+                <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewReport.period_start)} - {formatDateShort(viewReport.period_end)}</p></div>
+                <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewReport.status} /></div>
+                <div><p className="text-xs text-muted-foreground">Due Date</p><p className="font-medium">{formatDateShort(viewReport.due_date)}</p></div>
+                {viewProgress?.submitted_at && <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium">{formatDateShort(viewProgress.submitted_at)}</p></div>}
+              </div>
+              {viewProgress ? (
+                <>
+                  {viewProgress.narrative && <div><p className="text-xs text-muted-foreground font-medium">Narrative</p><p className="mt-1 bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{viewProgress.narrative}</p></div>}
+                  {viewProgress.objectives_met && <div><p className="text-xs text-muted-foreground font-medium">Objectives Met</p><p className="mt-1 bg-muted/40 rounded-lg p-3">{viewProgress.objectives_met}</p></div>}
+                  {viewProgress.challenges && <div><p className="text-xs text-muted-foreground font-medium">Challenges</p><p className="mt-1 bg-muted/40 rounded-lg p-3">{viewProgress.challenges}</p></div>}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><p className="text-xs text-muted-foreground">Expenditure YTD</p><p className="font-medium">{formatCurrency(viewProgress.expenditure_ytd)}</p></div>
+                    <div><p className="text-xs text-muted-foreground">Match YTD</p><p className="font-medium">{formatCurrency(viewProgress.match_ytd)}</p></div>
+                  </div>
+                  {viewProgress.reviewer_notes && <div className="bg-amber-50 border border-amber-200 rounded-lg p-3"><p className="text-xs font-semibold text-amber-800">Reviewer Notes</p><p className="text-sm text-amber-700 mt-1">{viewProgress.reviewer_notes}</p></div>}
+                </>
+              ) : (
+                <p className="text-muted-foreground text-center py-6">No report submitted yet.</p>
+              )}
+            </div>
+            <DialogFooter><Button variant="outline" onClick={() => { setViewReport(null); setViewProgress(null); }}>Close</Button></DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
