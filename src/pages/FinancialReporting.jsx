@@ -42,7 +42,7 @@ function KPICard({ label, value, sub, icon: IconComp, accent }) {
 }
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">””</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">""</span>;
   const cfg = PAYMENT_LABELS[status] || PAYMENT_LABELS.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -95,7 +95,7 @@ export default function FinancialReporting() {
     return matchProg && matchPay;
   }), [requests, filterProgram, filterPayment]);
 
-  // KPIs ”” all use amount_approved as the base amount
+  // KPIs "" all use amount_approved as the base amount
   // Total Approved = sum of all approved FR amounts
   const totalApproved = filtered.reduce((s, r) => s + (Number(r.amount_approved) || 0), 0);
   // Total Paid = sum where payment_status is Paid
@@ -279,15 +279,15 @@ export default function FinancialReporting() {
             <tbody>
               {filtered.map((r, i) => (
                 <tr key={i} className="border-b last:border-0 hover:bg-muted/20 transition">
-                  <td className="p-3 font-mono text-xs">{r.request_number || '””'}</td>
-                  <td className="p-3">{r.organization_name || '””'}</td>
+                  <td className="p-3 font-mono text-xs">{r.request_number || '""'}</td>
+                  <td className="p-3">{r.organization_name || '""'}</td>
                   <td className="p-3">
-                    <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{r.program_code || '””'}</span>
+                    <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{r.program_code || '""'}</span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(r.amount_approved)}</td>
                   <td className="p-3"><PaymentBadge status={r.payment_status} /></td>
-                  <td className="p-3 font-mono text-xs text-muted-foreground">{r.payment_reference || '””'}</td>
-                  <td className="p-3 text-xs text-muted-foreground">{r.payment_date || '””'}</td>
+                  <td className="p-3 font-mono text-xs text-muted-foreground">{r.payment_reference || '-'}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.payment_date ? r.payment_date.substring(0,10) : '-'}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
