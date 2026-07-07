@@ -48,7 +48,7 @@ export default function PortfolioSummary() {
         if (org && stateMap[org.state]) {
           stateMap[org.state].apps++;
           if (a.status === 'Approved') {
-            stateMap[org.state].totalAwarded += a.awarded_amount || 0;
+            stateMap[org.state].totalAwarded += Number(a.awarded_amount) || 0;
           }
           if (a.status === 'Submitted') {
             stateMap[org.state].pendingApps++;

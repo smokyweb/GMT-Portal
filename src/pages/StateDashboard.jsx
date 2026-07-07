@@ -164,10 +164,10 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       const rows = displayApps.map(a => [
         a.application_number, a.organization_name, a.program_code, a.nofo_title,
         a.status,
-        Number(a.requested_amount || 0).toFixed(2),
-        Number(a.awarded_amount || 0).toFixed(2),
-        Number(a.total_expended || 0).toFixed(2),
-        Number(a.remaining_balance || 0).toFixed(2),
+        Number(Number(a.requested_amount) || 0).toFixed(2),
+        Number(Number(a.awarded_amount) || 0).toFixed(2),
+        Number(Number(a.total_expended) || 0).toFixed(2),
+        Number(Number(a.remaining_balance) || 0).toFixed(2),
         a.performance_start || '', a.performance_end || '',
       ].map(toCsvField).join(','));
       const csv = [headers.join(','), ...rows].join('\n');

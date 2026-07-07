@@ -73,9 +73,9 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
 
 export default function PortalAnalyticsTab({ apps, fundingRequests }) {
   const activeGrants = apps.filter(a => a.status === 'Approved');
-  const totalAwarded = activeGrants.reduce((s, g) => s + (g.awarded_amount || 0), 0);
-  const totalExpended = activeGrants.reduce((s, g) => s + (g.total_expended || 0), 0);
-  const totalRemaining = activeGrants.reduce((s, g) => s + (g.remaining_balance ?? (g.awarded_amount - (g.total_expended || 0))), 0);
+  const totalAwarded = activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0);
+  const totalExpended = activeGrants.reduce((s, g) => s + (Number(g.total_expended) || 0), 0);
+  const totalRemaining = activeGrants.reduce((s, g) => s + (g.remaining_balance ?? (g.awarded_amount - (Number(g.total_expended) || 0))), 0);
   const overallRate = totalAwarded > 0 ? Math.round((totalExpended / totalAwarded) * 100) : 0;
   const approvedFRs = fundingRequests.filter(fr => fr.status === 'Approved');
   const totalReimbursed = approvedFRs.reduce((s, fr) => s + (fr.amount_approved || fr.amount_requested || 0), 0);
@@ -135,8 +135,8 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
     activeGrants.forEach(g => {
       const key = g.program_code || 'Other';
       if (!acc[key]) acc[key] = { name: key, Awarded: 0, Expended: 0 };
-      acc[key].Awarded += g.awarded_amount || 0;
-      acc[key].Expended += g.total_expended || 0;
+      acc[key].Awarded += Number(g.awarded_amount) || 0;
+      acc[key].Expended += Number(g.total_expended) || 0;
     });
     return Object.values(acc);
   }, [activeGrants]);
@@ -153,7 +153,7 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
   // ── 5. Budget Alerts ──────────────────────────────────────────────────────
   const alerts = useMemo(() => {
     return activeGrants.map(g => {
-      const remaining = g.remaining_balance ?? (g.awarded_amount - (g.total_expended || 0));
+      const remaining = g.remaining_balance ?? (g.awarded_amount - (Number(g.total_expended) || 0));
       const rate = g.expenditure_rate || 0;
       const daysLeft = g.performance_end
         ? Math.max(0, Math.ceil((new Date(g.performance_end) - new Date()) / 86400000))
@@ -255,7 +255,7 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
               <tbody>
                 {activeGrants.map(g => {
                   const rate = g.expenditure_rate || 0;
-                  const remaining = g.remaining_balance ?? (g.awarded_amount - (g.total_expended || 0));
+                  const remaining = g.remaining_balance ?? (g.awarded_amount - (Number(g.total_expended) || 0));
                   const daysLeft = g.performance_end
                     ? Math.max(0, Math.ceil((new Date(g.performance_end) - new Date()) / 86400000))
                     : null;

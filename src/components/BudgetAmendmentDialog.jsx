@@ -317,8 +317,8 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                   <div>
                     <p className="text-xs text-muted-foreground font-medium mb-2">Category Changes</p>
                     {(() => {
-                      const origBycat = originalBudget.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (l.amount_requested || 0); return acc; }, {});
-                      const propBycat = proposedLines.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (l.amount_requested || 0); return acc; }, {});
+                      const origBycat = originalBudget.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
+                      const propBycat = proposedLines.reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
                       const allCats = [...new Set([...Object.keys(origBycat), ...Object.keys(propBycat)])];
                       return (
                         <div className="divide-y rounded-lg border overflow-hidden">

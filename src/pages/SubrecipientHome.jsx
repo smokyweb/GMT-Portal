@@ -309,7 +309,7 @@ function AllocationDetailDialog({ grant, onClose }) {
                 { label: 'Total Expended', value: formatCurrency(grant.total_expended), color: '' },
                 { label: 'Remaining Balance', value: formatCurrency(grant.remaining_balance ?? grant.awarded_amount), color: 'text-blue-700' },
                 { label: 'Match Committed', value: formatCurrency(grant.match_amount), color: '' },
-                { label: 'Expenditure Rate', value: `${Math.round(grant.expenditure_rate || 0)}%`, color: '' },
+                { label: 'Expenditure Rate', value: `${Math.round(Number(grant.expenditure_rate) || 0)}%`, color: '' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted/40 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>

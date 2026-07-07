@@ -135,7 +135,7 @@ export const FIELD_GROUPS = {
     { key: '_days_until_perf_end', label: 'ƒ Days Until Perf. End', type: 'calc',
       calc: row => row.performance_end ? Math.floor((new Date(row.performance_end) - Date.now()) / 86400000) : '' },
     { key: '_remaining_balance_calc', label: 'ƒ Remaining Balance', type: 'calc',
-      calc: row => (row.awarded_amount || 0) - (row.total_expended || 0) },
+      calc: row => (Number(row.awarded_amount) || 0) - (Number(row.total_expended) || 0) },
   ],
   Organization: [
     { key: 'org_name', label: 'Organization Name', type: 'text', sourceKey: 'name' },

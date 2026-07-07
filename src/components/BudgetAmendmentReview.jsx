@@ -27,8 +27,8 @@ function AmendmentStatusBadge({ status }) {
 }
 
 function BeforeAfterTable({ original, proposed }) {
-  const origBycat = (original || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (l.amount_requested || 0); return acc; }, {});
-  const propBycat = (proposed || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (l.amount_requested || 0); return acc; }, {});
+  const origBycat = (original || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
+  const propBycat = (proposed || []).reduce((acc, l) => { acc[l.budget_category] = (acc[l.budget_category] || 0) + (Number(l.amount_requested) || 0); return acc; }, {});
   const allCats = [...new Set([...Object.keys(origBycat), ...Object.keys(propBycat)])];
   const origTotal = Object.values(origBycat).reduce((s, v) => s + v, 0);
   const propTotal = Object.values(propBycat).reduce((s, v) => s + v, 0);
@@ -227,10 +227,10 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
               <p className="text-xs text-muted-foreground">Current Budget</p>
               <p className="font-bold">{formatCurrency(amendment.original_total)}</p>
             </div>
-            <div className={`rounded-lg p-3 ${(amendment.net_change || 0) > 0 ? 'bg-amber-50 border border-amber-200' : (amendment.net_change || 0) < 0 ? 'bg-green-50 border border-green-200' : 'bg-muted/40'}`}>
+            <div className={`rounded-lg p-3 ${(Number(amendment.net_change) || 0) > 0 ? 'bg-amber-50 border border-amber-200' : (Number(amendment.net_change) || 0) < 0 ? 'bg-green-50 border border-green-200' : 'bg-muted/40'}`}>
               <p className="text-xs text-muted-foreground">Net Change</p>
-              <p className={`font-bold ${(amendment.net_change || 0) > 0 ? 'text-amber-700' : (amendment.net_change || 0) < 0 ? 'text-green-700' : ''}`}>
-                {(amendment.net_change || 0) >= 0 ? '+' : ''}{formatCurrency(amendment.net_change || 0)}
+              <p className={`font-bold ${(Number(amendment.net_change) || 0) > 0 ? 'text-amber-700' : (Number(amendment.net_change) || 0) < 0 ? 'text-green-700' : ''}`}>
+                {(Number(amendment.net_change) || 0) >= 0 ? '+' : ''}{formatCurrency(Number(amendment.net_change) || 0)}
               </p>
             </div>
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">

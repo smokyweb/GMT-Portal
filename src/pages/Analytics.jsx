@@ -93,8 +93,8 @@ export default function Analytics() {
     filtered.forEach(a => {
       const code = a.program_code || 'Other';
       if (!map[code]) map[code] = { program: code, awarded: 0, requested: 0 };
-      map[code].awarded += a.awarded_amount || 0;
-      map[code].requested += a.requested_amount || 0;
+      map[code].awarded += Number(a.awarded_amount) || 0;
+      map[code].requested += Number(a.requested_amount) || 0;
     });
     return Object.values(map);
   }, [filtered]);
@@ -108,8 +108,8 @@ export default function Analytics() {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       if (!months[key]) months[key] = { key, label, expended: 0, approved: 0 };
-      months[key].expended += r.amount_requested || 0;
-      months[key].approved += r.amount_approved || 0;
+      months[key].expended += Number(r.amount_requested) || 0;
+      months[key].approved += Number(r.amount_approved) || 0;
     });
     return Object.values(months).sort((a, b) => a.key.localeCompare(b.key));
   }, [fundingRequests]);
@@ -121,7 +121,7 @@ export default function Analytics() {
       const county = a.organization_name || 'Unknown';
       if (!map[county]) map[county] = { org: county, awards: 0, applications: 0, flags: 0, expenditure: 0 };
       map[county].applications += 1;
-      map[county].awards += a.awarded_amount || 0;
+      map[county].awards += Number(a.awarded_amount) || 0;
       map[county].expenditure = a.expenditure_rate || 0;
     });
     complianceFlags.forEach(f => {
@@ -164,8 +164,8 @@ export default function Analytics() {
     filtered.forEach(a => {
       const county = orgCountyMap[a.organization_id] || a.organization_name || 'Unknown';
       if (!map[county]) map[county] = { county, awarded: 0, expended: 0 };
-      map[county].awarded += a.awarded_amount || 0;
-      map[county].expended += a.total_expended || 0;
+      map[county].awarded += Number(a.awarded_amount) || 0;
+      map[county].expended += Number(a.total_expended) || 0;
     });
     return Object.values(map).sort((a, b) => b.awarded - a.awarded).slice(0, 10);
   }, [filtered, orgCountyMap]);

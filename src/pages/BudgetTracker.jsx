@@ -108,7 +108,7 @@ export default function BudgetTracker() {
   });
 
   // Totals
-  const totalBudgeted = categoryRows.reduce((s, r) => s + (r.amount_requested || 0), 0);
+  const totalBudgeted = categoryRows.reduce((s, r) => s + (Number(r.amount_requested) || 0), 0);
   const totalActual = categoryRows.reduce((s, r) => s + r.actual, 0);
   const totalPct = totalBudgeted > 0 ? (totalActual / totalBudgeted) * 100 : 0;
   const totalWarning = totalPct >= 90 && totalPct < 100;

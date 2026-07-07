@@ -198,8 +198,8 @@ export default function FundingRequestReview() {
       const app = await base44.entities.Application.filter({ id: selected.application_id });
       if (app.length > 0) {
         const a = app[0];
-        const newExpended = (a.total_expended || 0) + Number(approvedAmount);
-        const newRemaining = (a.awarded_amount || 0) - newExpended;
+        const newExpended = (Number(a.total_expended) || 0) + Number(approvedAmount);
+        const newRemaining = (Number(a.awarded_amount) || 0) - newExpended;
         const newRate = a.awarded_amount ? (newExpended / a.awarded_amount) * 100 : 0;
         await base44.entities.Application.update(a.id, {
           total_expended: newExpended,

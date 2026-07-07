@@ -90,7 +90,7 @@ export async function onFundingRequestApproved(base44, fundingRequest, approvedA
   const app = (await base44.entities.Application.filter({ id: fundingRequest.application_id }))[0];
   if (!app) return;
 
-  const newExpended = (app.total_expended || 0) + approvedAmount;
+  const newExpended = (Number(app.total_expended) || 0) + approvedAmount;
   const awarded = app.awarded_amount || 0;
   const remaining = Math.max(0, awarded - newExpended);
   const rate = awarded > 0 ? Math.round((newExpended / awarded) * 100) : 0;
@@ -149,7 +149,7 @@ export async function onApplicationApproved(base44, application) {
     await base44.integrations.Core.SendEmail({
       to: application.submitted_by,
       subject: emailOvr.subject || `🎉 Application ${application.application_number} Approved!`,
-      body: emailOvr.body || `Congratulations! Your grant application ${application.application_number} - "${application.project_title}" - has been approved.\n\nAwarded Amount: $${(application.awarded_amount || 0).toLocaleString()}\nPerformance Period: ${application.performance_start || 'TBD'} to ${application.performance_end || 'TBD'}\n\nLog in to the GMT Portal to view your award details and begin submitting funding requests.`,
+      body: emailOvr.body || `Congratulations! Your grant application ${application.application_number} - "${application.project_title}" - has been approved.\n\nAwarded Amount: $${(Number(application.awarded_amount) || 0).toLocaleString()}\nPerformance Period: ${application.performance_start || 'TBD'} to ${application.performance_end || 'TBD'}\n\nLog in to the GMT Portal to view your award details and begin submitting funding requests.`,
     }).catch(() => {});
   }
   await base44.entities.AuditLog.create({

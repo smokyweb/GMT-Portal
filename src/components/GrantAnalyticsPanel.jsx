@@ -174,11 +174,11 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
 
   // ── KPI metrics ──────────────────────────────────────────────────────────
   const approvedApps   = useMemo(() => filteredApps.filter(a => a.status === 'Approved'), [filteredApps]);
-  const totalAwarded   = useMemo(() => approvedApps.reduce((s, a) => s + (a.awarded_amount || 0), 0), [approvedApps]);
-  const totalExpended  = useMemo(() => approvedApps.reduce((s, a) => s + (a.total_expended || 0), 0), [approvedApps]);
-  const totalRemaining = useMemo(() => approvedApps.reduce((s, a) => s + (a.remaining_balance || 0), 0), [approvedApps]);
+  const totalAwarded   = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0), [approvedApps]);
+  const totalExpended  = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.total_expended) || 0), 0), [approvedApps]);
+  const totalRemaining = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.remaining_balance) || 0), 0), [approvedApps]);
   const avgUtilization = useMemo(() => {
-    const rates = approvedApps.filter(a => a.expenditure_rate > 0).map(a => a.expenditure_rate);
+    const rates = approvedApps.filter(a => Number(a.expenditure_rate) > 0).map(a => Number(a.expenditure_rate));
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [approvedApps]);
 
@@ -188,8 +188,8 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
       // Per-grant view for subrecipient
       return approvedApps.slice(0, 8).map(a => ({
         name: a.application_number || a.project_title?.slice(0, 12) || ' - ',
-        Awarded:  a.awarded_amount || 0,
-        Expended: a.total_expended || 0,
+        Awarded:  Number(a.awarded_amount) || 0,
+        Expended: Number(a.total_expended) || 0,
       }));
     }
     // By program for state admin
@@ -197,8 +197,8 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
     approvedApps.forEach(a => {
       const code = a.program_code || 'Other';
       if (!map[code]) map[code] = { name: code, Awarded: 0, Expended: 0 };
-      map[code].Awarded  += a.awarded_amount  || 0;
-      map[code].Expended += a.total_expended  || 0;
+      map[code].Awarded  += Number(a.awarded_amount)  || 0;
+      map[code].Expended += Number(a.total_expended)  || 0;
     });
     return Object.values(map);
   }, [approvedApps, organizationId]);
@@ -212,8 +212,8 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
       const label = d.toLocaleString('default', { month: 'short', year: '2-digit' });
       if (!months[key]) months[key] = { key, label, Requested: 0, Approved: 0 };
-      months[key].Requested += r.amount_requested || 0;
-      months[key].Approved  += r.amount_approved  || 0;
+      months[key].Requested += Number(r.amount_requested) || 0;
+      months[key].Approved  += Number(r.amount_approved)  || 0;
     });
     return Object.values(months).sort((a, b) => a.key.localeCompare(b.key));
   }, [fundingReqs]);
@@ -225,7 +225,7 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
     budgets.filter(b => appIds.has(b.application_id)).forEach(b => {
       const cat = b.budget_category || 'Other';
       if (!map[cat]) map[cat] = { name: cat, Budgeted: 0 };
-      map[cat].Budgeted += b.amount_requested || 0;
+      map[cat].Budgeted += Number(b.amount_requested) || 0;
     });
     return Object.values(map).sort((a, b) => b.Budgeted - a.Budgeted);
   }, [budgets, approvedApps]);

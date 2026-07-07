@@ -455,7 +455,7 @@ function AllocationDetailDialog({ grant, onClose }) {
                 { label: 'Total Expended', value: formatCurrency(grant.total_expended), color: '' },
                 { label: 'Remaining Balance', value: formatCurrency(grant.remaining_balance ?? grant.awarded_amount), color: 'text-blue-700' },
                 { label: 'Match Committed', value: formatCurrency(grant.match_amount), color: '' },
-                { label: 'Expenditure Rate', value: `${Math.round(grant.expenditure_rate || 0)}%`, color: '' },
+                { label: 'Expenditure Rate', value: `${Math.round(Number(grant.expenditure_rate) || 0)}%`, color: '' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted/40 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>
@@ -650,7 +650,7 @@ export default function SubrecipientPortal() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {[
           { label: 'Active Grants', value: activeGrants.length, icon: CheckCircle, color: 'bg-green-50 text-green-600' },
-          { label: 'Total Awarded', value: formatCurrency(activeGrants.reduce((s, g) => s + (g.awarded_amount || 0), 0)), icon: DollarSign, color: 'bg-blue-50 text-blue-600' },
+          { label: 'Total Awarded', value: formatCurrency(activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0)), icon: DollarSign, color: 'bg-blue-50 text-blue-600' },
           { label: 'Reports Due', value: pendingReports.length, icon: FileText, color: overdueReports.length > 0 ? 'bg-red-50 text-red-600' : 'bg-amber-50 text-amber-600' },
           { label: 'Compliance Flags', value: flags.length, icon: Shield, color: flags.length > 0 ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600' },
         ].map(({ label, value, icon: Icon, color }) => (

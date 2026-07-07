@@ -93,7 +93,7 @@ function ExpenditureHistory({ applicationId, application }) {
         <div className="bg-muted/30 rounded-lg p-3 space-y-1.5">
           <div className="flex justify-between text-xs text-muted-foreground">
             <span>Overall Expenditure Rate</span>
-            <span>{Math.round(application.expenditure_rate || 0)}% - {formatCurrency(application.total_expended || 0)} of {formatCurrency(application.awarded_amount)}</span>
+            <span>{Math.round(Number(application.expenditure_rate) || 0)}% - {formatCurrency(Number(application.total_expended) || 0)} of {formatCurrency(application.awarded_amount)}</span>
           </div>
           <ExpenditureBar rate={application.expenditure_rate || 0} />
         </div>

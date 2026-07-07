@@ -101,7 +101,7 @@ export default function FinancialOverview() {
   const projectData = useMemo(() =>
     [...filtered]
       .filter(a => a.awarded_amount > 0)
-      .sort((a, b) => (b.awarded_amount || 0) - (Number(a.awarded_amount) || 0))
+      .sort((a, b) => (Number(b.awarded_amount) || 0) - (Number(a.awarded_amount) || 0))
       .slice(0, 25)
       .map(a => ({
         name: a.application_number || 'Draft',

@@ -611,8 +611,8 @@ export default function ApplicationReviewQueue() {
                   <tfoot>
                     <tr className="bg-muted/50 font-bold">
                       <td className="p-3" colSpan={2}>Total</td>
-                      <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (b.amount_requested || 0), 0))}</td>
-                      <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (b.amount_match || 0), 0))}</td>
+                      <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (Number(b.amount_requested) || 0), 0))}</td>
+                      <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (Number(b.amount_match) || 0), 0))}</td>
                       <td></td>
                     </tr>
                   </tfoot>

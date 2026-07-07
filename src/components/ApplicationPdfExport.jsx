@@ -223,8 +223,8 @@ export default function ApplicationPdfExport({ app, budgets }) {
         doc.text(desc[0] || '', margin + 38, y + 4);
         doc.text(formatCurrency(b.amount_requested), pageW - margin, y + 4, { align: 'right' });
         doc.text(formatCurrency(b.amount_match), pageW - margin - 22, y + 4, { align: 'right' });
-        totalReq += b.amount_requested || 0;
-        totalMatch += b.amount_match || 0;
+        totalReq += Number(b.amount_requested) || 0;
+        totalMatch += Number(b.amount_match) || 0;
         doc.setDrawColor(235, 238, 245);
         doc.line(margin, y + 6, pageW - margin, y + 6);
         y += 7;
