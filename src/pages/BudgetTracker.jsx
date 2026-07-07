@@ -147,7 +147,7 @@ export default function BudgetTracker() {
         <p className="text-muted-foreground text-sm mt-1">Budget vs. actual expenditures per line item</p>
       </div>
 
-      {/* Grant Selector ”” dropdown or card grid */}
+      {/* Grant Selector "" dropdown or card grid */}
        {apps.length > 0 && (
          <>
            {apps.length === 1 ? (
@@ -162,7 +162,7 @@ export default function BudgetTracker() {
                    {apps.map(a => (
                      <SelectItem key={a.id} value={a.id}>
                        <span className="flex items-center gap-2">
-                         {a.application_number} ”” {a.project_title} <span className="text-xs opacity-60">({a.program_code})</span>
+                         {a.application_number}{a.project_title ? ` - ${a.project_title}` : ''} <span className="text-xs opacity-60">({a.program_code})</span>
                        </span>
                      </SelectItem>
                    ))}
@@ -196,7 +196,7 @@ export default function BudgetTracker() {
                            <p className="font-semibold text-sm truncate leading-snug">{a.project_title || 'Untitled'}</p>
                            <p className="text-[11px] font-mono text-muted-foreground mt-0.5">{a.application_number}</p>
                          </div>
-                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary flex-shrink-0">{a.program_code || '””'}</span>
+                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary flex-shrink-0">{a.program_code || '""'}</span>
                        </div>
                        <div className="space-y-1.5">
                          <div className="flex justify-between text-[11px] text-muted-foreground">
@@ -239,11 +239,11 @@ export default function BudgetTracker() {
             <div className="bg-card border rounded-xl p-4 flex flex-wrap gap-6">
               <div>
                 <p className="text-xs text-muted-foreground">Grant</p>
-                <p className="font-semibold">{selectedApp.application_number} ”” {selectedApp.project_title}</p>
+                <p className="font-semibold">{selectedApp.application_number}{selectedApp.project_title ? ` - ${selectedApp.project_title}` : ''}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Program</p>
-                <p className="font-semibold">{selectedApp.program_code || '””'}</p>
+                <p className="font-semibold">{selectedApp.program_code || '-'}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Awarded</p>
@@ -251,7 +251,7 @@ export default function BudgetTracker() {
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Performance Period</p>
-                <p className="font-semibold">{selectedApp.performance_start} - {selectedApp.performance_end}</p>
+                <p className="font-semibold">{selectedApp.performance_start ? selectedApp.performance_start.substring(0,10) : '-'} &ndash; {selectedApp.performance_end ? selectedApp.performance_end.substring(0,10) : '-'}</p>
               </div>
             </div>
           )}
@@ -266,8 +266,8 @@ export default function BudgetTracker() {
                   <div>
                     <span className="font-semibold">{r.budget_category}</span>
                     {r.over
-                      ? ` is over budget ”” ${formatCurrency(r.actual)} spent of ${formatCurrency(r.amount_requested)} budgeted (${r.pct.toFixed(1)}%)`
-                      : ` is ${r.pct.toFixed(1)}% spent ”” only ${formatCurrency(r.amount_requested - r.actual)} remaining`
+                      ? ` is over budget "" ${formatCurrency(r.actual)} spent of ${formatCurrency(r.amount_requested)} budgeted (${r.pct.toFixed(1)}%)`
+                      : ` is ${r.pct.toFixed(1)}% spent "" only ${formatCurrency(r.amount_requested - r.actual)} remaining`
                     }
                   </div>
                 </div>
@@ -327,7 +327,7 @@ export default function BudgetTracker() {
                     <Search className="h-3.5 w-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       className="pl-8 h-8 text-xs w-52"
-                      placeholder="Filter categories…"
+                      placeholder="Filter categories..."
                       value={categorySearch}
                       onChange={e => setCategorySearch(e.target.value)}
                     />
@@ -368,7 +368,7 @@ export default function BudgetTracker() {
                   </div>
                 ))}
               </div>
-              {/* Grand total row ”” only when not filtered */}
+              {/* Grand total row "" only when not filtered */}
               {!categorySearch && (
                 <div className={`px-4 py-3 border-t font-semibold flex items-center justify-between
                   ${totalOver ? 'bg-red-50' : totalWarning ? 'bg-amber-50' : 'bg-muted/30'}`}>
