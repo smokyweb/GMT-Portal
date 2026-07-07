@@ -117,15 +117,19 @@ export default function ApplicationReviewQueue() {
   };
 
   const handleApprove = async () => {
-    // Validate score is required and in range
+    // Check if scoring is required for this NOFO
+    const selectedNofo = nofos.find(n => n.id === selected?.nofo_id);
+    const scoringRequired = !!selectedNofo?.scoring_enabled;
     const scoreNum = Number(reviewScore);
-    if (reviewScore === '' || reviewScore === null || reviewScore === undefined) {
-      alert('A review score is required before approving. Please enter a score between 0 and 100.');
-      return;
-    }
-    if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
-      alert('Score must be a number between 0 and 100.');
-      return;
+    if (scoringRequired) {
+      if (reviewScore === '' || reviewScore === null || reviewScore === undefined) {
+        alert('A review score is required before approving (this NOFO has scoring enabled). Please enter a score between 0 and 100.');
+        return;
+      }
+      if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
+        alert('Score must be a number between 0 and 100.');
+        return;
+      }
     }
     // Confirmation dialog
     const confirmed = window.confirm(
@@ -667,13 +671,13 @@ export default function ApplicationReviewQueue() {
                   <>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Score (0 - 100) <span className="text-red-500">*</span></Label>
+                        <Label>Score (0 - 100) {scoringEnabled && <span className="text-red-500">*</span>}{!scoringEnabled && <span className="text-xs text-muted-foreground">(optional)</span>}</Label>
                         <Input
                           type="number" min={0} max={100}
                           value={reviewScore}
                           onChange={e => setReviewScore(e.target.value)}
-                          className={reviewScore === '' ? 'border-amber-400' : (Number(reviewScore) < 0 || Number(reviewScore) > 100) ? 'border-red-500' : ''}
-                          placeholder="Required for approval"
+                          className={(Number(reviewScore) < 0 || Number(reviewScore) > 100) ? 'border-red-500' : ''}
+                          placeholder={scoringEnabled ? 'Required for approval' : 'Optional'}
                         />
                         {reviewScore !== '' && (Number(reviewScore) < 0 || Number(reviewScore) > 100) && (
                           <p className="text-xs text-red-500 mt-1">Score must be between 0 and 100</p>
@@ -721,8 +725,8 @@ export default function ApplicationReviewQueue() {
                       )}
                       <Button
                         onClick={handleApprove}
-                        disabled={hasBlockingRfis || reviewScore === '' || reviewScore === null || reviewScore === undefined || isNaN(Number(reviewScore)) || Number(reviewScore) < 0 || Number(reviewScore) > 100}
-                        title={hasBlockingRfis ? 'Resolve all open RFIs first' : (reviewScore === '' ? 'Enter a score (0-100) before approving' : '')}
+                        disabled={hasBlockingRfis || (scoringEnabled && (reviewScore === '' || reviewScore === null || isNaN(Number(reviewScore)) || Number(reviewScore) < 0 || Number(reviewScore) > 100))}
+                        title={hasBlockingRfis ? 'Resolve all open RFIs first' : (scoringEnabled && reviewScore === '' ? 'Enter a score (0-100) before approving' : '')}
                       >Approve</Button>
                     </>
                   )}
