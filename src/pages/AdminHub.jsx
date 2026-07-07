@@ -23,7 +23,7 @@ const HUB_LINKS = [
     color: 'bg-purple-50 text-purple-600',
   },
   {
-    label: 'Applications & Document Review',
+    label: 'Applications',
     description: 'Manage applications and document review settings.',
     icon: FileText,
     path: '/admin-applications',
@@ -84,14 +84,6 @@ const HUB_LINKS = [
     tier: 3,
   },
   {
-    label: 'Closeout Checklist',
-    description: 'Track grant closeout readiness and completion status.',
-    icon: FileSearch,
-    path: '/closeout-checklist',
-    color: 'bg-orange-50 text-orange-600',
-    tier: 3,
-  },
-  {
     label: 'ISC Dashboard',
     description: 'Interstate & inter-agency coordination overview.',
     icon: Globe,
@@ -132,7 +124,7 @@ export default function AdminHub() {
 
   const countLabels = {
     'User Management': `${counts.users || 0} users`,
-    'Applications & Document Review': `${counts.applications || 0} apps`,
+    'Applications': `${counts.applications || 0} apps`,
     'Grant Programs': `${counts.programs || 0} programs`,
     'Organizations': `${counts.orgs || 0} orgs`,
     'Audit Log': `${counts.auditLogs || 0} entries`,

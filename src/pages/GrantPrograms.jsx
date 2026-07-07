@@ -43,9 +43,23 @@ export default function GrantPrograms() {
     setCodeError('');
 
     if (editingProgram) {
-      await base44.entities.GrantProgram.update(editingProgram.id, { ...form, code: finalCode });
+      const cleanedFormU = { ...form, code: finalCode,
+        match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
+        award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
+        award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
+        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [],
+        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [],
+      };
+      await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
     } else {
-      await base44.entities.GrantProgram.create({ ...form, code: finalCode });
+      const cleanedForm = { ...form, code: finalCode,
+        match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
+        award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
+        award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
+        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [],
+        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [],
+      };
+      await base44.entities.GrantProgram.create(cleanedForm);
     }
 
     setOpen(false);

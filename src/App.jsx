@@ -125,7 +125,7 @@ const AuthenticatedApp = () => {
         <Route path="/org-deep-dive" element={<OrgDeepDive />} />
         <Route path="/template-manager" element={<TemplateManager />} />
         <Route path="/portfolio-summary" element={<PortfolioSummary />} />
-        <Route path="/closeout-checklist" element={<CloseoutChecklist />} />
+        {/* Closeout Checklist removed - not fully built */}
         <Route path="*" element={<PageNotFound />} />
       </Route>
     </Routes>

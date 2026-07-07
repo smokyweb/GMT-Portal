@@ -2,18 +2,33 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Download } from 'lucide-react';
 import moment from 'moment';
+import { Button } from '@/components/ui/button';
 
 export default function AuditLogPage() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterEntity, setFilterEntity] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.entities.AuditLog.list('-created_date', 200).then(l => { setLogs(l); setLoading(false); });
+    base44.auth.me().then(u => setUser(u)).catch(() => {});
+    base44.entities.AuditLog.list('-created_date', 500).then(l => { setLogs(l); setLoading(false); });
   }, []);
+
+  const exportCsv = () => {
+    const headers = ['Date','User','Action','Entity Type','Description'];
+    const escape = v => { const s = String(v ?? ''); return (s.includes(',') || s.includes('"') || s.includes('\n')) ? '"' + s.replace(/"/g,'""') + '"' : s; };
+    const rows = filtered.map(l => [escape(l.created_date ? l.created_date.substring(0,16).replace('T',' ') : ''),escape(l.user_name||l.user_email||''),escape(l.action||''),escape(l.entity_type||''),escape(l.description||'')].join(','));
+    const csv = [headers.join(','),...rows].join('\n');
+    const blob = new Blob([csv],{type:'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href=url; a.download='audit-log-'+new Date().toISOString().substring(0,10)+'.csv'; a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const entityTypes = [...new Set(logs.map(l => l.entity_type).filter(Boolean))];
   const filtered = logs.filter(l => {
@@ -27,9 +42,16 @@ export default function AuditLogPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
-        <p className="text-muted-foreground text-sm mt-1">Complete activity history</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Audit Log</h1>
+          <p className="text-muted-foreground text-sm mt-1">Complete activity history &mdash; {filtered.length} records</p>
+        </div>
+        {['isc_admin','federal_admin','admin'].includes(user?.role) && (
+          <Button variant="outline" size="sm" className="gap-1.5" onClick={exportCsv}>
+            <Download className="h-3.5 w-3.5" /> Export CSV
+          </Button>
+        )}
       </div>
 
       <div className="flex gap-3">
