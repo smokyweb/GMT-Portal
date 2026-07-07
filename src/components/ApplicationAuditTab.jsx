@@ -108,9 +108,22 @@ export default function ApplicationAuditTab({ applicationId }) {
       base44.entities.FundingRequest.filter({ application_id: applicationId }, '-created_date', 50).catch(() => []),
       base44.entities.ReportSchedule.filter({ application_id: applicationId }, '-created_date', 50).catch(() => []),
       base44.entities.ReviewComment.filter({ entity_id: applicationId }, '-created_date', 100).catch(() => []),
-    ]).then(([logs, fundingRequests, reports, comments]) => {
+    ]).then(async ([logs, fundingRequests, reports, comments]) => {
+      // Also fetch audit logs for each funding request (logged under entity_id = fr.id)
+      const frAuditLogs = await Promise.all(
+        (fundingRequests || []).map(fr =>
+          base44.entities.AuditLog.filter({ entity_id: fr.id }, '-created_date', 50).catch(() => [])
+        )
+      );
+      const allFrLogs = frAuditLogs.flat().map(l => ({
+        ...l,
+        _type: 'audit',
+        _date: l.created_date,
+        _frContext: true, // flag so we can prefix label
+      }));
       const timeline = [
         ...logs.map(l => ({ ...l, _type: 'audit', _date: l.created_date })),
+        ...allFrLogs,
         ...fundingRequests.map(r => ({ ...r, _type: 'funding', _date: r.created_date })),
         ...reports.map(r => ({ ...r, _type: 'report', _date: r.created_date })),
         // Show payment and RFI comments inline

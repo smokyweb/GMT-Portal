@@ -249,6 +249,11 @@ export default function MyFundingRequests() {
     }
 
     await logAudit(base44, user, 'Submitted', 'FundingRequest', fr.id, `Submitted funding request ${reqNum}`);
+    // Cross-log to application audit trail
+    if (form.application_id) {
+      logAudit(base44, user, 'Submitted', 'Application', form.application_id,
+        `Funding Request ${reqNum} submitted for reimbursement`).catch(() => {});
+    }
     setSubmitting(false);
     setOpen(false);
     resetForm();

@@ -146,6 +146,11 @@ export default function FundingRequestReview() {
     const label = PAYMENT_STATUS_CONFIG[paymentAction]?.label || paymentAction;
     await logAudit(base44, user, paymentAction, 'FundingRequest', selected.id,
       `Updated payment status to "${label}" for ${selected.request_number}${paymentReference ? ` (Ref: ${paymentReference})` : ''}`);
+    // Also log to the parent application so it shows in the app audit trail
+    if (selected.application_id) {
+      logAudit(base44, user, paymentAction, 'Application', selected.application_id,
+        `Funding Request ${selected.request_number}: payment status updated to "${label}"${paymentReference ? ` (Ref: ${paymentReference})` : ''}${paymentDate ? ` on ${paymentDate}` : ''}`).catch(() => {});
+    }
     await createNotification(base44, selected.submitted_by,
       `Payment Status Updated: ${label}`,
       `The payment status for your funding request ${selected.request_number} has been updated to "${label}".`,
@@ -215,6 +220,11 @@ export default function FundingRequestReview() {
       'fr_status', 'FundingRequest', selected.id, '/my-funding-requests');
     await logAudit(base44, user, action, 'FundingRequest', selected.id,
       `${action} funding request ${selected.request_number}`);
+    // Cross-log to application audit trail
+    if (selected.application_id) {
+      logAudit(base44, user, action, 'Application', selected.application_id,
+        `Funding Request ${selected.request_number} ${action.toLowerCase()} by ${user?.full_name || user?.email}`).catch(() => {});
+    }
     setSelected(null);
     await refreshRequests();
   };
