@@ -20,6 +20,86 @@ import ExpenditureBar from '../components/ExpenditureBar';
 import PortalAnalyticsTab from '../components/PortalAnalyticsTab';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 
+// ── Compliance Flag Action Row ──────────────────────────────────────────────
+function FlagActionRow({ flag, user, onResolved }) {
+  const [responding, setResponding] = useState(false);
+  const [responseText, setResponseText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmitResponse = async () => {
+    if (!responseText.trim()) return;
+    setSubmitting(true);
+    try {
+      await base44.entities.ComplianceFlag.update(flag.id, {
+        subrecipient_response: responseText.trim(),
+        response_submitted_at: new Date().toISOString(),
+        response_submitted_by: user?.email,
+        status: 'PendingReview',
+      });
+      // Notify state admin
+      const allUsers = await base44.entities.User.list('-created_date', 100).catch(() => []);
+      const admins = (allUsers || []).filter(u => ['admin','reviewer','isc_admin'].includes(u.role));
+      for (const admin of admins) {
+        base44.entities.Notification.create({
+          user_email: admin.email,
+          title: `Compliance Flag Response: ${flag.application_number}`,
+          message: `${user?.full_name || user?.email} responded to a compliance flag on ${flag.application_number}: "${responseText.substring(0, 80)}"`,
+          type: 'compliance_response',
+          is_read: false,
+        }).catch(() => {});
+      }
+      setResponding(false);
+      setResponseText('');
+      onResolved();
+    } catch (err) {
+      alert('Failed to submit response: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="px-5 py-4 space-y-2">
+      <div className="flex items-start gap-3">
+        <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-red-800">{flag.flag_type?.replace(/([A-Z])/g, ' $1').trim()}</p>
+          <p className="text-xs text-red-600 mt-0.5">{flag.description}</p>
+          <p className="text-xs text-muted-foreground mt-1">{flag.application_number} &bull; Severity: {flag.severity}</p>
+          {flag.subrecipient_response && (
+            <div className="mt-2 text-xs bg-blue-50 border border-blue-200 rounded p-2 text-blue-800">
+              <span className="font-semibold">Your Response: </span>{flag.subrecipient_response}
+              <span className="text-blue-500 ml-2">(Pending Review)</span>
+            </div>
+          )}
+        </div>
+        {!flag.subrecipient_response && (
+          <button
+            onClick={() => setResponding(r => !r)}
+            className="text-xs text-primary hover:underline font-medium flex-shrink-0"
+          >{responding ? 'Cancel' : 'Respond / Take Action'}</button>
+        )}
+      </div>
+      {responding && (
+        <div className="ml-7 space-y-2">
+          <textarea
+            className="w-full text-sm border rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+            rows={3}
+            placeholder="Describe the corrective action you have taken or plan to take to resolve this compliance issue..."
+            value={responseText}
+            onChange={e => setResponseText(e.target.value)}
+          />
+          <button
+            className="text-xs bg-primary text-white px-3 py-1.5 rounded-md font-medium disabled:opacity-50"
+            disabled={submitting || !responseText.trim()}
+            onClick={handleSubmitResponse}
+          >{submitting ? 'Submitting...' : 'Submit Response'}</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── NOFO Card ─────────────────────────────────────────────────────────────
 function NofoCard({ nofo, orgType, onApply }) {
   const daysLeft = nofo.close_date
@@ -1268,14 +1348,7 @@ export default function SubrecipientHome() {
               </div>
               <div className="divide-y">
                 {flags.map(flag => (
-                  <div key={flag.id} className="px-5 py-4 flex items-start gap-3">
-                    <AlertTriangle className="h-4 w-4 text-red-500 flex-shrink-0 mt-0.5" />
-                    <div>
-                      <p className="text-sm font-medium text-red-800">{flag.flag_type?.replace(/([A-Z])/g, ' $1').trim()}</p>
-                      <p className="text-xs text-red-600 mt-0.5">{flag.description}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{flag.application_number} · Severity: {flag.severity}</p>
-                    </div>
-                  </div>
+                  <FlagActionRow key={flag.id} flag={flag} user={user} onResolved={() => loadData()} />
                 ))}
               </div>
             </div>
