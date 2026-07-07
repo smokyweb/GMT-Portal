@@ -138,6 +138,11 @@ export default function FundingRequestReview() {
 
   const handlePaymentUpdate = async () => {
     try {
+    // Require payment date when marking as Paid
+    if (paymentAction === 'Paid' && !paymentDate) {
+      alert('A payment date is required when marking a request as Paid.');
+      return;
+    }
     const updates = { payment_status: paymentAction };
     if (paymentReference) updates.payment_reference = paymentReference;
     if (paymentDate) updates.payment_date = paymentDate;

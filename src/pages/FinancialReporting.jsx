@@ -60,8 +60,18 @@ export default function FinancialReporting() {
 
   const loadData = async () => {
     try {
+      const me = await base44.auth.me().catch(() => null);
       const data = await base44.entities.FundingRequest.list('-created_date', 500);
-      setRequests((data || []).filter(r => r.status === 'Approved'));
+      let filtered = (data || []).filter(r => r.status === 'Approved');
+      // Scope to state admin's orgs
+      if (me?.scope_state && ['admin','reviewer'].includes(me.role)) {
+        const orgs = await base44.entities.Organization.filter({ state: me.scope_state }).catch(() => []);
+        const orgIds = new Set((orgs || []).map(o => o.id));
+        filtered = filtered.filter(r => orgIds.has(r.organization_id));
+      } else if (me?.role === 'user' && me?.organization_id) {
+        filtered = filtered.filter(r => r.organization_id === me.organization_id);
+      }
+      setRequests(filtered);
     } catch (err) {
       console.error('FinancialReporting load error:', err);
     } finally {
