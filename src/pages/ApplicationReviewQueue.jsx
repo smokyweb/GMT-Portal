@@ -101,7 +101,7 @@ export default function ApplicationReviewQueue() {
     setReviewScore(app.score || '');
     setReviewNotes('');
     setRevisionRequest('');
-    setAwardAmount(app.requested_amount || '');
+    setAwardAmount(Number(app.requested_amount) || '');
     setScoreCardValues({});
   };
 
@@ -391,9 +391,11 @@ export default function ApplicationReviewQueue() {
                     <Button variant="ghost" size="sm" onClick={() => setViewApp(app)}>
                       <FileText className="h-3.5 w-3.5 mr-1" /> View
                     </Button>
-                    <Button variant="ghost" size="sm" onClick={() => openReview(app)}>
-                      <Eye className="h-3.5 w-3.5 mr-1" /> Review
-                    </Button>
+                    {app.submitted_at && (
+                      <Button variant="ghost" size="sm" onClick={() => openReview(app)}>
+                        <Eye className="h-3.5 w-3.5 mr-1" /> Review
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}

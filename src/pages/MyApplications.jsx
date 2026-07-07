@@ -48,7 +48,7 @@ function ExpenditureHistory({ applicationId, application }) {
 
   const totalRequested = fundingRequests.reduce((s, fr) => s + (Number(fr.amount_requested) || 0), 0);
   const totalApproved = fundingRequests.filter(fr => fr.status === 'Approved').reduce((s, fr) => s + (Number(fr.amount_approved) || 0), 0);
-  const totalPaid = fundingRequests.filter(fr => fr.payment_status === 'Paid').reduce((s, fr) => s + (fr.amount_approved || fr.amount_requested || 0), 0);
+  const totalPaid = fundingRequests.filter(fr => fr.payment_status === 'Paid').reduce((s, fr) => s + (Number(fr.amount_approved) || Number(fr.amount_requested) || 0), 0);
 
   // Category breakdown across all line items
   const allLineItems = Object.values(lineItemsByFR).flat();
