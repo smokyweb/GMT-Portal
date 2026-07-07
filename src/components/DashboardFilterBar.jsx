@@ -70,7 +70,7 @@ export default function DashboardFilterBar({ apps, filters, setFilters, isStateV
 
       {hasActive && (
         <span className="text-xs text-muted-foreground">
-          {apps.length} result{apps.length !== 1 ? 's' : ''}
+          {applyDashboardFilters(apps, filters).length} result{applyDashboardFilters(apps, filters).length !== 1 ? 's' : ''}
         </span>
       )}
 
