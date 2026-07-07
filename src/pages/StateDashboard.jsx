@@ -276,7 +276,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
                   <div key={flag.id} className="flex items-start gap-3 p-3 rounded-lg bg-muted/50">
                     <SeverityBadge severity={flag.severity} />
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium truncate">{flag.description}</p>
+                      <p className="text-sm font-medium">{flag.description}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {flag.organization_name} • {flag.application_number}
                       </p>
