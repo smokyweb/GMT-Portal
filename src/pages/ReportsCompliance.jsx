@@ -7,8 +7,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import StatusBadge from '../components/StatusBadge';
 import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
-import { formatDateShort, formatCurrency } from '../lib/helpers';
-import { CheckCircle2, XCircle, FileText, Eye } from 'lucide-react';
+import { formatDateShort, formatCurrency, createNotification, logAudit } from '../lib/helpers';
+import { CheckCircle2, XCircle, FileText, Eye, RotateCcw } from 'lucide-react';
 
 export default function ReportsCompliance() {
   const [schedules, setSchedules] = useState([]);
@@ -71,10 +71,15 @@ export default function ReportsCompliance() {
 
   const handleDecision = async (decision) => {
     setSaving(true);
-    const newScheduleStatus = decision === 'Approved' ? 'Approved' : 'Denied';
-    const newReportStatus = decision === 'Approved' ? 'Approved' : 'Denied';
+    const newScheduleStatus = decision === 'Approved' ? 'Approved' : decision === 'RevisionRequested' ? 'RevisionRequested' : 'Denied';
+    const newReportStatus = decision === 'Approved' ? 'Approved' : decision === 'RevisionRequested' ? 'RevisionRequested' : 'Denied';
 
-    await base44.entities.ReportSchedule.update(selectedSchedule.id, { status: newScheduleStatus });
+    await base44.entities.ReportSchedule.update(selectedSchedule.id, {
+      status: newScheduleStatus,
+      reviewer_notes: reviewNotes,
+      reviewed_by: user?.email,
+      reviewed_at: new Date().toISOString(),
+    });
 
     if (progressReport) {
       await base44.entities.ProgressReport.update(progressReport.id, {
@@ -86,18 +91,24 @@ export default function ReportsCompliance() {
 
     setSchedules(prev => prev.map(s => s.id === selectedSchedule.id ? { ...s, status: newScheduleStatus } : s));
 
-    // Notify subrecipient
-    if (selectedSchedule.application_id) {
-      const apps = await base44.entities.Application.filter({ id: selectedSchedule.application_id });
-      const app = apps[0];
-      if (app?.submitted_by) {
-        await base44.integrations.Core.SendEmail({
-          to: app.submitted_by,
-          subject: `Progress Report ${decision} - ${selectedSchedule.application_number}`,
-          body: `Your ${selectedSchedule.report_type} progress report for grant ${selectedSchedule.application_number} has been ${decision.toLowerCase()} by the state office.\n\n${reviewNotes ? `Reviewer notes: ${reviewNotes}` : ''}\n\nLog in to the portal for details.`,
-        });
+    // In-app notification to subrecipient
+    try {
+      const apps = await base44.entities.Application.filter({ id: selectedSchedule.application_id }).catch(() => []);
+      const app = (apps || [])[0];
+      const recipientEmail = app?.submitted_by || selectedSchedule.organization_email;
+      if (recipientEmail) {
+        const actionLabel = decision === 'Approved' ? 'Approved' : decision === 'RevisionRequested' ? 'Revision Requested' : 'Denied';
+        createNotification(base44, recipientEmail,
+          `Report ${actionLabel}: ${selectedSchedule.application_number}`,
+          `Your ${selectedSchedule.report_type} report for ${selectedSchedule.application_number} has been ${actionLabel.toLowerCase()}.${reviewNotes ? ` Notes: ${reviewNotes.substring(0, 100)}` : ''}`,
+          'report_review', 'ReportSchedule', selectedSchedule.id, '/my-reports'
+        ).catch(() => {});
       }
-    }
+      // Log audit
+      logAudit(base44, user, decision, 'ReportSchedule', selectedSchedule.id,
+        `Report ${decision} for ${selectedSchedule.application_number} (${selectedSchedule.report_type})${reviewNotes ? '. Notes: ' + reviewNotes : ''}`
+      ).catch(() => {});
+    } catch (_) {}
 
     setSaving(false);
     setSelectedSchedule(null);
@@ -346,7 +357,16 @@ export default function ReportsCompliance() {
                   disabled={saving}
                 >
                   <XCircle className="h-4 w-4 mr-1.5" />
-                  {saving ? 'Saving…' : 'Deny'}
+                  {saving ? 'Saving...' : 'Deny'}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDecision('RevisionRequested')}
+                  disabled={saving}
+                  className="border-amber-400 text-amber-700 hover:bg-amber-50"
+                >
+                  <RotateCcw className="h-4 w-4 mr-1.5" />
+                  {saving ? 'Saving...' : 'Request Revision'}
                 </Button>
                 <Button
                   className="bg-green-600 hover:bg-green-700 text-white"
@@ -354,7 +374,7 @@ export default function ReportsCompliance() {
                   disabled={saving}
                 >
                   <CheckCircle2 className="h-4 w-4 mr-1.5" />
-                  {saving ? 'Saving…' : 'Approve'}
+                  {saving ? 'Saving...' : 'Approve'}
                 </Button>
               </>
             )}
