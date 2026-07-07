@@ -69,13 +69,13 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
         body: `An RFI has been issued for application ${applicationNumber}.\n\nTitle: ${form.title}\nDetails: ${form.description}\nDue: ${form.due_date || 'No deadline specified'}\n\nLog in to the GMT Portal to respond.`,
       }).catch(() => {});
       logAudit(base44, user, 'RFICreated', 'Application', applicationId,
-        `RFI issued: "${form.title}" ”” assigned to ${form.assigned_to}`).catch(() => {});
+        `RFI issued: "${form.title}" "" assigned to ${form.assigned_to}`).catch(() => {});
       base44.entities.ReviewComment.create({
         entity_type: 'Application',
         entity_id: applicationId,
         reviewer_email: user.email,
         reviewer_name: user.full_name || user.email,
-        comment: `RFI issued: "${form.title}" ”” assigned to ${form.assigned_to}. ${form.description || ''}`.trim(),
+        comment: `RFI issued: "${form.title}" "" assigned to ${form.assigned_to}. ${form.description || ''}`.trim(),
         action: 'RFICreated',
       }).catch(() => {});
       setTasks(prev => [task, ...prev]);
@@ -118,7 +118,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
         // Fire-and-forget email
         base44.integrations.Core.SendEmail({
           to: adminEmail,
-          subject: `RFI Response: ${task.title} ”” ${applicationNumber}`,
+          subject: `RFI Response: ${task.title} "" ${applicationNumber}`,
           body: `A response has been submitted for RFI "${task.title}" on application ${applicationNumber}.\n\nResponse:\n${responseText.trim()}\n\nLog in to review: https://gmt.bluesapps.com/applications`,
         }).catch(() => {});
       } catch {}
@@ -133,21 +133,35 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
     }
   };
 
-    const handleResolve = async () => {
+  const handleResolve = async () => {
     setSaving(true);
-    const update = {
-      status: 'Resolved',
-      resolution_notes: resolveNotes,
-      resolved_by: user.email,
-      resolved_at: new Date().toISOString(),
-    };
-    await base44.entities.Task.update(resolvingTask.id, update);
-    await logAudit(base44, user, 'RFIResolved', 'Application', applicationId,
-      `RFI resolved: "${resolvingTask.title}"`);
-    setTasks(prev => prev.map(t => t.id === resolvingTask.id ? { ...t, ...update } : t));
-    setResolvingTask(null);
-    setResolveNotes('');
-    setSaving(false);
+    try {
+      const update = {
+        status: 'Resolved',
+        resolution_notes: resolveNotes,
+        resolved_by: user?.email,
+        resolved_at: new Date().toISOString(),
+      };
+      await base44.entities.Task.update(resolvingTask.id, update);
+      logAudit(base44, user, 'RFIResolved', 'Application', applicationId,
+        `RFI resolved: "${resolvingTask.title}"`).catch(() => {});
+      // Notify subrecipient
+      if (resolvingTask.assigned_to) {
+        createNotification(base44, resolvingTask.assigned_to,
+          'RFI Resolved',
+          `Your RFI "${resolvingTask.title}" for application ${applicationNumber} has been resolved.`,
+          'rfi_resolved', 'Application', applicationId, '/applications'
+        ).catch(() => {});
+      }
+      setTasks(prev => prev.map(t => t.id === resolvingTask.id ? { ...t, ...update } : t));
+      setResolvingTask(null);
+      setResolveNotes('');
+    } catch (err) {
+      console.error('RFI resolve error:', err);
+      alert('Failed to resolve RFI: ' + (err?.message || 'Please try again.'));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleStatusChange = async (task, newStatus) => {
@@ -155,7 +169,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
   };
 
-  if (loading) return <div className="p-6 text-center text-sm text-muted-foreground">Loading RFIs…</div>;
+  if (loading) return <div className="p-6 text-center text-sm text-muted-foreground">Loading RFIs...</div>;
 
   return (
     <div className="space-y-4">
@@ -164,11 +178,11 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
           <h3 className="font-semibold text-sm">RFI Tracker</h3>
           {openCount > 0 && (
             <p className="text-xs text-red-600 font-medium mt-0.5">
-              âš  {openCount} open RFI{openCount !== 1 ? 's' : ''} ”” approval is blocked until resolved
+              &#9888; {openCount} open RFI{openCount !== 1 ? 's' : ''} — approval is blocked until resolved
             </p>
           )}
           {openCount === 0 && tasks.length > 0 && (
-            <p className="text-xs text-green-600 font-medium mt-0.5">âœ“ All RFIs resolved</p>
+            <p className="text-xs text-green-600 font-medium mt-0.5">&#10003; All RFIs resolved</p>
           )}
         </div>
         {isAdmin && (
@@ -202,7 +216,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
                         'bg-slate-100 text-slate-600'
                       }`}>{task.priority}</span>
                       {task.due_date && <span className="text-xs text-muted-foreground">Due: {formatDateShort(task.due_date)}</span>}
-                      {task.assigned_to && <span className="text-xs text-muted-foreground">â†’ {task.assigned_to}</span>}
+                      {task.assigned_to && <span className="text-xs text-muted-foreground">&rarr; {task.assigned_to}</span>}
                     </div>
                   </div>
                 </div>
@@ -300,7 +314,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
               </div>
             </div>
             <div>
-              <Label>Assign To (Email) <span className="text-xs text-muted-foreground font-normal">”” optional, auto-filled if available</span></Label>
+              <Label>Assign To (Email) <span className="text-xs text-muted-foreground font-normal">"" optional, auto-filled if available</span></Label>
               <Input className="mt-1" type="email" placeholder="subrecipient@org.gov" value={form.assigned_to} onChange={e => setForm(p => ({ ...p, assigned_to: e.target.value }))} />
             </div>
           </div>
@@ -308,12 +322,12 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
             <div className="mx-6 mb-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{createError}</div>
           )}
           {createSuccess && (
-            <div className="mx-6 mb-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">âœ“ RFI created successfully!</div>
+            <div className="mx-6 mb-2 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2">&#10003; RFI created successfully!</div>
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => { setShowCreate(false); setCreateError(''); }}>Cancel</Button>
             <Button onClick={handleCreate} disabled={saving || !form.title || createSuccess}>
-              {saving ? 'Creating…' : 'Create RFI'}
+              {saving ? 'Creating...' : 'Create RFI'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -337,7 +351,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
             <Button variant="outline" onClick={() => { setResolvingTask(null); setResolveNotes(''); }}>Cancel</Button>
             <Button onClick={handleResolve} disabled={saving}>
               <CheckCircle className="h-3.5 w-3.5 mr-1" />
-              {saving ? 'Resolving…' : 'Confirm Resolve'}
+              {saving ? 'Resolving...' : 'Confirm Resolve'}
             </Button>
           </DialogFooter>
         </DialogContent>
