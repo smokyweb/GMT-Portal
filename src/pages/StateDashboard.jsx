@@ -36,6 +36,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState(null);
   const [widgets, setWidgets] = useState(DEFAULT_WIDGETS);
+  const [viewApp, setViewApp] = useState(null);
 
   // Use filtered apps if provided, otherwise fall back to all apps
   const displayApps = filteredApps || apps;
@@ -186,6 +187,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
   };
 
   return (
+    <>
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
@@ -247,9 +249,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
                         <td className="p-3"><StatusBadge status={app.status} /></td>
                         <td className="p-3 text-muted-foreground text-xs">{formatDateShort(app.submitted_at)}</td>
                         <td className="p-3">
-                          <Link to={`/applications?review=${app.id}`}>
-                            <Button variant="ghost" size="sm"><Eye className="h-3.5 w-3.5" /></Button>
-                          </Link>
+                          <Button variant="ghost" size="sm" onClick={() => setViewApp(app)}><Eye className="h-3.5 w-3.5" /></Button>
                         </td>
                       </tr>
                     ))}
@@ -316,5 +316,43 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
         </div>
       )}
     </div>
+
+    {/* Read-only application quick-view dialog */}
+    {viewApp && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setViewApp(null)}>
+        <div className="bg-background rounded-xl shadow-xl w-full max-w-2xl max-h-[85vh] overflow-y-auto m-4" onClick={e => e.stopPropagation()}>
+          <div className="flex items-center justify-between p-5 border-b">
+            <div>
+              <h2 className="font-semibold">{viewApp.application_number || 'Draft'}</h2>
+              <p className="text-sm text-muted-foreground mt-0.5">{viewApp.project_title || 'Untitled'}</p>
+            </div>
+            <button onClick={() => setViewApp(null)} className="text-muted-foreground hover:text-foreground text-xl leading-none">&times;</button>
+          </div>
+          <div className="p-5 space-y-4 text-sm">
+            <div className="grid grid-cols-2 gap-4">
+              <div><p className="text-xs text-muted-foreground">Organization</p><p className="font-medium mt-0.5">{viewApp.organization_name || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Status</p><p className="mt-0.5"><StatusBadge status={viewApp.status} /></p></div>
+              <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium mt-0.5">{viewApp.program_code || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium mt-0.5 text-xs">{viewApp.nofo_title || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Requested Amount</p><p className="font-medium mt-0.5">{formatCurrency(viewApp.requested_amount)}</p></div>
+              <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-medium mt-0.5">{viewApp.awarded_amount ? formatCurrency(viewApp.awarded_amount) : '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium mt-0.5">{formatDateShort(viewApp.performance_start) || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium mt-0.5">{formatDateShort(viewApp.performance_end) || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium mt-0.5">{formatDateShort(viewApp.submitted_at) || '-'}</p></div>
+              <div><p className="text-xs text-muted-foreground">Match Amount</p><p className="font-medium mt-0.5">{viewApp.match_amount ? formatCurrency(viewApp.match_amount) : '-'}</p></div>
+            </div>
+            {viewApp.project_description && (
+              <div><p className="text-xs text-muted-foreground">Project Description</p><p className="mt-1 text-sm bg-muted/40 rounded-lg p-3">{viewApp.project_description}</p></div>
+            )}
+            <div className="flex justify-end pt-2">
+              <Link to={`/applications?review=${viewApp.id}`} onClick={() => setViewApp(null)}>
+                <button className="text-xs text-primary hover:underline">Open Full Review &rarr;</button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    </>
   );
 }
