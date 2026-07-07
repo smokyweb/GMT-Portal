@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
-import MonitoringPanel from '../components/MonitoringPanel';
+import { runGrantMonitor } from '../lib/monitoringService';
 import { DollarSign, Users, ClipboardList, Shield, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
@@ -22,7 +22,7 @@ const DEFAULT_WIDGETS = [
   { id: 'compliance_alerts', label: 'Compliance Alerts', description: 'Open compliance flags', visible: true },
   { id: 'workflow', label: 'Workflow Pipeline', description: 'Application & funding request pipeline', visible: true },
   { id: 'risk_table', label: 'Risk Score Table', description: 'Organization risk assessment', visible: true },
-  { id: 'monitoring', label: 'Monitoring Panel', description: 'System-wide monitoring metrics', visible: true },
+  // monitoring widget removed - runs silently in background
   { id: 'expenditure_chart', label: 'Expenditure Chart', description: 'Expenditure rate by program', visible: true },
 ];
 
@@ -48,9 +48,11 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
   const isVisible = (id) => widgets.find(w => w.id === id)?.visible !== false;
 
   useEffect(() => {
-    // Run daily report due-date service (throttled to once per 24h)
+    // Run background services (throttled, silent - no UI spinner)
     runReportDueDateService();
     base44.auth.me().then(u => {
+      // Run grant monitor silently in background after user loads
+      runGrantMonitor(u).catch(() => {});
       setCurrentUser(u);
       if (u?.state_dashboard_widgets) {
         try {
@@ -290,8 +292,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       {/* Risk Score Table */}
       {isVisible('risk_table') && <RiskScoreTable />}
 
-      {/* Monitoring Panel */}
-      {isVisible('monitoring') && <MonitoringPanel user={currentUser} />}
+      {/* Monitoring Panel removed - runs silently in background */}
 
       {/* Expenditure Chart */}
       {isVisible('expenditure_chart') && chartData.length > 0 && (
