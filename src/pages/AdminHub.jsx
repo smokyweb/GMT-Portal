@@ -16,7 +16,7 @@ const HUB_LINKS = [
     tier: 1,
   },
   {
-    label: 'Admin Panel',
+    label: 'User Management',
     description: 'Manage users, roles, and permissions.',
     icon: ShieldCheck,
     path: '/admin',
@@ -131,7 +131,7 @@ export default function AdminHub() {
    }, []);
 
   const countLabels = {
-    'Admin Panel': `${counts.users || 0} users`,
+    'User Management': `${counts.users || 0} users`,
     'Applications & Document Review': `${counts.applications || 0} apps`,
     'Grant Programs': `${counts.programs || 0} programs`,
     'Organizations': `${counts.orgs || 0} orgs`,

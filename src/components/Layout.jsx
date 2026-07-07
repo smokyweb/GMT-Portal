@@ -96,13 +96,6 @@ const stateNavGroups = [
   requiresRole: ['admin', 'isc_admin', 'federal_admin', 'federal_officer'],
   items: [
   { label: 'Admin Hub', icon: ShieldCheck, path: '/admin-hub' },
-  { label: 'System Health', icon: Activity, path: '/admin-health' },
-  { label: 'User Management', icon: ShieldCheck, path: '/admin' },
-  { label: 'Grant Programs', icon: FileText, path: '/grant-programs' },
-  { label: 'Notification Rules', icon: AlertCircle, path: '/notification-rules' },
-  { label: 'Org Deep Dive', icon: Building2, path: '/org-deep-dive' },
-  { label: 'Doc Templates', icon: FilePen, path: '/template-manager' },
-  { label: 'Closeout Checklist', icon: CheckCircle, path: '/closeout-checklist' },
   { label: 'Portfolio Summary', icon: Globe, path: '/portfolio-summary', requiresRole: ['isc_admin', 'federal_admin', 'federal_officer'] }]
 }];
 
