@@ -42,7 +42,7 @@ function KPICard({ label, value, sub, icon: IconComp, accent }) {
 }
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">""</span>;
+  if (!status) return <span className="text-xs text-muted-foreground">-</span>;
   const cfg = PAYMENT_LABELS[status] || PAYMENT_LABELS.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
