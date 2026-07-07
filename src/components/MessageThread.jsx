@@ -4,7 +4,7 @@ import { Send, Reply, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { isStateUser } from '../lib/helpers';
+import { isStateUser, createNotification } from '../lib/helpers';
 import moment from 'moment';
 
 const TOPICS = ['General', 'Budget', 'Compliance', 'Documentation', 'Timeline', 'Other'];
@@ -46,13 +46,16 @@ function MessageBubble({ msg, user, replies, getReplies, onReply, topicColors, d
     } finally {
       setSending(false);
     }
-    // Email - fire and forget
+    // In-app notification to original sender
     try {
-      base44.integrations.Core.SendEmail({
-        to: isOwn ? msg.application_number : msg.sender_email,
-        subject: `New reply on Application ${msg.application_number}`,
-        body: `${user.full_name} replied:\n\n"${replyBody}"\n\nLog in to the GMT Portal to respond.`,
-      }).catch(() => {});
+      const notifyEmail = msg.sender_email !== user?.email ? msg.sender_email : null;
+      if (notifyEmail) {
+        createNotification(base44, notifyEmail,
+          `Reply on Application ${msg.application_number}`,
+          `${user.full_name || user.email} replied to your message: "${replyBody.substring(0, 80)}${replyBody.length > 80 ? '...' : ''}".`,
+          'message', 'Application', msg.application_id, '/messages'
+        ).catch(() => {});
+      }
     } catch (_) {}
   };
 
@@ -164,15 +167,29 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
     } finally {
       setSending(false);
     }
-    // Email notification - fire and forget, don't block
+    // In-app notification to the other party
     try {
-      const recipientEmail = isStateUser(user?.role) ? app.submitted_by : null;
-      if (recipientEmail) {
-        base44.integrations.Core.SendEmail({
-          to: recipientEmail,
-          subject: `New message on Application ${app.application_number} [${newTopic}]`,
-          body: `${user.full_name} sent you a message on application ${app.application_number}:\n\n"${bodyToSend}"\n\nLog in to the GMT Portal to respond.`,
-        }).catch(() => {});
+      if (isStateUser(user?.role)) {
+        // State admin sent message -> notify subrecipient
+        const recipientEmail = app.submitted_by;
+        if (recipientEmail) {
+          createNotification(base44, recipientEmail,
+            `New Message: ${app.application_number}`,
+            `${user.full_name || user.email} sent you a message on application ${app.application_number}: "${bodyToSend.substring(0, 80)}${bodyToSend.length > 80 ? '...' : ''}".`,
+            'message', 'Application', app.id, '/applications'
+          ).catch(() => {});
+        }
+      } else {
+        // Subrecipient sent message -> notify all state admins/reviewers
+        const allUsers = await base44.entities.User.list('-created_date', 200).catch(() => []);
+        const stateUsers = (allUsers || []).filter(u => ['admin', 'reviewer', 'isc_admin'].includes(u.role));
+        for (const su of stateUsers) {
+          createNotification(base44, su.email,
+            `New Message: ${app.application_number}`,
+            `${user.full_name || user.email} (${app.organization_name}) sent a message on application ${app.application_number}: "${bodyToSend.substring(0, 80)}${bodyToSend.length > 80 ? '...' : ''}".`,
+            'message', 'Application', app.id, '/messages'
+          ).catch(() => {});
+        }
       }
     } catch (_) {}
   };
