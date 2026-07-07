@@ -366,8 +366,7 @@ export default function Documents() {
                     <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                     {showOrg && <th className="text-left p-3 font-medium text-muted-foreground">Uploaded By</th>}
                     <th className="text-left p-3 font-medium text-muted-foreground">Uploaded</th>
-                    <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
-                    <th className="p-3" />
+                                        <th className="p-3" />
                   </tr>
                 </thead>
                 <tbody>
@@ -390,12 +389,7 @@ export default function Documents() {
                       </td>
                       {showOrg && <td className="p-3 text-xs text-muted-foreground">{doc.uploaded_by || ' - '}</td>}
                       <td className="p-3 text-xs text-muted-foreground">{moment(doc.uploaded_at || doc.created_date).fromNow()}</td>
-                      <td className="p-3">
-                        <ReviewBadge status={doc.review_status || 'Pending'} />
-                        {doc.reviewer_notes && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5 truncate max-w-[120px]" title={doc.reviewer_notes}>{doc.reviewer_notes}</p>
-                        )}
-                      </td>
+
                       <td className="p-3">
                         <div className="flex items-center gap-1">
                           {doc.file_url && (
@@ -478,7 +472,7 @@ export default function Documents() {
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Total Documents', value: latestDocs.length },
-          { label: 'Pending Review', value: latestDocs.filter(d => (d.review_status || 'Pending') === 'Pending').length, warn: true },
+          { label: 'Uploaded This Week', value: latestDocs.filter(d => { const d7 = new Date(); d7.setDate(d7.getDate()-7); return new Date(d.uploaded_at || d.created_date) > d7; }).length },
           { label: isState ? 'Received Sent' : 'Documents Received', value: receivedDocs.length },
         ].map(s => (
           <div key={s.label} className={`bg-card border rounded-xl p-4 ${s.warn && s.value > 0 ? 'border-amber-200 bg-amber-50/30' : ''}`}>
@@ -508,15 +502,7 @@ export default function Documents() {
             {DOC_TYPES.map(t => <SelectItem key={t} value={t}>{t.replace(/([A-Z])/g, ' $1').trim()}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[150px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Statuses</SelectItem>
-            <SelectItem value="Pending">Pending Review</SelectItem>
-            <SelectItem value="Approved">Approved</SelectItem>
-            <SelectItem value="Rejected">Rejected</SelectItem>
-          </SelectContent>
-        </Select>
+        
       </div>
 
       {/* Tabs */}
@@ -800,7 +786,6 @@ export default function Documents() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <ReviewBadge status={v.review_status || 'Pending'} />
                   {v.file_url && (
                     <InlinePdfViewer fileUrl={v.file_url} fileName={v.name} />
                   )}
