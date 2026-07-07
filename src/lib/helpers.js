@@ -14,12 +14,14 @@ export function toNum(val) {
 
 export function formatDate(date) {
   if (!date) return ' - ';
-  return moment(date).format('MMMM DD, YYYY');
+  // Use UTC to prevent timezone offset shifting dates by 1 day
+  return moment.utc(date).format('MMMM DD, YYYY');
 }
 
 export function formatDateShort(date) {
   if (!date) return ' - ';
-  return moment(date).format('MMM DD, YYYY');
+  // Use UTC to prevent timezone offset shifting dates by 1 day
+  return moment.utc(date).format('MMM DD, YYYY');
 }
 
 export function isStateUser(role) {
