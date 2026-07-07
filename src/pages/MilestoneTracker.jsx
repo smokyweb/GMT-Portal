@@ -157,11 +157,19 @@ export default function MilestoneTracker() {
       setSaving(true);
       const selectedApp = applications.find(a => a.id === form.application_id);
       const payload = {
-        ...form,
-        organization_id: selectedApp?.organization_id || form.organization_id,
-        organization_name: selectedApp?.organization_name || form.organization_name,
-        application_number: selectedApp?.application_number || form.application_number,
-        program_code: selectedApp?.program_code || form.program_code,
+        title: form.title,
+        description: form.description || undefined,
+        milestone_type: form.milestone_type,
+        status: form.status,
+        due_date: form.due_date,
+        completed_date: form.completed_date || undefined,
+        application_id: form.application_id,
+        assigned_to: form.assigned_to || undefined,
+        notes: form.notes || undefined,
+        organization_id: selectedApp?.organization_id || form.organization_id || undefined,
+        organization_name: selectedApp?.organization_name || form.organization_name || undefined,
+        application_number: selectedApp?.application_number || form.application_number || undefined,
+        program_code: selectedApp?.program_code || form.program_code || undefined,
       };
       if (editingMilestone) {
         await base44.entities.Milestone.update(editingMilestone.id, payload);
@@ -184,6 +192,7 @@ export default function MilestoneTracker() {
       resetForm();
     } catch (error) {
       console.error('Error saving milestone:', error);
+      alert('Failed to save milestone: ' + (error?.message || error?.detail || 'Please try again.'));
     } finally {
       setSaving(false);
     }
@@ -539,10 +548,10 @@ export default function MilestoneTracker() {
               <div>
                 <Label>Assigned To</Label>
                 {userList.length > 0 ? (
-                  <Select value={form.assigned_to} onValueChange={v => setForm({ ...form, assigned_to: v })}>
+                  <Select value={form.assigned_to} onValueChange={v => setForm({ ...form, assigned_to: v === "__none__" ? "" : v })}>
                     <SelectTrigger><SelectValue placeholder="Select user (optional)" /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Unassigned</SelectItem>
+                      <SelectItem value="__none__">Unassigned</SelectItem>
                       {userList.map(u => (
                         <SelectItem key={u.id} value={u.email}>
                           {u.full_name || u.email} ({u.role})
