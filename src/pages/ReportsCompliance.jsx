@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import StatusBadge from '../components/StatusBadge';
 import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
 import { formatDateShort, formatCurrency, createNotification, logAudit } from '../lib/helpers';
-import { CheckCircle2, XCircle, FileText, Eye, RotateCcw } from 'lucide-react';
+import { CheckCircle2, XCircle, FileText, Eye, RotateCcw, Download } from 'lucide-react';
 
 export default function ReportsCompliance() {
   const [schedules, setSchedules] = useState([]);
@@ -58,6 +58,46 @@ export default function ReportsCompliance() {
     };
     loadData();
   }, []);
+
+  const exportReportsCsv = async () => {
+    // Fetch progress reports for all filtered schedules
+    const reportMap = {};
+    const allPRs = await base44.entities.ProgressReport.list('-submitted_at', 500).catch(() => []);
+    (allPRs || []).forEach(pr => { reportMap[pr.schedule_id] = pr; });
+
+    const headers = ['App #','Organization','Program','Report Type','Period','Due Date','Status','Submitted By','Submitted Date','Objectives Met','Expenditure YTD','Match YTD','Progress Narrative','Challenges & Corrective Actions','Reviewer Notes'];
+    const escape = v => { const s = String(v ?? ''); return s.includes(',') || s.includes('"') || s.includes('\n') ? `"${s.replace(/"/g,'""')}"` : s; };
+
+    const rows = filtered.map(s => {
+      const pr = reportMap[s.id];
+      return [
+        escape(s.application_number),
+        escape(s.organization_name),
+        escape(s.program_code),
+        escape(s.report_type),
+        escape(s.period_start && s.period_end ? `${s.period_start} - ${s.period_end}` : ''),
+        escape(s.due_date),
+        escape(s.status),
+        escape(pr?.submitted_by || ''),
+        escape(pr?.submitted_at ? pr.submitted_at.substring(0,10) : ''),
+        escape(pr?.objectives_met != null ? (pr.objectives_met ? 'Yes' : 'No') : ''),
+        escape(pr?.expenditure_ytd != null ? `$${Number(pr.expenditure_ytd).toLocaleString()}` : ''),
+        escape(pr?.match_ytd != null ? `$${Number(pr.match_ytd).toLocaleString()}` : ''),
+        escape(pr?.narrative || ''),
+        escape(pr?.challenges || ''),
+        escape(pr?.reviewer_notes || ''),
+      ].join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `progress-reports-${new Date().toISOString().substring(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const openReview = async (schedule) => {
     setSelectedSchedule(schedule);
@@ -209,6 +249,9 @@ export default function ReportsCompliance() {
            {dateFilter.dateMode !== 'none' && (
              <Button variant="ghost" size="sm" onClick={() => dateFilter.reset()}>Clear dates</Button>
            )}
+           <Button variant="outline" size="sm" className="ml-auto gap-1.5" onClick={() => exportReportsCsv()}>
+             <Download className="h-3.5 w-3.5" /> Export CSV
+           </Button>
          </div>
 
         <div className="bg-card rounded-xl border overflow-hidden">

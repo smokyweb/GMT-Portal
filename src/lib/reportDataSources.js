@@ -192,10 +192,15 @@ export const FIELD_GROUPS = {
   ProgressReport: [
     { key: 'application_id', label: 'Application ID', type: 'text' },
     { key: 'submitted_by', label: 'Submitted By', type: 'text' },
-    { key: 'expenditure_ytd', label: 'Expenditure YTD', type: 'currency' },
-    { key: 'match_ytd', label: 'Match YTD', type: 'currency' },
     { key: 'status', label: 'Status', type: 'dropdown', options: ['Submitted','UnderReview','Approved','Denied','RevisionRequested'] },
     { key: 'submitted_at', label: 'Submitted Date', type: 'date' },
+    { key: 'narrative', label: 'Progress Narrative', type: 'text' },
+    { key: 'objectives_met', label: 'Performance Objectives Met', type: 'boolean' },
+    { key: 'challenges', label: 'Challenges & Corrective Actions', type: 'text' },
+    { key: 'expenditure_ytd', label: 'Expenditure YTD', type: 'currency' },
+    { key: 'match_ytd', label: 'Match YTD', type: 'currency' },
+    { key: 'reviewer_notes', label: 'Reviewer Notes', type: 'text' },
+    { key: 'reviewer_id', label: 'Reviewed By', type: 'text' },
   ],
   Organization: [
     { key: 'name', label: 'Organization Name', type: 'text' },
