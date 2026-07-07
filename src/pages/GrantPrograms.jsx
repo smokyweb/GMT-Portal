@@ -238,28 +238,7 @@ export default function GrantPrograms() {
            <DialogHeader><DialogTitle>{editingProgram ? 'Edit Grant Program' : 'Add Grant Program'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
 
-            {/* AI Scrape Section */}
-            <div className="rounded-lg border border-primary/20 bg-primary/5 p-4 space-y-2">
-              <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                <Wand2 className="h-4 w-4" /> Auto-populate from URL
-              </div>
-              <p className="text-xs text-muted-foreground">Paste a government grant program URL and AI will extract the details for you.</p>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <Link className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input
-                    className="pl-8 text-sm"
-                    placeholder="https://www.fema.gov/grants/..."
-                    value={scrapeUrl}
-                    onChange={(e) => {setScrapeUrl(e.target.value);setScrapeError('');}} />
-                  
-                </div>
-                <Button size="sm" onClick={handleScrape} disabled={scraping} className="shrink-0">
-                  {scraping ? <><Loader2 className="h-3.5 w-3.5 mr-1 animate-spin" /> Fetching...</> : 'Populate'}
-                </Button>
-              </div>
-              {scrapeError && <p className="text-xs text-red-500">{scrapeError}</p>}
-            </div>
+            {/* AI Scrape Section removed - not available in self-hosted mode */}
 
             <div><Label>Program Name</Label><Input value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} /></div>
             <div>
