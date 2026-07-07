@@ -88,7 +88,8 @@ export default function Credits() {
 
   const handleIssue = async () => {
     setSubmitting(true);
-    const allCredits = await base44.entities.Credit.list('-created_date', 1000);
+    try {
+    const allCredits = await base44.entities.Credit.list('-created_date', 1000).catch(() => []);
     const creditNum = `CRD-${new Date().getFullYear()}-${String(allCredits.length + 1).padStart(4, '0')}`;
     const org = orgs.find(o => o.id === form.organization_id);
     const amt = Number(form.amount);
@@ -125,6 +126,11 @@ export default function Credits() {
     setOpen(false);
     resetForm();
     load();
+    } catch (err) {
+      console.error('Credit issue error:', err);
+      alert('Failed to issue credit: ' + (err?.message || err?.detail || 'Please try again.'));
+      setSubmitting(false);
+    }
   };
 
   const handleVoid = async () => {
@@ -292,9 +298,10 @@ export default function Credits() {
                   <div className="px-3 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50"
                     onClick={() => { setForm(f => ({ ...f, application_id: '', application_number: '', program_code: '' })); setAppSearch(''); }}>None / Clear</div>
                   {apps.filter(a =>
-                    a.application_number?.toLowerCase().includes(appSearch.toLowerCase()) ||
+                    (!form.organization_id || a.organization_id === form.organization_id) &&
+                    (a.application_number?.toLowerCase().includes(appSearch.toLowerCase()) ||
                     a.project_title?.toLowerCase().includes(appSearch.toLowerCase()) ||
-                    a.organization_name?.toLowerCase().includes(appSearch.toLowerCase())
+                    a.organization_name?.toLowerCase().includes(appSearch.toLowerCase()))
                   ).map(a => (
                     <div key={a.id}
                       className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${form.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}

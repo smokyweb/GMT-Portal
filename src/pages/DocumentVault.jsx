@@ -382,14 +382,7 @@ export default function DocumentVault() {
                         <Button variant="ghost" size="sm" onClick={() => openVersionHistory(doc)} title="Version history">
                           <History className="h-3.5 w-3.5" />
                         </Button>
-                        {isState && (
-                          <Button
-                            variant="ghost" size="sm"
-                            onClick={() => { setReviewing(doc); setReviewNotes(doc.reviewer_notes || ''); }}
-                          >
-                            <Eye className="h-3.5 w-3.5 mr-1" /> Review
-                          </Button>
-                        )}
+                        {/* Document review/approve removed per request - docs are view-only */}
                         {!isState && (
                           <>
                             <Button variant="ghost" size="sm" onClick={() => {
@@ -598,18 +591,8 @@ export default function DocumentVault() {
                   <Button variant="outline" size="sm" className="w-full"><Download className="h-3.5 w-3.5 mr-1.5" /> Download & View File</Button>
                 </a>
               )}
-              <div>
-                <Label>Review Notes</Label>
-                <Textarea value={reviewNotes} onChange={e => setReviewNotes(e.target.value)} rows={3} placeholder="Add notes for the subrecipient (optional)…" />
-              </div>
               <div className="flex gap-2 justify-end">
-                <Button variant="outline" onClick={() => { setReviewing(null); setReviewNotes(''); }}>Cancel</Button>
-                <Button variant="destructive" onClick={() => handleReview('Rejected')}>
-                  <X className="h-3.5 w-3.5 mr-1" /> Reject
-                </Button>
-                <Button className="bg-green-600 hover:bg-green-700" onClick={() => handleReview('Approved')}>
-                  <Check className="h-3.5 w-3.5 mr-1" /> Approve
-                </Button>
+                <Button variant="outline" onClick={() => { setReviewing(null); setReviewNotes(''); }}>Close</Button>
               </div>
             </div>
           )}
