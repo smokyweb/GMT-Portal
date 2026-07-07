@@ -132,12 +132,7 @@ export default function BudgetTracker() {
     </div>
   );
 
-  if (!user?.organization_id) return (
-    <div className="text-center py-16 text-muted-foreground">
-      <DollarSign className="h-10 w-10 mx-auto mb-3 opacity-30" />
-      <p className="font-medium">No organization linked to your account.</p>
-    </div>
-  );
+  // Note: admins don't have organization_id but can still see apps by state scope - don't block here
 
   const filteredCategoryRows = categoryRows.filter(r =>
     !categorySearch || r.budget_category?.toLowerCase().includes(categorySearch.toLowerCase()) ||
