@@ -61,6 +61,7 @@ export default function MilestoneTracker() {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
+  const [userList, setUserList] = useState([]);
 
   // Filters
   const [filterOrg, setFilterOrg] = useState('');
@@ -117,6 +118,8 @@ export default function MilestoneTracker() {
         setMilestones(milestonesData || []);
         setApplications(appsData || []);
         setOrganizations(orgsData || []);
+        // Load users for assigned_to lookup
+        base44.entities.User.list('-created_date', 200).then(u => setUserList(u || [])).catch(() => {});
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {
@@ -146,9 +149,9 @@ export default function MilestoneTracker() {
 
   // Handle save
   const handleSave = async () => {
-    if (!form.title || !form.due_date || !form.application_id) {
-      return;
-    }
+    if (!form.title) { alert('Please enter a milestone title.'); return; }
+    if (!form.due_date) { alert('Please select a due date.'); return; }
+    if (!form.application_id) { alert('Please select an application.'); return; }
 
     try {
       setSaving(true);
@@ -534,12 +537,26 @@ export default function MilestoneTracker() {
                 />
               </div>
               <div>
-                <Label>Assigned To (email)</Label>
-                <Input
-                  value={form.assigned_to}
-                  onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
-                  placeholder="email@example.com"
-                />
+                <Label>Assigned To</Label>
+                {userList.length > 0 ? (
+                  <Select value={form.assigned_to} onValueChange={v => setForm({ ...form, assigned_to: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select user (optional)" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">Unassigned</SelectItem>
+                      {userList.map(u => (
+                        <SelectItem key={u.id} value={u.email}>
+                          {u.full_name || u.email} ({u.role})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                ) : (
+                  <Input
+                    value={form.assigned_to}
+                    onChange={(e) => setForm({ ...form, assigned_to: e.target.value })}
+                    placeholder="email@example.com"
+                  />
+                )}
               </div>
             </div>
             <DialogFooter className="pt-4 flex flex-row gap-2 justify-end">
@@ -547,7 +564,7 @@ export default function MilestoneTracker() {
               <Button
                 className="flex-1 sm:flex-none"
                 onClick={handleSave}
-                disabled={saving || !form.title || !form.due_date}
+                disabled={saving || !form.title || !form.due_date || !form.application_id}
               >
                 {saving ? 'Saving...' : editingMilestone ? 'Save Changes' : 'Add Milestone'}
               </Button>
