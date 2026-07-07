@@ -32,6 +32,9 @@ export default function NofoManagement() {
   const [editing, setEditing] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [viewNofo, setViewNofo] = useState(null);
+  const [nofoHistory, setNofoHistory] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -143,6 +146,15 @@ export default function NofoManagement() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const openView = async (nofo) => {
+    setViewNofo(nofo);
+    setHistoryLoading(true);
+    setNofoHistory([]);
+    const logs = await base44.entities.AuditLog.filter({ entity_id: nofo.id }, '-created_date', 50).catch(() => []);
+    setNofoHistory(logs || []);
+    setHistoryLoading(false);
   };
 
   const changeStatus = async (nofo, newStatus) => {
@@ -261,6 +273,7 @@ export default function NofoManagement() {
                         <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => openView(nofo)}>&#128065; View / Review</DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openEdit(nofo)}>Edit</DropdownMenuItem>
                         {getStatusActions(nofo).map(a => (
                           <DropdownMenuItem key={a.status} onClick={() => changeStatus(nofo, a.status)}>
@@ -461,6 +474,76 @@ export default function NofoManagement() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* NOFO View / Review Dialog */}
+      {viewNofo && (
+        <Dialog open={!!viewNofo} onOpenChange={o => { if (!o) setViewNofo(null); }}>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{viewNofo.title}</DialogTitle>
+              <p className="text-sm text-muted-foreground">{viewNofo.program_name} &bull; {viewNofo.program_code} &bull; <span className="font-medium">{viewNofo.status}</span></p>
+            </DialogHeader>
+
+            {/* Summary */}
+            <div className="space-y-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
+                <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available ? `$${Number(viewNofo.total_funding_available).toLocaleString()}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Award Range</p><p className="font-medium">{viewNofo.min_award || viewNofo.max_award ? `$${Number(viewNofo.min_award||0).toLocaleString()} - $${Number(viewNofo.max_award||0).toLocaleString()}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Available States</p><p className="font-medium">{viewNofo.scope_states?.length ? viewNofo.scope_states.join(', ') : 'All States'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Scoring Enabled</p><p className="font-medium">{viewNofo.scoring_enabled ? 'Yes' : 'No'}</p></div>
+              </div>
+
+              {viewNofo.summary && <div><p className="text-xs text-muted-foreground font-medium">Summary</p><p className="mt-1 bg-muted/40 rounded-lg p-3">{viewNofo.summary}</p></div>}
+              {viewNofo.eligibility_criteria && <div><p className="text-xs text-muted-foreground font-medium">Eligibility Criteria</p><p className="mt-1 bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{viewNofo.eligibility_criteria}</p></div>}
+              {viewNofo.allowable_costs && <div><p className="text-xs text-muted-foreground font-medium">Allowable Costs</p><p className="mt-1 bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{viewNofo.allowable_costs}</p></div>}
+              {viewNofo.evaluation_criteria && <div><p className="text-xs text-muted-foreground font-medium">Evaluation Criteria</p><p className="mt-1 bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{viewNofo.evaluation_criteria}</p></div>}
+
+              {/* Approval Actions */}
+              {getStatusActions(viewNofo).length > 0 && (
+                <div className="border rounded-lg p-4 bg-muted/20 space-y-3">
+                  <p className="text-sm font-semibold">Review Actions</p>
+                  <div className="flex flex-wrap gap-2">
+                    {getStatusActions(viewNofo).map(a => (
+                      <Button key={a.status}
+                        variant={a.status === 'Published' ? 'default' : a.status === 'RevisionRequested' ? 'outline' : 'secondary'}
+                        className={a.status === 'Published' ? 'bg-green-600 hover:bg-green-700' : ''}
+                        onClick={async () => { await changeStatus(viewNofo, a.status); setViewNofo(null); }}
+                      >{a.label}</Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Review History */}
+              <div className="border rounded-lg p-4 space-y-2">
+                <p className="text-sm font-semibold">Review History</p>
+                {historyLoading ? (
+                  <p className="text-xs text-muted-foreground">Loading history...</p>
+                ) : nofoHistory.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">No history recorded yet.</p>
+                ) : (
+                  <div className="space-y-2">
+                    {nofoHistory.map((log, i) => (
+                      <div key={log.id || i} className="flex items-start gap-3 text-xs">
+                        <span className="text-muted-foreground whitespace-nowrap">{log.created_date ? new Date(log.created_date).toLocaleDateString('en-US', {month:'short',day:'numeric',year:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'}</span>
+                        <span className="font-medium text-muted-foreground">{log.user_email || log.user_name}</span>
+                        <span className="flex-1">{log.description || log.action}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => openEdit(viewNofo)} className="mr-auto">Edit</Button>
+              <Button variant="outline" onClick={() => setViewNofo(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
