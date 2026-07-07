@@ -75,10 +75,12 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
   const activeGrants = apps.filter(a => a.status === 'Approved');
   const totalAwarded = activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0);
   const totalExpended = activeGrants.reduce((s, g) => s + (Number(g.total_expended) || 0), 0);
-  const totalRemaining = activeGrants.reduce((s, g) => s + (g.remaining_balance ?? (g.awarded_amount - (Number(g.total_expended) || 0))), 0);
+  // Remaining = awarded - expended (recalculated, not from DB field which may be stale)
+  const totalRemaining = totalAwarded - totalExpended;
   const overallRate = totalAwarded > 0 ? Math.round((totalExpended / totalAwarded) * 100) : 0;
-  const approvedFRs = fundingRequests.filter(fr => fr.status === 'Approved');
-  const totalReimbursed = approvedFRs.reduce((s, fr) => s + (fr.amount_approved || fr.amount_requested || 0), 0);
+  // Reimbursed = sum of Paid funding requests only
+  const paidFRs = fundingRequests.filter(fr => fr.payment_status === 'Paid');
+  const totalReimbursed = paidFRs.reduce((s, fr) => s + (Number(fr.amount_approved) || Number(fr.amount_requested) || 0), 0);
 
   // ── 1. Actual vs Projected Spend per Grant ────────────────────────────────
   const actualVsProjected = useMemo(() => {
@@ -302,12 +304,12 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
         <SectionTitle icon={DollarSign} sub="Linear projection based on time elapsed in each performance period">Actual vs. Projected Spend by Grant</SectionTitle>
         <div className="bg-card border rounded-xl p-4">
           <ResponsiveContainer width="100%" height={280}>
-            <BarChart data={actualVsProjected} margin={{ top: 5, right: 20, left: 10, bottom: 50 }}>
+            <BarChart data={actualVsProjected} margin={{ top: 5, right: 20, left: 10, bottom: 70 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-30} textAnchor="end" interval={0} />
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} angle={-35} textAnchor="end" interval={0} height={60} />
               <YAxis tickFormatter={fmt} tick={{ fontSize: 11 }} />
               <Tooltip content={<CustomTooltip formatter={formatCurrency} />} />
-              <Legend wrapperStyle={{ fontSize: 12, paddingTop: 12 }} />
+              <Legend verticalAlign="top" wrapperStyle={{ fontSize: 12, paddingBottom: 8 }} />
               <Bar dataKey="Projected" fill="#e2e8f0" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Actual" fill="#3b82f6" radius={[4, 4, 0, 0]} />
             </BarChart>
