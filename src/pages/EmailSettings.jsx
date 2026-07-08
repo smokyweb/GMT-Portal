@@ -14,7 +14,7 @@ export default function EmailSettings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/settings/smtp').then(r => r.json()).then(d => {
+    fetch('/api/email/settings').then(r => r.json()).then(d => {
       setForm(f => ({ ...f, host: d.host || 'smtp.gmail.com', port: d.port || '587', user: d.user || '', from: d.from || '' }));
       setConfigured(d.configured);
       setLoading(false);
@@ -24,7 +24,7 @@ export default function EmailSettings() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/settings/smtp', {
+      const res = await fetch('/api/email/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
