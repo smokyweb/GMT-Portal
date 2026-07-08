@@ -2,6 +2,7 @@ import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import pool from '../db/connection.js';
 import { generateToken, authRequired } from '../middleware/auth.js';
+import { sendWelcomeEmail } from '../email.js';
 
 const router = Router();
 
@@ -25,6 +26,8 @@ router.post('/register', async (req, res) => {
     const user = result.rows[0];
     delete user.password_hash;
     const token = generateToken(user);
+    // Send welcome email (non-blocking)
+    sendWelcomeEmail(user.email, user.full_name).catch(() => {});
     res.status(201).json({ user, token });
   } catch (err) {
     console.error('Register error:', err);
