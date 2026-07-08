@@ -204,7 +204,7 @@ export default function PortalAnalyticsTab({ apps = [], fundingRequests = [] }) 
         <KpiCard label="Total Awarded" value={formatCurrency(totalAwarded)} icon={DollarSign} color="green" />
         <KpiCard label="Total Expended" value={formatCurrency(totalExpended)} sub={`${overallRate}% of portfolio`} icon={TrendingUp} color="blue" />
         <KpiCard label="Remaining Balance" value={formatCurrency(totalRemaining)} icon={Target} color={totalRemaining < 10000 ? 'red' : 'purple'} />
-        <KpiCard label="Total Reimbursed" value={formatCurrency(totalReimbursed)} sub={`${approvedFRs.length} approved requests`} icon={CheckCircle2} color="green" />
+        <KpiCard label="Total Reimbursed" value={formatCurrency(totalReimbursed)} sub={`${paidFRs.length} paid requests`} icon={CheckCircle2} color="green" />
       </div>
 
       {/* ── Budget Alerts ── */}
