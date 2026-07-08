@@ -131,6 +131,7 @@ export default function GrantPrograms() {
   };
 
   const openNewForm = () => {
+    console.log("[GMT] openNewForm called");
     setEditingProgram(null);
     setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
     setFormExtra({ type: '', fundingCycle: '' });
