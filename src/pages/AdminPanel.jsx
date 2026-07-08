@@ -72,6 +72,38 @@ export default function AdminPanel() {
     });
   }, []);
 
+
+  const sendInviteEmail = async (email, tempPassword) => {
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Welcome to GMT Portal - Your Account Has Been Created',
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h2 style="color:#0F1F3D">Welcome to GMT Portal</h2>
+            <p>An account has been created for you on the Grant Management Tool (GMT) Portal.</p>
+            <div style="background:#f4f4f8;border-radius:8px;padding:16px;margin:16px 0">
+              <p style="margin:4px 0"><strong>Login URL:</strong> <a href="https://gmt.bluesapps.com">gmt.bluesapps.com</a></p>
+              <p style="margin:4px 0"><strong>Email:</strong> ${email}</p>
+              <p style="margin:4px 0"><strong>Temporary Password:</strong> GMT_Welcome_2026!</p>
+            </div>
+            <p>Please log in and change your password as soon as possible.</p>
+            <p style="color:#666;font-size:12px;margin-top:24px">If you did not expect this email, please contact your administrator.</p>
+          </div>`,
+        }),
+      });
+      if (res.ok) return true;
+      const err = await res.json();
+      console.warn('Email not sent:', err.message || err.error);
+      return false;
+    } catch (e) {
+      console.warn('Email send failed:', e.message);
+      return false;
+    }
+  };
+
   const handleInvite = async () => {
     if (!inviteEmail) return;
     setInviting(true);
@@ -107,7 +139,8 @@ export default function AdminPanel() {
       setInviting(false);
     }
     const savedEmail = inviteEmail;
-    setInviteSuccess(savedEmail);
+    const emailSent = await sendInviteEmail(savedEmail, 'GMT_Welcome_2026!');
+    setInviteSuccess(savedEmail + (emailSent ? '|sent' : '|manual'));
     setInviteEmail('');
     setInviteOrgId('');
     setInviteScopeState('');
@@ -319,7 +352,7 @@ export default function AdminPanel() {
               </Button>
               {inviteSuccess && (
                 <div className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-lg p-3 space-y-1">
-                  <p className="font-semibold flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Account created successfully!</p>
+                  <p className="font-semibold flex items-center gap-1"><CheckCircle className="h-3.5 w-3.5" /> Account created{inviteSuccess?.includes("|sent") ? " — invite email sent!" : " — share credentials manually:"}</p>
                   <p>Share these credentials with the user:</p>
                   <p className="font-mono bg-white border rounded px-2 py-1">Email: {inviteSuccess}</p>
                   <p className="font-mono bg-white border rounded px-2 py-1">Password: GMT_Welcome_2026!</p>

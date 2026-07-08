@@ -42,6 +42,38 @@ export default function OrgUserManagement({ user, org }) {
 
   useEffect(() => { load(); }, [user.organization_id]);
 
+
+  const sendInviteEmail = async (email, tempPassword) => {
+    try {
+      const res = await fetch('/api/email/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Welcome to GMT Portal - Your Account Has Been Created',
+          html: `<div style="font-family:sans-serif;max-width:600px;margin:0 auto;padding:24px">
+            <h2 style="color:#0F1F3D">Welcome to GMT Portal</h2>
+            <p>An account has been created for you on the Grant Management Tool (GMT) Portal.</p>
+            <div style="background:#f4f4f8;border-radius:8px;padding:16px;margin:16px 0">
+              <p style="margin:4px 0"><strong>Login URL:</strong> <a href="https://gmt.bluesapps.com">gmt.bluesapps.com</a></p>
+              <p style="margin:4px 0"><strong>Email:</strong> ${email}</p>
+              <p style="margin:4px 0"><strong>Temporary Password:</strong> GMT_Welcome_2026!</p>
+            </div>
+            <p>Please log in and change your password as soon as possible.</p>
+            <p style="color:#666;font-size:12px;margin-top:24px">If you did not expect this email, please contact your administrator.</p>
+          </div>`,
+        }),
+      });
+      if (res.ok) return true;
+      const err = await res.json();
+      console.warn('Email not sent:', err.message || err.error);
+      return false;
+    } catch (e) {
+      console.warn('Email send failed:', e.message);
+      return false;
+    }
+  };
+
   const handleInvite = async () => {
     if (!inviteEmail) return;
     setInviting(true);
@@ -66,6 +98,7 @@ export default function OrgUserManagement({ user, org }) {
         attempts++;
       }
       const savedEmail = inviteEmail;
+      await sendInviteEmail(savedEmail, 'GMT_Welcome_2026!');
       setInviteEmail('');
       setInviteSuccess(savedEmail);
       setTimeout(() => setInviteSuccess(false), 15000);
