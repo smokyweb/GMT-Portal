@@ -71,15 +71,17 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
   );
 };
 
-export default function PortalAnalyticsTab({ apps, fundingRequests }) {
-  const activeGrants = apps.filter(a => a.status === 'Approved');
+export default function PortalAnalyticsTab({ apps = [], fundingRequests = [] }) {
+  const safeApps = Array.isArray(apps) ? apps : [];
+  const safeFRs = Array.isArray(fundingRequests) ? safeFRs : [];
+  const activeGrants = safeApps.filter(a => a.status === 'Approved');
   const totalAwarded = activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0);
   const totalExpended = activeGrants.reduce((s, g) => s + (Number(g.total_expended) || 0), 0);
   // Remaining = awarded - expended (recalculated, not from DB field which may be stale)
   const totalRemaining = totalAwarded - totalExpended;
   const overallRate = totalAwarded > 0 ? Math.round((totalExpended / totalAwarded) * 100) : 0;
   // Reimbursed = sum of Paid funding requests only
-  const paidFRs = fundingRequests.filter(fr => fr.payment_status === 'Paid');
+  const paidFRs = safeFRs.filter(fr => fr.payment_status === 'Paid');
   const totalReimbursed = paidFRs.reduce((s, fr) => s + (Number(fr.amount_approved) || Number(fr.amount_requested) || 0), 0);
 
   // ── 1. Actual vs Projected Spend per Grant ────────────────────────────────
@@ -106,7 +108,7 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
 
   // ── 2. Expenditure Rate Trend ─────────────────────────────────────────────
   const rateTrend = useMemo(() => {
-    const relevant = fundingRequests
+    const relevant = safeFRs
       .filter(fr => ['Approved', 'Submitted', 'UnderReview'].includes(fr.status))
       .sort((a, b) => new Date(a.created_date) - new Date(b.created_date));
     const byMonth = {};
@@ -146,11 +148,11 @@ export default function PortalAnalyticsTab({ apps, fundingRequests }) {
   // ── 4. Funding Request Status Breakdown ───────────────────────────────────
   const frStatusData = useMemo(() => {
     const counts = {};
-    fundingRequests.forEach(fr => {
+    safeFRs.forEach(fr => {
       counts[fr.status] = (counts[fr.status] || 0) + 1;
     });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
-  }, [fundingRequests]);
+  }, [safeFRs]);
 
   // ── 5. Budget Alerts ──────────────────────────────────────────────────────
   const alerts = useMemo(() => {
