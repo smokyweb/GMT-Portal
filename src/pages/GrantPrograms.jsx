@@ -52,14 +52,20 @@ export default function GrantPrograms() {
       };
       await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
     } else {
-      const cleanedForm = { ...form, code: finalCode,
+      const cleanedForm = {
+        name: form.name, code: finalCode,
+        description: form.description || null,
+        federal_agency: form.federal_agency || null,
+        cfda_number: form.cfda_number || null,
+        is_active: form.is_active !== false,
+        program_type: form.program_type || null,
+        program_year: form.program_year || null,
         match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
         award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [],
-        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [],
       };
-      await base44.entities.GrantProgram.create(cleanedForm);
+      try { await base44.entities.GrantProgram.create(cleanedForm); }
+      catch (err) { alert('Failed: ' + (err?.message || err?.detail || 'Try again')); return; }
     }
 
     setOpen(false);
