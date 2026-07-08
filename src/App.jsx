@@ -17,6 +17,7 @@ import ComplianceFlags from './pages/ComplianceFlags';
 import GrantPrograms from './pages/GrantPrograms';
 import Organizations from './pages/Organizations';
 import OrganizationProfile from './pages/OrganizationProfile';
+import EmailSettings from './pages/EmailSettings';
 import AuditLogPage from './pages/AuditLogPage';
 import BrowseNofos from './pages/BrowseNofos';
 import NewApplication from './pages/NewApplication';
@@ -90,7 +91,8 @@ const AuthenticatedApp = () => {
         <Route path="/grant-programs" element={<GrantPrograms />} />
         <Route path="/organizations" element={<Organizations />} />
         <Route path="/organizations/:id" element={<OrganizationProfile />} />
-        <Route path="/audit-log" element={<AuditLogPage />} />
+        <Route path="/email-settings" element={<EmailSettings />} />
+          <Route path="/audit-log" element={<AuditLogPage />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/grant-timeline" element={<GrantTimeline />} />

@@ -69,6 +69,13 @@ const HUB_LINKS = [
     tier: 2,
   },
   {
+    label: 'Email Settings',
+    description: 'Configure SMTP for automatic user invitation emails.',
+    icon: Settings,
+    path: '/email-settings',
+    color: 'bg-sky-50 text-sky-600',
+  },
+  {
     label: 'Audit Log',
     description: 'Full history of all user actions across the platform.',
     icon: FileSearch,
