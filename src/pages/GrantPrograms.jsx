@@ -38,8 +38,6 @@ export default function GrantPrograms() {
   const handleSave = async () => {
     const finalCode = useCustomCode ? customCode.trim().toUpperCase() : form.code;
     if (!finalCode) {setCodeError('Code is required.');return;}
-    const duplicate = programs.some((p) => p.id !== editingProgram?.id && p.code?.toUpperCase() === finalCode);
-    if (duplicate) {setCodeError(`Code "${finalCode}" already exists.`);return;}
     setCodeError('');
 
     if (editingProgram) {
