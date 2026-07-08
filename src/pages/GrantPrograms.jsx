@@ -50,18 +50,16 @@ export default function GrantPrograms() {
       };
       await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
     } else {
-      const cleanedForm = {
-        name: form.name, code: finalCode,
-        description: form.description || null,
-        federal_agency: form.federal_agency || null,
-        cfda_number: form.cfda_number || null,
-        is_active: form.is_active !== false,
-        program_type: form.program_type || null,
-        program_year: form.program_year || null,
-        match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
-        award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
-        award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-      };
+      // Build payload - omit any empty string fields entirely to avoid DB type errors
+      const cleanedForm = { name: form.name, code: finalCode, is_active: form.is_active !== false };
+      if (form.description) cleanedForm.description = form.description;
+      if (form.federal_agency) cleanedForm.federal_agency = form.federal_agency;
+      if (form.cfda_number) cleanedForm.cfda_number = form.cfda_number;
+      if (form.program_type) cleanedForm.program_type = form.program_type;
+      if (form.program_year) cleanedForm.program_year = form.program_year;
+      if (form.match_requirement !== '' && form.match_requirement != null) cleanedForm.match_requirement = Number(form.match_requirement);
+      if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedForm.award_ceiling = Number(form.award_ceiling);
+      if (form.award_floor !== '' && form.award_floor != null) cleanedForm.award_floor = Number(form.award_floor);
       try { await base44.entities.GrantProgram.create(cleanedForm); }
       catch (err) { alert('Failed: ' + (err?.message || err?.detail || 'Try again')); return; }
     }
