@@ -168,60 +168,6 @@ export default function BudgetTracker() {
                </SelectContent>
              </Select>
            </div>
-           {false && (
-             // Card grid removed - replaced with dropdown above
-             <div>
-               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                 {apps.map(a => {
-                   const rate = a.expenditure_rate || 0;
-                   const isSelected = a.id === selectedAppId;
-                   const daysLeft = a.performance_end
-                     ? Math.max(0, Math.ceil((new Date(a.performance_end) - new Date()) / 86400000))
-                     : null;
-                   const barColor = rate > 90 ? 'bg-red-500' : rate > 75 ? 'bg-amber-500' : 'bg-primary';
-                   return (
-                     <button
-                       key={a.id}
-                       onClick={() => setSelectedAppId(a.id)}
-                       className={`text-left p-4 rounded-xl border transition-all duration-150 ${
-                         isSelected
-                           ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-sm'
-                           : 'bg-card hover:border-primary/40 hover:shadow-sm'
-                       }`}
-                     >
-                       <div className="flex items-start justify-between gap-2 mb-2">
-                         <div className="min-w-0">
-                           <p className="font-semibold text-sm truncate leading-snug">{a.project_title || 'Untitled'}</p>
-                           <p className="text-[11px] font-mono text-muted-foreground mt-0.5">{a.application_number}</p>
-                         </div>
-                         <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-primary/10 text-primary flex-shrink-0">{a.program_code || '""'}</span>
-                       </div>
-                       <div className="space-y-1.5">
-                         <div className="flex justify-between text-[11px] text-muted-foreground">
-                           <span>{formatCurrency(a.awarded_amount)} awarded</span>
-                           <span className="font-medium">{Math.round(rate)}%</span>
-                         </div>
-                         <div className="h-1.5 bg-muted rounded-full overflow-hidden">
-                           <div className={`h-full rounded-full ${barColor}`} style={{ width: `${Math.min(100, rate)}%` }} />
-                         </div>
-                         {daysLeft !== null && (
-                           <p className={`text-[10px] ${daysLeft < 60 ? 'text-amber-600 font-medium' : 'text-muted-foreground'}`}>
-                             {daysLeft}d remaining · ends {formatDateShort(a.performance_end)}
-                           </p>
-                         )}
-                       </div>
-                       {isSelected && (
-                         <div className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-primary">
-                           <ChevronRight className="h-3 w-3" /> Viewing this grant
-                         </div>
-                       )}
-                     </button>
-                   );
-                 })}
-               </div>
-             </div>
-           )}
-           )}
          </>
        )}
 
