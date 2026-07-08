@@ -651,15 +651,15 @@ export default function SubrecipientHome() {
     if (!u.organization_id) { setLoading(false); return; }
 
     const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments] = await Promise.all([
-      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20),
-      base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
-      base44.entities.ReportSchedule.list('-due_date', 100),
-      base44.entities.ComplianceFlag.list('-created_date', 50),
-      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200),
-      base44.entities.Task.filter({ assigned_to: u.email }, '-created_date', 50),
-      base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20),
-      base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100),
-      base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50),
+      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20).catch(() => []),
+      base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
+      base44.entities.ReportSchedule.list('-due_date', 100).catch(() => []),
+      base44.entities.ComplianceFlag.list('-created_date', 50).catch(() => []),
+      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200).catch(() => []),
+      base44.entities.Task.filter({ assigned_to: u.email }, '-created_date', 50).catch(() => []),
+      base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20).catch(() => []),
+      base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
+      base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50).catch(() => []),
       base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
     ]);
 
