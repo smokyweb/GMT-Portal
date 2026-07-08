@@ -73,7 +73,7 @@ const CustomTooltip = ({ active, payload, label, formatter }) => {
 
 export default function PortalAnalyticsTab({ apps = [], fundingRequests = [] }) {
   const safeApps = Array.isArray(apps) ? apps : [];
-  const safeFRs = Array.isArray(fundingRequests) ? safeFRs : [];
+  const safeFRs = Array.isArray(fundingRequests) ? fundingRequests : [];
   const activeGrants = safeApps.filter(a => a.status === 'Approved');
   const totalAwarded = activeGrants.reduce((s, g) => s + (Number(g.awarded_amount) || 0), 0);
   const totalExpended = activeGrants.reduce((s, g) => s + (Number(g.total_expended) || 0), 0);
