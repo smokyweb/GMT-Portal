@@ -147,32 +147,30 @@ export default function BudgetTracker() {
         <p className="text-muted-foreground text-sm mt-1">Budget vs. actual expenditures per line item</p>
       </div>
 
-      {/* Grant Selector "" dropdown or card grid */}
+      {/* Grant Selector - dropdown for scalability */}
        {apps.length > 0 && (
          <>
-           {apps.length === 1 ? (
-             // Single grant: show as dropdown select
-             <div className="flex flex-col gap-2">
-               <label className="text-sm font-medium text-muted-foreground">Select Grant</label>
-               <Select value={selectedAppId} onValueChange={setSelectedAppId}>
-                 <SelectTrigger>
-                   <SelectValue />
-                 </SelectTrigger>
-                 <SelectContent>
-                   {apps.map(a => (
-                     <SelectItem key={a.id} value={a.id}>
-                       <span className="flex items-center gap-2">
-                         {a.application_number}{a.project_title ? ` - ${a.project_title}` : ''} <span className="text-xs opacity-60">({a.program_code})</span>
-                       </span>
-                     </SelectItem>
-                   ))}
-                 </SelectContent>
-               </Select>
-             </div>
-           ) : (
-             // Multiple grants: show as card grid
+           <div className="flex flex-col gap-2">
+             <label className="text-sm font-medium text-muted-foreground">Select Grant ({apps.length} available)</label>
+             <Select value={selectedAppId} onValueChange={setSelectedAppId}>
+               <SelectTrigger className="max-w-xl">
+                 <SelectValue placeholder="Select a grant..." />
+               </SelectTrigger>
+               <SelectContent className="max-h-64 overflow-y-auto">
+                 {apps.map(a => (
+                   <SelectItem key={a.id} value={a.id}>
+                     <span className="flex items-center gap-2">
+                       {a.application_number}{a.project_title ? ` - ${a.project_title}` : ''}
+                       <span className="text-xs opacity-60">({a.program_code}{a.expenditure_rate ? ` · ${Math.round(Number(a.expenditure_rate))}%` : ''})</span>
+                     </span>
+                   </SelectItem>
+                 ))}
+               </SelectContent>
+             </Select>
+           </div>
+           {false && (
+             // Card grid removed - replaced with dropdown above
              <div>
-               <p className="text-sm font-medium text-muted-foreground mb-2">Select Grant</p>
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                  {apps.map(a => {
                    const rate = a.expenditure_rate || 0;
@@ -222,6 +220,7 @@ export default function BudgetTracker() {
                  })}
                </div>
              </div>
+           )}
            )}
          </>
        )}
