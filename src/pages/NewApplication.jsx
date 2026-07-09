@@ -137,7 +137,7 @@ export default function NewApplication() {
       status: 'Draft',
       requested_amount: Number(form.requested_amount),
       match_amount: Number(form.match_amount),
-      version: (app?.version || 0) + 1,
+      version: (Number(app?.version) || 0) + 1,
     };
 
     let savedApp;
@@ -199,7 +199,7 @@ export default function NewApplication() {
         status: 'Draft',
         requested_amount: Number(form.requested_amount),
         match_amount: Number(form.match_amount),
-        version: (app?.version || 0) + 1,
+        version: (Number(app?.version) || 0) + 1,
       };
       let savedApp = app;
       if (app) {

@@ -182,7 +182,7 @@ export default function ApplicationPdfExport({ app, budgets }) {
       ['Organization', app.organization_name],
       ['Submitted By', app.submitted_by],
       ['Submission Date', formatDateShort(app.submitted_at)],
-      ['Version', app.version || 1],
+      ['Version', (() => { const v = String(app.version || '1'); return /^1+$/.test(v) ? String(v.length) : v; })()],
       ['NOFO', app.nofo_title],
       ['Grant Number', app.grant_number],
     ]);

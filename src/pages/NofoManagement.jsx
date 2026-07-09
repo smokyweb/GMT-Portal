@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Plus, MoreHorizontal, FileText, Info } from 'lucide-react';
+import { Plus, MoreHorizontal, FileText, Info, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -33,6 +33,10 @@ export default function NofoManagement() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewNofo, setViewNofo] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterProgram, setFilterProgram] = useState('all');
+  const [nofoStats, setNofoStats] = useState({}); // map nofo_id -> { awarded, remaining }
   const [nofoHistory, setNofoHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
@@ -60,7 +64,18 @@ export default function NofoManagement() {
       }
     }
     setNofos(filtered);
-    setLoading(false);
+        // Load awarded amounts per NOFO
+    base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500).then(apps => {
+      const statsMap = {};
+      (apps || []).forEach(app => {
+        if (app.nofo_id) {
+          if (!statsMap[app.nofo_id]) statsMap[app.nofo_id] = { awarded: 0 };
+          statsMap[app.nofo_id].awarded += Number(app.awarded_amount) || 0;
+        }
+      });
+      setNofoStats(statsMap);
+    }).catch(() => {});
+setLoading(false);
   };
 
   const openCreate = () => {
@@ -211,6 +226,13 @@ export default function NofoManagement() {
     return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
   }
 
+  const filteredNofos = nofos.filter(n => {
+    if (filterStatus !== 'all' && n.status !== filterStatus) return false;
+    if (filterProgram !== 'all' && n.program_code !== filterProgram) return false;
+    if (searchTerm && !n.title?.toLowerCase().includes(searchTerm.toLowerCase()) && !n.program_code?.toLowerCase().includes(searchTerm.toLowerCase()) && !n.grant_number?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
+    return true;
+  });
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -221,6 +243,35 @@ export default function NofoManagement() {
         <Button onClick={openCreate}><Plus className="h-4 w-4 mr-1" /> Create NOFO</Button>
       </div>
 
+      {/* Search & Filter Bar */}
+      <div className="flex flex-wrap gap-3 items-center">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input className="pl-9" placeholder="Search NOFOs..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+        </div>
+        <Select value={filterStatus} onValueChange={setFilterStatus}>
+          <SelectTrigger className="w-[160px]"><SelectValue placeholder="All Statuses" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Statuses</SelectItem>
+            <SelectItem value="Draft">Draft</SelectItem>
+            <SelectItem value="UnderReview">Under Review</SelectItem>
+            <SelectItem value="Published">Published</SelectItem>
+            <SelectItem value="Closed">Closed</SelectItem>
+            <SelectItem value="Archived">Archived</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filterProgram} onValueChange={setFilterProgram}>
+          <SelectTrigger className="w-[140px]"><SelectValue placeholder="All Programs" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Programs</SelectItem>
+            {[...new Set(nofos.map(n => n.program_code).filter(Boolean))].sort().map(p => (
+              <SelectItem key={p} value={p}>{p}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground">{filteredNofos.length} of {nofos.length}</span>
+      </div>
+
       <div className="bg-card rounded-xl border overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -229,7 +280,9 @@ export default function NofoManagement() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Grant #</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
-                <th className="text-right p-3 font-medium text-muted-foreground">Funding</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Available</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Awarded</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Remaining</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Window</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">States</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -237,7 +290,7 @@ export default function NofoManagement() {
               </tr>
             </thead>
             <tbody>
-              {nofos.map(nofo => (
+              {filteredNofos.map(nofo => (
                 <tr key={nofo.id} className="border-b last:border-0 hover:bg-muted/30 transition">
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -252,6 +305,8 @@ export default function NofoManagement() {
                     </span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(nofo.total_funding_available)}</td>
+                  <td className="p-3 text-right font-medium text-green-700">{nofoStats[nofo.id]?.awarded ? formatCurrency(nofoStats[nofo.id].awarded) : <span className="text-muted-foreground text-xs">-</span>}</td>
+                  <td className="p-3 text-right text-blue-700 font-medium">{nofoStats[nofo.id]?.awarded && nofo.total_funding_available ? formatCurrency(Math.max(0, Number(nofo.total_funding_available) - nofoStats[nofo.id].awarded)) : <span className="text-muted-foreground text-xs">-</span>}</td>
                   <td className="p-3 text-xs text-muted-foreground">
                     {formatDateShort(nofo.open_date)} - {formatDateShort(nofo.close_date)}
                   </td>
