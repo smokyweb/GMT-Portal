@@ -266,10 +266,10 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
               <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2">Performance Period Change Requested</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 {amendment.performance_start_new && (
-                  <div><p className="text-xs text-muted-foreground">New Start Date</p><p className="font-medium">{amendment.performance_start_new}</p></div>
+                  <div><p className="text-xs text-muted-foreground">New Start Date</p><p className="font-medium">{amendment.performance_start_new ? amendment.performance_start_new.substring(0,10) : ''}</p></div>
                 )}
                 {amendment.performance_end_new && (
-                  <div><p className="text-xs text-muted-foreground">New End Date</p><p className="font-medium">{amendment.performance_end_new}</p></div>
+                  <div><p className="text-xs text-muted-foreground">New End Date</p><p className="font-medium">{amendment.performance_end_new ? amendment.performance_end_new.substring(0,10) : ''}</p></div>
                 )}
               </div>
               <p className="text-xs text-blue-600 mt-2">Approving will update the application performance period dates.</p>

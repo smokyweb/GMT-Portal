@@ -415,8 +415,8 @@ export default function MyApplications() {
                   <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-semibold">{selected.awarded_amount ? formatCurrency(selected.awarded_amount) : ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">Match / Cost-Share</p><p className="font-medium">{formatCurrency(selected.match_amount)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Total Expended</p><p className="font-medium">{selected.total_expended ? formatCurrency(selected.total_expended) : ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium">{selected.performance_start || ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium">{selected.performance_end || ' - '}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium">{selected.performance_start ? selected.performance_start.substring(0,10) : '-'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium">{selected.performance_end ? selected.performance_end.substring(0,10) : '-'}</p></div>
                   <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium">{formatDateShort(selected.submitted_at)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Submitted By</p><p className="font-medium">{selected.submitted_by || ' - '}</p></div>
                 </div>

@@ -13,14 +13,24 @@ export function toNum(val) {
 }
 
 export function formatDate(date) {
-  if (!date) return ' - ';
-  // Use UTC to prevent timezone offset shifting dates by 1 day
+  if (!date) return '-';
+  // Fast path: if it's YYYY-MM-DD or starts with it, parse directly
+  const str = String(date);
+  if (str.length >= 10) {
+    const d = new Date(str.substring(0, 10) + 'T12:00:00Z');
+    if (!isNaN(d)) return d.toLocaleDateString('en-US', { month: 'long', day: '2-digit', year: 'numeric', timeZone: 'UTC' });
+  }
   return moment.utc(date).format('MMMM DD, YYYY');
 }
 
 export function formatDateShort(date) {
-  if (!date) return ' - ';
-  // Use UTC to prevent timezone offset shifting dates by 1 day
+  if (!date) return '-';
+  // Fast path: strip time component directly from string to avoid timezone issues
+  const str = String(date);
+  if (str.length >= 10) {
+    const d = new Date(str.substring(0, 10) + 'T12:00:00Z');
+    if (!isNaN(d)) return d.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric', timeZone: 'UTC' });
+  }
   return moment.utc(date).format('MMM DD, YYYY');
 }
 

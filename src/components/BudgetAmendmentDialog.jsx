@@ -229,11 +229,11 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
                   <div className="grid grid-cols-2 gap-3">
                     <div>
                       <Label className="text-xs">New Start Date</Label>
-                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_start_new} onChange={e => setForm(f => ({ ...f, performance_start_new: e.target.value }))} />
+                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_start_new ? form.performance_start_new.substring(0,10) : ''} onChange={e => setForm(f => ({ ...f, performance_start_new: e.target.value }))} />
                     </div>
                     <div>
                       <Label className="text-xs">New End Date</Label>
-                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_end_new} onChange={e => setForm(f => ({ ...f, performance_end_new: e.target.value }))} />
+                      <input type="date" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={form.performance_end_new ? form.performance_end_new.substring(0,10) : ''} onChange={e => setForm(f => ({ ...f, performance_end_new: e.target.value }))} />
                     </div>
                   </div>
                 </div>

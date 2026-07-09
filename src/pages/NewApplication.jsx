@@ -443,8 +443,8 @@ export default function NewApplication() {
                   <div><p className="text-xs text-muted-foreground">Grant Number</p><p className="font-mono">{nofo?.grant_number || app?.grant_number}</p></div>
                 )}
                 <div><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{form.project_title || ' - '}</p></div>
-                <div><p className="text-xs text-muted-foreground">Performance Start</p><p>{form.performance_start || ' - '}</p></div>
-                <div><p className="text-xs text-muted-foreground">Performance End</p><p>{form.performance_end || ' - '}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance Start</p><p>{form.performance_start ? form.performance_start.substring(0,10) : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Performance End</p><p>{form.performance_end ? form.performance_end.substring(0,10) : '-'}</p></div>
                 {form.project_narrative && (
                   <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Narrative</p><p className="text-xs line-clamp-3">{form.project_narrative}</p></div>
                 )}

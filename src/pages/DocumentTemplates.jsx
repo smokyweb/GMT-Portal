@@ -44,8 +44,8 @@ function populateTemplate(body, app) {
     '{{requested_amount}}': fmt(app.requested_amount),
     '{{awarded_amount}}': fmt(app.awarded_amount),
     '{{match_amount}}': fmt(app.match_amount),
-    '{{performance_start}}': app.performance_start || ' - ',
-    '{{performance_end}}': app.performance_end || ' - ',
+    '{{performance_start}}': app.performance_start ? app.performance_start.substring(0,10) : ' - ',
+    '{{performance_end}}': app.performance_end ? app.performance_end.substring(0,10) : ' - ',
     '{{submitted_by}}': app.submitted_by || ' - ',
     '{{today_date}}': new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
   };
