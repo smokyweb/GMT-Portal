@@ -86,7 +86,14 @@ export const DATA_SOURCES = {
     entities: ['Credit'],
     defaultFilters: [],
   },
-  // Combined
+  reports_with_schedule: {
+    label: 'Progress Reports + Schedule (with org, program, type)',
+    group: 'COMBINED VIEWS',
+    entities: ['ProgressReport', 'ReportSchedule', 'Application'],
+    join: { ProgressReport: { schedule_id: 'ReportSchedule', application_id: 'Application' } },
+    defaultFilters: [],
+  },
+    // Combined
   apps_org_nofo: {
     label: 'Applications + Organization + NOFO',
     group: 'COMBINED VIEWS',
@@ -241,12 +248,6 @@ export const FIELD_GROUPS = {
     { key: 'match_ytd', label: 'Match YTD', type: 'currency' },
     { key: 'reviewer_notes', label: 'Reviewer Notes', type: 'text' },
     { key: 'reviewer_id', label: 'Reviewed By', type: 'text' },
-    { key: 'organization_name', label: 'Organization Name', type: 'text' },
-    { key: 'program_code', label: 'Program Code', type: 'text' },
-    { key: 'report_type', label: 'Report Type', type: 'text' },
-    { key: 'period_start', label: 'Period Start', type: 'date' },
-    { key: 'period_end', label: 'Period End', type: 'date' },
-    { key: 'due_date', label: 'Due Date', type: 'date' },
   ],
   Organization: [
     { key: 'name', label: 'Organization Name', type: 'text' },
@@ -257,11 +258,10 @@ export const FIELD_GROUPS = {
     { key: 'ein', label: 'EIN', type: 'text' },
     { key: 'sam_uei', label: 'SAM UEI', type: 'text' },
     { key: 'is_active', label: 'Is Active', type: 'boolean' },
-    { key: 'primary_contact_name', label: 'Primary Contact Name', type: 'text' },
-    { key: 'primary_contact_email', label: 'Primary Contact Email', type: 'text' },
-    { key: 'primary_contact_phone', label: 'Primary Contact Phone', type: 'text' },
+    { key: 'address', label: 'Address', type: 'text' },
+    { key: 'city', label: 'City', type: 'text' },
+    { key: 'zip', label: 'ZIP Code', type: 'text' },
     { key: 'created_date', label: 'Registered Date', type: 'date' },
-    { key: 'website', label: 'Website', type: 'text' },
   ],
   GrantProgram: [
     { key: 'name', label: 'Program Name', type: 'text' },
