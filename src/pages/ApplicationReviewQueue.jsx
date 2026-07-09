@@ -42,6 +42,7 @@ export default function ApplicationReviewQueue() {
   const [scoreCardValues, setScoreCardValues] = useState({});
   const [nofos, setNofos] = useState([]);
   const [appTasks, setAppTasks] = useState([]);
+  const [allOpenRfis, setAllOpenRfis] = useState({});  // map of app_id -> open RFI count
   const [revisionRequest, setRevisionRequest] = useState('');
   const [awardAmount, setAwardAmount] = useState('');
   const [viewApp, setViewApp] = useState(null);
@@ -82,6 +83,14 @@ export default function ApplicationReviewQueue() {
     setUser(u);
     setNofos(visibleNofos);
     setLoading(false);
+    // Load open RFIs for all apps to show badges in list
+    base44.entities.Task.filter({ type: 'RFI' }, '-created_date', 500).then(tasks => {
+      const rfiMap = {};
+      (tasks || []).filter(t => !['Resolved','Cancelled'].includes(t.status)).forEach(t => {
+        if (t.application_id) rfiMap[t.application_id] = (rfiMap[t.application_id] || 0) + 1;
+      });
+      setAllOpenRfis(rfiMap);
+    }).catch(() => {});
     // Auto-open application from ?review= URL param
     const reviewId = searchParams.get('review');
     if (reviewId) {
@@ -299,6 +308,16 @@ export default function ApplicationReviewQueue() {
         </p>
       </div>
 
+      {/* Create on Behalf of Subrecipient */}
+      {user && ['admin','reviewer','isc_admin'].includes(user.role) && (
+        <div className="flex items-center gap-3 p-3 bg-blue-50 border border-blue-200 rounded-xl text-sm">
+          <span className="text-blue-800 font-medium">Admin:</span>
+          <a href="/new-application" className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium transition">
+            + Create Application on Behalf of Subrecipient
+          </a>
+        </div>
+      )}
+
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
@@ -389,7 +408,8 @@ export default function ApplicationReviewQueue() {
                     <span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{app.program_code || ' - '}</span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(app.requested_amount)}</td>
-                  <td className="p-3"><StatusBadge status={app.status} /></td>
+                  <td className="p-3 text-right font-medium text-green-700">{app.awarded_amount ? formatCurrency(app.awarded_amount) : <span className="text-muted-foreground text-xs">-</span>}</td>
+                  <td className="p-3"><div className="flex items-center gap-1"><StatusBadge status={app.status} />{allOpenRfis[app.id] ? <span className="ml-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold" title={allOpenRfis[app.id] + " open RFI(s)"}>RFI</span> : null}</div></td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(app.submitted_at)}</td>
                   <td className="p-3 flex gap-1">
                     <Button variant="ghost" size="sm" onClick={() => setViewApp(app)}>
