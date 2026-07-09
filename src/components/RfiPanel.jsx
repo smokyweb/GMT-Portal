@@ -310,7 +310,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
               </div>
               <div>
                 <Label>Due Date</Label>
-                <Input type="date" className="mt-1" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
+                <Input type="date" className="mt-1" value={form.due_date ? form.due_date.substring(0, 10) : '-'} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))} />
               </div>
             </div>
             <div>

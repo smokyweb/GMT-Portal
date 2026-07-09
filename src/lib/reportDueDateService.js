@@ -77,7 +77,7 @@ export async function runReportDueDateService() {
       await base44.integrations.Core.SendEmail({
         to: recipientEmail,
         subject: `Reminder: ${schedule.report_type} Report Due in ${daysUntilDue} Day${daysUntilDue !== 1 ? 's' : ''} - ${appNumber}`,
-        body: `Dear ${orgName},\n\nThis is a friendly reminder that your ${schedule.report_type} progress report for grant application ${appNumber} is due on ${dueDate.format('MMMM DD, YYYY')} - that is ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} from today.\n\nPlease log in to the GMT Portal to submit your report before the deadline.\n\nPerformance Period: ${schedule.period_start} to ${schedule.period_end}\n\nThank you,\nGMT Portal - Automated Reporting System`,
+        body: `Dear ${orgName},\n\nThis is a friendly reminder that your ${schedule.report_type} progress report for grant application ${appNumber} is due on ${dueDate.format('MMMM DD, YYYY')} - that is ${daysUntilDue} day${daysUntilDue !== 1 ? 's' : ''} from today.\n\nPlease log in to the GMT Portal to submit your report before the deadline.\n\nPerformance Period: ${schedule.period_start ? schedule.period_start.substring(0, 10) : '-'} to ${schedule.period_end ? schedule.period_end.substring(0, 10) : '-'}\n\nThank you,\nGMT Portal - Automated Reporting System`,
       });
 
       await logAudit(base44, systemUser, 'NoteAdded', 'ReportSchedule', schedule.id,

@@ -340,8 +340,8 @@ export default function NewApplication() {
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Requested Amount ($)</Label><Input type="number" value={form.requested_amount} onChange={e => setForm(f => ({ ...f, requested_amount: e.target.value }))} /></div>
               <div><Label>Match/Cost-Share ($)</Label><Input type="number" value={form.match_amount} onChange={e => setForm(f => ({ ...f, match_amount: e.target.value }))} /></div>
-              <div><Label>Performance Start</Label><Input type="date" value={form.performance_start} onChange={e => setForm(f => ({ ...f, performance_start: e.target.value }))} /></div>
-              <div><Label>Performance End</Label><Input type="date" value={form.performance_end} onChange={e => setForm(f => ({ ...f, performance_end: e.target.value }))} /></div>
+              <div><Label>Performance Start</Label><Input type="date" value={form.performance_start ? form.performance_start.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, performance_start: e.target.value }))} /></div>
+              <div><Label>Performance End</Label><Input type="date" value={form.performance_end ? form.performance_end.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, performance_end: e.target.value }))} /></div>
             </div>
           </div>
         )}

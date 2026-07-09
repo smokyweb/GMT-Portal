@@ -128,7 +128,7 @@ export async function runGrantMonitor(currentUser) {
     if (schedule.status === 'Pending') {
       const overdueDays = daysAgo(schedule.due_date);
       if (overdueDays !== null && overdueDays > THRESHOLDS.OVERDUE_DAYS) {
-        const desc = `${schedule.report_type} report overdue by ${overdueDays} day(s) (due ${schedule.due_date})`;
+        const desc = `${schedule.report_type} report overdue by ${overdueDays} day(s) (due ${schedule.due_date ? schedule.due_date.substring(0, 10) : '-'})`;
         const key = `${schedule.application_id}::OverdueReport::${desc.slice(0, 40)}`;
         if (!existingFlagKeys.has(key)) {
           const severity = overdueDays > 30 ? 'Critical' : overdueDays > 14 ? 'High' : 'Medium';
@@ -145,7 +145,7 @@ export async function runGrantMonitor(currentUser) {
             adminTitle: `Overdue Report - ${schedule.application_number}`,
             adminMsg: `${schedule.organization_name}: ${desc}`,
             subTitle: `Report Overdue - ${schedule.application_number}`,
-            subMsg: `Your ${schedule.report_type} report was due on ${schedule.due_date} and has not been submitted.`,
+            subMsg: `Your ${schedule.report_type} report was due on ${schedule.due_date ? schedule.due_date.substring(0, 10) : '-'} and has not been submitted.`,
             submittedBy: null, // no submitter on schedule directly
             entityId: schedule.application_id,
           });

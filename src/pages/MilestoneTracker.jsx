@@ -524,7 +524,7 @@ export default function MilestoneTracker() {
                   <Label>Due Date</Label>
                   <Input
                     type="date"
-                    value={form.due_date}
+                    value={form.due_date ? form.due_date.substring(0, 10) : '-'}
                     onChange={(e) => setForm({ ...form, due_date: e.target.value })}
                   />
                 </div>

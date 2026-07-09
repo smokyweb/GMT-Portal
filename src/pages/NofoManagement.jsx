@@ -354,11 +354,11 @@ export default function NofoManagement() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <Label>Open Date</Label>
-                <Input type="date" value={form.open_date} onChange={e => setForm(f => ({ ...f, open_date: e.target.value }))} />
+                <Input type="date" value={form.open_date ? form.open_date.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, open_date: e.target.value }))} />
               </div>
               <div>
                 <Label>Close Date</Label>
-                <Input type="date" value={form.close_date} onChange={e => setForm(f => ({ ...f, close_date: e.target.value }))} />
+                <Input type="date" value={form.close_date ? form.close_date.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, close_date: e.target.value }))} />
               </div>
             </div>
             {form.program_id && (

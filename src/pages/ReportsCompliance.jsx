@@ -75,7 +75,7 @@ export default function ReportsCompliance() {
         escape(s.organization_name),
         escape(s.program_code),
         escape(s.report_type),
-        escape(s.period_start && s.period_end ? `${s.period_start} - ${s.period_end}` : ''),
+        escape(s.period_start && s.period_end ? `${s.period_start ? s.period_start.substring(0, 10) : '-'} - ${s.period_end ? s.period_end.substring(0, 10) : '-'}` : ''),
         escape(s.due_date),
         escape(s.status),
         escape(pr?.submitted_by || ''),

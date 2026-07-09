@@ -215,7 +215,7 @@ export async function onReportOverdue(base44, reportSchedule) {
     application_number: reportSchedule.application_number,
     organization_name: reportSchedule.organization_name,
     flag_type: 'OverdueReport',
-    description: `${reportSchedule.report_type} report due ${reportSchedule.due_date} is overdue.`,
+    description: `${reportSchedule.report_type} report due ${reportSchedule.due_date ? reportSchedule.due_date.substring(0, 10) : '-'} is overdue.`,
     severity: 'High',
     is_resolved: false,
   });
@@ -246,7 +246,7 @@ export async function onMilestoneOverdue(base44, milestone) {
       application_number: milestone.application_number,
       organization_name: milestone.organization_name,
       flag_type: 'MissingDocument',
-      description: `Milestone "${milestone.title}" was due ${milestone.due_date} and is now overdue.`,
+      description: `Milestone "${milestone.title}" was due ${milestone.due_date ? milestone.due_date.substring(0, 10) : '-'} and is now overdue.`,
       severity: 'Medium',
       is_resolved: false,
     });
@@ -256,7 +256,7 @@ export async function onMilestoneOverdue(base44, milestone) {
     await base44.integrations.Core.SendEmail({
       to: milestone.assigned_to,
       subject: emailOvr.subject || `Overdue Milestone: ${milestone.title}`,
-      body: emailOvr.body || `The milestone "${milestone.title}" assigned to you for application ${milestone.application_number} was due on ${milestone.due_date} and is now overdue.\n\nPlease log in to the GMT Portal to update its status.`,
+      body: emailOvr.body || `The milestone "${milestone.title}" assigned to you for application ${milestone.application_number} was due on ${milestone.due_date ? milestone.due_date.substring(0, 10) : '-'} and is now overdue.\n\nPlease log in to the GMT Portal to update its status.`,
     }).catch(() => {});
   }
 

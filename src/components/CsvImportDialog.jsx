@@ -169,13 +169,13 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
               </div>
               <div>
                 <Label>Period Start</Label>
-                <input type="date" value={form.period_start}
+                <input type="date" value={form.period_start ? form.period_start.substring(0, 10) : '-'}
                   onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
               </div>
               <div>
                 <Label>Period End</Label>
-                <input type="date" value={form.period_end}
+                <input type="date" value={form.period_end ? form.period_end.substring(0, 10) : '-'}
                   onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))}
                   className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm" />
               </div>

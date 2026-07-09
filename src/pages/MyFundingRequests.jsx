@@ -388,7 +388,7 @@ export default function MyFundingRequests() {
                     <div><p className="text-xs text-muted-foreground">Payment Status</p><div className="mt-1"><PaymentBadge status={viewRequest.payment_status} /></div></div>
                   )}
                   {viewRequest.payment_reference && <div><p className="text-xs text-muted-foreground">Payment Reference</p><p className="font-mono font-medium">{viewRequest.payment_reference}</p></div>}
-                  {viewRequest.payment_date && <div><p className="text-xs text-muted-foreground">Payment Date</p><p className="font-medium">{viewRequest.payment_date}</p></div>}
+                  {viewRequest.payment_date && <div><p className="text-xs text-muted-foreground">Payment Date</p><p className="font-medium">{viewRequest.payment_date ? viewRequest.payment_date.substring(0, 10) : '-'}</p></div>}
                 </div>
                 <LifecycleProgress status={viewRequest.status} type="funding" />
               </TabsContent>
@@ -526,8 +526,8 @@ export default function MyFundingRequests() {
                 {form.modification_type === 'Period of Performance Extension' && (
                   <div className="grid grid-cols-2 gap-4 rounded-lg border p-4 bg-muted/30">
                     <p className="col-span-2 text-sm font-semibold">New Performance Period</p>
-                    <div><Label>New Start Date</Label><Input type="date" value={form.period_start} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
-                    <div><Label>New End Date</Label><Input type="date" value={form.period_end} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
+                    <div><Label>New Start Date</Label><Input type="date" value={form.period_start ? form.period_start.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
+                    <div><Label>New End Date</Label><Input type="date" value={form.period_end ? form.period_end.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
                   </div>
                 )}
               </div>
@@ -537,8 +537,8 @@ export default function MyFundingRequests() {
             {form.request_type !== 'Modification' && (
               <>
                 <div className="grid grid-cols-2 gap-4">
-                  <div><Label>Period Start <span className="text-red-500">*</span></Label><Input type="date" value={form.period_start} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
-                  <div><Label>Period End <span className="text-red-500">*</span></Label><Input type="date" value={form.period_end} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
+                  <div><Label>Period Start <span className="text-red-500">*</span></Label><Input type="date" value={form.period_start ? form.period_start.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, period_start: e.target.value }))} /></div>
+                  <div><Label>Period End <span className="text-red-500">*</span></Label><Input type="date" value={form.period_end ? form.period_end.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, period_end: e.target.value }))} /></div>
                 </div>
 
                 {form.request_type === 'Advance' && (
