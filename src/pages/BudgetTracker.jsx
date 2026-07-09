@@ -256,6 +256,20 @@ export default function BudgetTracker() {
             </p>
           </div>
 
+          {/* Amendment alert - show if awarded amount differs from budgeted total */}
+          {selectedApp?.awarded_amount && Math.abs(Number(selectedApp.awarded_amount) - totalBudgeted) > 1 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm flex items-start gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-semibold text-amber-800">Budget Mismatch</p>
+                <p className="text-amber-700 text-xs mt-0.5">
+                  Awarded amount ({formatCurrency(Number(selectedApp.awarded_amount))}) differs from budget line total ({formatCurrency(totalBudgeted)}).
+                  Budget amendments may have changed the award. Review the Amendments tab to reconcile.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Line items table */}
           {lineLoading ? (
             <div className="space-y-3">

@@ -110,7 +110,8 @@ export default function ApplicationReviewQueue() {
     setReviewScore(app.score || '');
     setReviewNotes('');
     setRevisionRequest('');
-    setAwardAmount(Number(app.requested_amount) || '');
+    // Pre-fill with awarded_amount if already set, else use the latest amendment proposed_total, else requested_amount
+setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '');
     setScoreCardValues({});
   };
 
