@@ -180,16 +180,16 @@ export default function ReportBuilder() {
         />
         {dirty && <span className="text-xs text-amber-600">● Unsaved</span>}
         <div className="flex items-center gap-2 ml-auto flex-wrap">
-          <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saveLoading}>
+          <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={saveLoading || !config.data_source || !config.selected_fields?.length}>
             <Save className="h-3.5 w-3.5 mr-1" /> {saveLoading ? 'Saving…' : 'Save'}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleSave(true)}>
+          <Button variant="outline" size="sm" onClick={() => handleSave(true)} disabled={!config.data_source || !config.selected_fields?.length}>
             <Copy className="h-3.5 w-3.5 mr-1" /> Save As
           </Button>
-          <Button size="sm" onClick={handleRunFull} disabled={previewLoading}>
+          <Button size="sm" onClick={handleRunFull} disabled={previewLoading || !config.data_source || !config.selected_fields?.length}>
             {previewLoading ? <><span className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin mr-1" /> Running...</> : <><Play className="h-3.5 w-3.5 mr-1" /> Run Report</>}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => exportToCSV(previewRows, config.selected_fields, config.report_name)} disabled={!previewRows.length}>
+          <Button variant="outline" size="sm" onClick={() => exportToCSV(previewRows, config.selected_fields, config.report_name)} disabled={!config.data_source || !config.selected_fields?.length || !previewRows?.length} disabled={!previewRows.length}>
             <Download className="h-3.5 w-3.5 mr-1" /> Export CSV
           </Button>
         </div>

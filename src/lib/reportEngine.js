@@ -14,6 +14,9 @@ const ENTITY_MAP = {
   GrantProgram: 'GrantProgram',
   ApplicationReview: 'ApplicationReview',
   ApplicationBudget: 'ApplicationBudget',
+  Milestone: 'Milestone',
+  BudgetAmendment: 'BudgetAmendment',
+  Credit: 'Credit',
 };
 
 // Fetch raw data for a source (with optional org restriction for subrecipients)
