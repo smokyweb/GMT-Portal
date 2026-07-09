@@ -392,6 +392,7 @@ export default function ApplicationReviewQueue() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Requested</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Awarded</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Submitted</th>
                 <th className="p-3"></th>
