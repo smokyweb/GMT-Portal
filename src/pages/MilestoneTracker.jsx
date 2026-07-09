@@ -239,7 +239,11 @@ export default function MilestoneTracker() {
 
   const handleEdit = (milestone) => {
     setEditingMilestone(milestone);
-    setForm(milestone);
+    // Only pre-fill completed_date if status is actually Completed or Waived
+    setForm({
+      ...milestone,
+      completed_date: ['Completed','Waived'].includes(milestone.status) ? milestone.completed_date : '',
+    });
     setShowForm(true);
   };
 
@@ -414,7 +418,9 @@ export default function MilestoneTracker() {
                                 {formatMilestoneDate(milestone.due_date)}
                               </td>
                               <td className="px-6 py-4 text-sm text-foreground">
-                                {formatMilestoneDate(milestone.completed_date)}
+                                {['Completed', 'Waived'].includes(milestone.status) && milestone.completed_date
+                                  ? formatMilestoneDate(milestone.completed_date)
+                                  : <span className="text-muted-foreground text-xs">-</span>}
                               </td>
                               <td className="px-6 py-4">
                                 <div className="flex items-center gap-2">

@@ -282,6 +282,9 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
 
   const { start: rangeStart, end: rangeEnd } = getEffectiveDateRange();
 
+  const PAGE_SIZE = 25;
+  const [currentPage, setCurrentPage] = useState(1);
+
   const filtered = apps.filter(a => {
     if (filterStatus !== 'all' && a.status !== filterStatus) return false;
     if (filterProgram !== 'all' && a.program_code !== filterProgram) return false;
@@ -400,7 +403,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               </tr>
             </thead>
             <tbody>
-              {filtered.map(app => (
+              {filtered.slice((currentPage-1)*PAGE_SIZE, currentPage*PAGE_SIZE).map(app => (
                 <tr key={app.id} className="border-b last:border-0 hover:bg-muted/30 transition">
                   <td className="p-3 font-mono text-xs">{app.application_number || ' - '}</td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">{app.grant_number || ' - '}</td>
@@ -430,6 +433,20 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               )}
             </tbody>
           </table>
+        </div>
+        {/* Pagination */}
+        <div className="flex items-center justify-between px-4 py-3 border-t bg-muted/20">
+          <span className="text-xs text-muted-foreground">
+            Showing {Math.min(filtered.length, (currentPage-1)*PAGE_SIZE+1)}–{Math.min(filtered.length, currentPage*PAGE_SIZE)} of {filtered.length} applications
+            {filtered.length < apps.length && ` (${apps.length} total loaded)`}
+          </span>
+          <div className="flex gap-1">
+            <button onClick={() => setCurrentPage(p => Math.max(1,p-1))} disabled={currentPage===1} className="px-2 py-1 text-xs rounded border disabled:opacity-40 hover:bg-muted">← Prev</button>
+            {Array.from({length: Math.ceil(filtered.length/PAGE_SIZE)}, (_,i) => i+1).map(p => (
+              <button key={p} onClick={() => setCurrentPage(p)} className={`px-2 py-1 text-xs rounded border ${p===currentPage ? 'bg-primary text-white' : 'hover:bg-muted'}`}>{p}</button>
+            ))}
+            <button onClick={() => setCurrentPage(p => Math.min(Math.ceil(filtered.length/PAGE_SIZE),p+1))} disabled={currentPage>=Math.ceil(filtered.length/PAGE_SIZE)} className="px-2 py-1 text-xs rounded border disabled:opacity-40 hover:bg-muted">Next →</button>
+          </div>
         </div>
       </div>
 
