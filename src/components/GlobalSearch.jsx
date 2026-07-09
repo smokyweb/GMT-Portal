@@ -13,9 +13,21 @@ export default function GlobalSearch() {
   const containerRef = useRef(null);
   const navigate = useNavigate();
 
-  // Load all applications once
+  // Load applications scoped to user's state
   useEffect(() => {
-    base44.entities.Application.list('-submitted_at', 500).then(setAllApps);
+    base44.auth.me().then(async (u) => {
+      const all = await base44.entities.Application.list('-submitted_at', 500);
+      if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
+        const orgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
+        const orgIds = new Set((orgs || []).map(o => o.id));
+        setAllApps((all || []).filter(a => orgIds.has(a.organization_id)));
+      } else if (u?.role === 'user' && u?.organization_id) {
+        setAllApps((all || []).filter(a => a.organization_id === u.organization_id));
+      } else {
+        // ISC/federal: see all
+        setAllApps(all || []);
+      }
+    }).catch(() => base44.entities.Application.list('-submitted_at', 500).then(setAllApps));
   }, []);
 
   // Filter on query change

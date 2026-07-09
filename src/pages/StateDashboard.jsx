@@ -203,10 +203,11 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       </div>
       {/* KPIs */}
       {isVisible('kpis') && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
           <KPICard title="Total Grants Awarded" value={formatCurrency(totalAwarded)} icon={DollarSign} />
           <KPICard title="Active Subrecipients" value={activeOrgs} subtitle={`${orgs.length} total registered`} icon={Users} />
-          <KPICard title="Apps Pending Review" value={pendingAppReviews} subtitle={`${pendingFRReviews} funding requests pending`} icon={ClipboardList} />
+          <KPICard title="Apps Pending Review" value={pendingAppReviews} subtitle={`${draftApps} drafts in progress`} icon={ClipboardList} />
+          <KPICard title="FRs Pending Review" value={pendingFRReviews} subtitle="Funding requests awaiting action" icon={ClipboardList} />
           <KPICard title="Open Compliance Flags" value={flags.length} subtitle={`${highFlags} high/critical`} icon={Shield} />
         </div>
       )}
