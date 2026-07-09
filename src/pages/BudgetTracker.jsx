@@ -250,7 +250,10 @@ export default function BudgetTracker() {
               }
             </div>
             <ProgressBar pct={totalPct} warning={totalWarning} over={totalOver} />
-            <p className="text-xs text-muted-foreground">{formatCurrency(totalActual)} of {formatCurrency(totalBudgeted)}</p>
+            <p className="text-xs text-muted-foreground">
+              {totalActual > 0 ? formatCurrency(totalActual) : '$0'} of {formatCurrency(totalBudgeted)}
+              {totalPct > 0 && totalActual === 0 && selectedApp?.total_expended ? ` (${formatCurrency(Number(selectedApp.total_expended))} per grant record)` : ''}
+            </p>
           </div>
 
           {/* Line items table */}
