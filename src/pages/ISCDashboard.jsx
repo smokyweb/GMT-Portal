@@ -134,7 +134,10 @@ export default function ISCDashboard() {
             Manage all state grantees, their branding, and system configuration.
           </p>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-1.5" /> Add Grantee</Button>
+        <div className="flex gap-2">
+          <a href="/email-settings"><Button variant="outline" size="sm">⚙ Email Settings</Button></a>
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-1.5" /> Add Grantee</Button>
+        </div>
       </div>
 
       {/* KPI Summary */}

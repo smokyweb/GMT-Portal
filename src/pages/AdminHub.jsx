@@ -68,13 +68,7 @@ const HUB_LINKS = [
     color: 'bg-violet-50 text-violet-600',
     tier: 2,
   },
-  {
-    label: 'Email Settings',
-    description: 'Configure SMTP for automatic user invitation emails.',
-    icon: Settings,
-    path: '/email-settings',
-    color: 'bg-sky-50 text-sky-600',
-  },
+  // Email Settings moved to ISC Dashboard
   {
     label: 'Audit Log',
     description: 'Full history of all user actions across the platform.',
