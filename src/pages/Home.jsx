@@ -4,11 +4,12 @@ import { base44 } from '@/api/base44Client';
 import StateDashboard from './StateDashboard';
 import SubrecipientHome from './SubrecipientHome';
 import FederalDashboard from './FederalDashboard';
+import ISCDashboard from './ISCDashboard';
 import GrantAnalyticsPanel from '../components/GrantAnalyticsPanel';
 import DashboardFilterBar, { DEFAULT_FILTERS, applyDashboardFilters } from '../components/DashboardFilterBar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { isStateUser } from '../lib/helpers';
-import { isFederal } from '../lib/permissions';
+import { isFederal, isIscAdmin } from '../lib/permissions';
 
 export default function Home() {
   const { user } = useAuth();
@@ -55,6 +56,7 @@ export default function Home() {
 
   const role = user?.role;
 
+  if (isIscAdmin(role)) return <ISCDashboard />;
   if (isFederal(role)) return <FederalDashboard />;
 
   // Subrecipients get the unified portal

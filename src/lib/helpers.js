@@ -35,7 +35,7 @@ export function formatDateShort(date) {
 }
 
 export function isStateUser(role) {
-  return role === 'admin' || role === 'reviewer' || role === 'federal_admin' || role === 'federal_officer';
+  return role === 'admin' || role === 'reviewer' || role === 'isc_admin' || role === 'federal_admin' || role === 'federal_officer';
 }
 
 export function isAdmin(role) {
