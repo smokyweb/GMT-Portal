@@ -36,8 +36,10 @@ export default function GrantPrograms() {
   }, []);
 
   const handleSave = async () => {
+    if (!form.name?.trim()) { alert('Program Name is required.'); return; }
     const finalCode = useCustomCode ? customCode.trim().toUpperCase() : form.code;
-    if (!finalCode) {setCodeError('Code is required.');return;}
+    if (!finalCode) { setCodeError('Code is required.'); alert('Please select a program code.'); return; }
+    if (!PRESET_CODES.includes(finalCode)) { alert('Invalid code. Must be one of: ' + PRESET_CODES.join(', ')); return; }
     setCodeError('');
 
     if (editingProgram) {
