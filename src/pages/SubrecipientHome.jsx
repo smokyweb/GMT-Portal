@@ -153,9 +153,10 @@ function NofoCard({ nofo, orgType, onApply }) {
 // ── Allocation Card ────────────────────────────────────────────────────────
 function AllocationCard({ grant, onViewDetails }) {
   const expRate = grant.expenditure_rate || 0;
-  const awarded = grant.awarded_amount || 0;
-  const remaining = grant.remaining_balance ?? awarded;
-  const expended = grant.total_expended || 0;
+  const awarded = Number(grant.awarded_amount) || 0;
+  const expended = Number(grant.total_expended) || 0;
+  // Calculate remaining dynamically (DB field may be stale)
+  const remaining = awarded - expended;
   const daysLeft = grant.performance_end
     ? Math.max(0, Math.ceil((new Date(grant.performance_end) - new Date()) / 86400000))
     : null;
@@ -387,7 +388,7 @@ function AllocationDetailDialog({ grant, onClose }) {
               {[
                 { label: 'Awarded Amount', value: formatCurrency(grant.awarded_amount), color: 'text-green-700' },
                 { label: 'Total Expended', value: formatCurrency(grant.total_expended), color: '' },
-                { label: 'Remaining Balance', value: formatCurrency(grant.remaining_balance ?? grant.awarded_amount), color: 'text-blue-700' },
+                { label: 'Remaining Balance', value: formatCurrency((Number(grant.awarded_amount)||0) - (Number(grant.total_expended)||0)), color: 'text-blue-700' },
                 { label: 'Match Committed', value: formatCurrency(grant.match_amount), color: '' },
                 { label: 'Expenditure Rate', value: `${Math.round(Number(grant.expenditure_rate) || 0)}%`, color: '' },
               ].map(({ label, value, color }) => (
