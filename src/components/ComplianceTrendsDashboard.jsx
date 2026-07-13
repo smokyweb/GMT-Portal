@@ -35,10 +35,17 @@ export default function ComplianceTrendsDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    base44.entities.ComplianceFlag.list('-created_date', 500).then(f => {
-      setFlags(f);
+    base44.auth.me().then(async (user) => {
+      let allFlags = await base44.entities.ComplianceFlag.list('-created_date', 500).catch(() => []);
+      // Scope to state admin's state
+      if (user?.scope_state && ['admin','reviewer'].includes(user.role)) {
+        const orgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
+        const orgIds = new Set((orgs || []).map(o => o.id));
+        allFlags = (allFlags || []).filter(f => orgIds.has(f.organization_id));
+      }
+      setFlags(allFlags || []);
       setLoading(false);
-    });
+    }).catch(() => setLoading(false));
   }, []);
 
   if (loading) return (

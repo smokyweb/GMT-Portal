@@ -9,12 +9,32 @@ import { toast } from 'sonner';
 import moment from 'moment';
 
 const NOTIFICATION_ROUTES = {
+  // Messages
   message: '/messages',
-  compliance_flag: '/compliance',
-  report_submitted: '/reports',
+  // Compliance
+  compliance_flag: '/compliance-flags',
+  compliance_response: '/compliance-flags',
+  // Reports
+  report_submitted: '/reports-compliance',
+  report_review: '/reports-compliance',
+  rfi_response: '/applications',
+  rfi_resolved: '/applications',
+  // Applications
   application_status: '/applications',
+  application_submitted: '/applications',
+  amendment_actioned: '/my-applications',
+  // Funding
   funding_request: '/funding-requests',
+  fr_status: '/my-funding-requests',
+  fr_payment: '/my-funding-requests',
+  // Budget amendments
+  amendment_submitted: '/financials/amendments',
+  // Milestones
   milestone: '/milestones',
+  // Credits
+  credit_issued: '/my-funding-requests',
+  // NOFO
+  nofo_published: '/browse-nofos',
 };
 
 export default function NotificationBell({ userEmail }) {
@@ -47,8 +67,9 @@ export default function NotificationBell({ userEmail }) {
   };
 
   const handleNotificationClick = (notification) => {
-    const route = NOTIFICATION_ROUTES[notification.type] || '/';
-    base44.entities.Notification.update(notification.id, { is_read: true });
+    // Use notification's own link if set, otherwise fall back to type-based routing
+    const route = notification.link || NOTIFICATION_ROUTES[notification.type] || '/';
+    base44.entities.Notification.update(notification.id, { is_read: true }).catch(() => {});
     setNotifications(prev => prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n));
     setOpen(false);
     navigate(route);
