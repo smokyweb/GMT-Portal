@@ -109,7 +109,18 @@ export default function MilestoneTracker() {
           const orgMilestones = Array.isArray(byOrg) && byOrg.length > 0 ? byOrg : (Array.isArray(byApps) ? byApps.filter(m => appIds.has(m.application_id)) : []);
           milestonesData = orgMilestones;
           orgsData = [];
+        } else if (currentUser.scope_state && ['admin','reviewer'].includes(currentUser.role)) {
+          // State admin: scope to their state
+          const allOrgs = await base44.entities.Organization.list();
+          orgsData = allOrgs.filter(o => o.state === currentUser.scope_state);
+          const orgIds = new Set(orgsData.map(o => o.id));
+          const allApps = await base44.entities.Application.list();
+          appsData = allApps.filter(a => orgIds.has(a.organization_id));
+          const appIds = new Set(appsData.map(a => a.id));
+          const allMilestones = await base44.entities.Milestone.list();
+          milestonesData = allMilestones.filter(m => orgIds.has(m.organization_id) || appIds.has(m.application_id));
         } else {
+          // ISC/federal: see all
           milestonesData = await base44.entities.Milestone.list();
           appsData = await base44.entities.Application.list();
           orgsData = await base44.entities.Organization.list();

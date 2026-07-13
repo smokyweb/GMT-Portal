@@ -99,27 +99,37 @@ export default function AdminHub() {
    const [loadingCounts, setLoadingCounts] = useState(true);
 
    useEffect(() => {
-     base44.auth.me().then(setUser);
-     Promise.all([
-       base44.entities.User.list(),
-       base44.entities.Organization.list(),
-       base44.entities.Application.list(),
-       base44.entities.AuditLog.list('-created_date', 1000),
-       base44.entities.GrantProgram.list(),
-       base44.entities.Grantee.list(),
-     ]).then(([users, orgs, applications, auditLogs, programs, grantees]) => {
-       setCounts({
-         users: users.length,
-         orgs: orgs.length,
-         applications: applications.length,
-         auditLogs: auditLogs.length,
-         programs: programs.length,
-         grantees: grantees.length,
-       });
+     base44.auth.me().then(async (u) => {
+       setUser(u);
+       try {
+         const [allOrgs, allApps, auditLogs, programs, grantees] = await Promise.all([
+           base44.entities.Organization.list(),
+           base44.entities.Application.list(),
+           base44.entities.AuditLog.list('-created_date', 1000),
+           base44.entities.GrantProgram.list(),
+           base44.entities.Grantee.list(),
+         ]);
+         // Scope counts to state admin's scope_state
+         let scopedOrgs = allOrgs;
+         let scopedApps = allApps;
+         if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
+           scopedOrgs = allOrgs.filter(o => o.state === u.scope_state);
+           const orgIds = new Set(scopedOrgs.map(o => o.id));
+           scopedApps = allApps.filter(a => orgIds.has(a.organization_id));
+         }
+         const users = await base44.entities.User.list();
+         setCounts({
+           users: users.length,
+           orgs: scopedOrgs.length,
+           applications: scopedApps.length,
+           auditLogs: auditLogs.length,
+           programs: programs.length,
+           grantees: grantees.length,
+         });
+       } catch(e) {
+         setCounts({ users: 0, orgs: 0, applications: 0, auditLogs: 0, programs: 0, grantees: 0 });
+       }
        setLoadingCounts(false);
-     }).catch(() => {
-       setLoadingCounts(false);
-       setCounts({ users: 0, orgs: 0, applications: 0, auditLogs: 0, programs: 0, grantees: 0 });
      });
    }, []);
 
