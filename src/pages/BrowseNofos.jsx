@@ -41,6 +41,13 @@ export default function BrowseNofos() {
           ? nofo.scope_states
           : (nofo.scope_states ? [nofo.scope_states] : []);
 
+        // Check if NOFO application window is closed
+        const now = new Date();
+        if (nofo.close_date && new Date(nofo.close_date) < now) {
+          ineligible++;
+          continue; // Skip expired NOFOs
+        }
+
         // Check state scope first — if NOFO is restricted to specific states, org must be in one of them
         if (scopeStates.length > 0 && orgState && !scopeStates.includes(orgState)) {
           ineligible++;
@@ -87,7 +94,7 @@ export default function BrowseNofos() {
       {ineligibleCount > 0 && (
         <div className="flex items-center gap-2 p-3 bg-muted/50 border rounded-lg text-sm text-muted-foreground">
           <Lock className="h-4 w-4 flex-shrink-0" />
-          <span>{ineligibleCount} additional {ineligibleCount === 1 ? 'opportunity is' : 'opportunities are'} not shown because your organization type is not eligible. Contact your state administrator for more information.</span>
+          <span>{ineligibleCount} additional {ineligibleCount === 1 ? 'opportunity is' : 'opportunities are'} not shown (expired application window or organization type not eligible). Contact your state administrator for more information.</span>
         </div>
       )}
 

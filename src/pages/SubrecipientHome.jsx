@@ -669,9 +669,10 @@ export default function SubrecipientHome() {
 
     // Filter NOFOs to those scoped to the org's state (or with no state restriction)
     const orgState = orgs[0]?.state;
-    const filteredNofos = orgState
-      ? openNofos.filter(n => !n.scope_states?.length || n.scope_states.includes(orgState))
-      : openNofos;
+    const _now = new Date();
+    const filteredNofos = (orgState
+        ? openNofos.filter(n => !n.scope_states?.length || n.scope_states.includes(orgState))
+        : openNofos).filter(n => !n.close_date || new Date(n.close_date) >= _now);
     setNofos(filteredNofos);
     setApps(myApps);
     const appIds = new Set(myApps.map(x => x.id));
