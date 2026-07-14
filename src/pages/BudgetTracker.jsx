@@ -256,6 +256,20 @@ export default function BudgetTracker() {
             </p>
           </div>
 
+          {/* Line items vs grant-level expended mismatch */}
+          {selectedApp?.total_expended && Number(selectedApp.total_expended) > 0 && totalActual === 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-3 text-sm flex items-start gap-2">
+              <div className="h-4 w-4 text-blue-500 flex-shrink-0 mt-0.5">ℹ</div>
+              <div>
+                <p className="font-semibold text-blue-800">Note: Grant-Level Expenditure</p>
+                <p className="text-blue-700 text-xs mt-0.5">
+                  The grant record shows {formatCurrency(Number(selectedApp.total_expended))} expended, but the funding request line items don't have category-level detail.
+                  Submit funding requests with itemized budget categories to see the breakdown here.
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Amendment alert - show if awarded amount differs from budgeted total */}
           {selectedApp?.awarded_amount && Math.abs(Number(selectedApp.awarded_amount) - totalBudgeted) > 1 && (
             <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-sm flex items-start gap-2">
