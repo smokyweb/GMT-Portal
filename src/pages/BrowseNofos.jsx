@@ -18,14 +18,16 @@ export default function BrowseNofos() {
         base44.entities.Nofo.filter({ status: 'Published' }, '-created_date', 100),
       ]);
 
-      // Load user's organization to get its type
+      // Load user's organization to get its type and state
       let orgType = null;
+      let orgState = null;
       const orgId = user?.organization_id;
       setHasOrg(!!orgId);
       if (orgId) {
         try {
           const orgs = await base44.entities.Organization.filter({ id: orgId });
           orgType = orgs[0]?.type || null;
+          orgState = orgs[0]?.state || null;
         } catch {}
       }
 
@@ -35,16 +37,25 @@ export default function BrowseNofos() {
       for (const nofo of allNofos) {
         const eligibleTypes = nofo.eligible_org_types || [];
         const overrideIds = nofo.override_org_ids || [];
+        const scopeStates = Array.isArray(nofo.scope_states)
+          ? nofo.scope_states
+          : (nofo.scope_states ? [nofo.scope_states] : []);
 
-        // If no restrictions set, everyone is eligible
-        if (eligibleTypes.length === 0) {
-          eligible.push(nofo);
+        // Check state scope first — if NOFO is restricted to specific states, org must be in one of them
+        if (scopeStates.length > 0 && orgState && !scopeStates.includes(orgState)) {
+          ineligible++;
           continue;
         }
 
-        // Check override first
+        // Check override
         if (orgId && overrideIds.includes(orgId)) {
           eligible.push({ ...nofo, _override: true });
+          continue;
+        }
+
+        // If no org type restrictions, org is eligible (subject to state check above)
+        if (eligibleTypes.length === 0) {
+          eligible.push(nofo);
           continue;
         }
 
