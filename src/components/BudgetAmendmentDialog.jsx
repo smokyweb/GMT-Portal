@@ -81,13 +81,13 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
     setForm({ justification: '', impact_on_scope: '', impact_on_timeline: '', performance_start_new: '', performance_end_new: '' });
     base44.entities.ApplicationBudget.filter({ application_id: application.id })
       .then(items => {
-        setOriginalBudget(items);
+        setOriginalBudget(items.map(it => ({ ...it, amount_requested: Number(it.amount_requested) || 0, amount_match: Number(it.amount_match) || 0 })));
         // Pre-fill proposed with copies of existing lines
         setProposedLines(items.map(it => ({
           budget_category: it.budget_category,
           line_description: it.line_description || '',
-          amount_requested: it.amount_requested || 0,
-          amount_match: it.amount_match || 0,
+          amount_requested: Number(it.amount_requested) || 0,
+          amount_match: Number(it.amount_match) || 0,
         })));
         setLoading(false);
       });
