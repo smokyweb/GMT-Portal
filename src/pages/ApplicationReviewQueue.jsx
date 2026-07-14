@@ -44,6 +44,8 @@ export default function ApplicationReviewQueue() {
   const [appTasks, setAppTasks] = useState([]);
   const [allOpenRfis, setAllOpenRfis] = useState({});  // map of app_id -> open RFI count
   const [revisionRequest, setRevisionRequest] = useState('');
+  const [assignedReviewer, setAssignedReviewer] = useState('');
+  const [reviewerUsers, setReviewerUsers] = useState([]);
   const [awardAmount, setAwardAmount] = useState('');
   const [viewApp, setViewApp] = useState(null);
   const [dateStart, setDateStart] = useState('');
@@ -110,8 +112,15 @@ export default function ApplicationReviewQueue() {
     setReviewScore(app.score || '');
     setReviewNotes('');
     setRevisionRequest('');
+    setAssignedReviewer(app.internal_review_notes_reviewer || '');
     // Pre-fill with awarded_amount if already set, else use the latest amendment proposed_total, else requested_amount
 setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '');
+    // Load reviewer users if not loaded
+    if (reviewerUsers.length === 0) {
+      base44.entities.User.list('-created_date', 200).then(users => {
+        setReviewerUsers((users || []).filter(u => ['admin','reviewer','isc_admin'].includes(u.role)));
+      }).catch(() => {});
+    }
     setScoreCardValues({});
   };
 
@@ -154,6 +163,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
       remaining_balance: awarded,
       total_expended: 0,
       expenditure_rate: 0,
+      ...(assignedReviewer ? { internal_review_notes_reviewer: assignedReviewer } : {}),
     });
     await base44.entities.ApplicationReview.create({
       application_id: selected.id,
@@ -725,6 +735,13 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                       <div>
                         <Label>Award Amount ($)</Label>
                         <Input type="number" value={awardAmount} onChange={e => setAwardAmount(e.target.value)} />
+                      </div>
+                      <div>
+                        <Label>Assign Reviewer</Label>
+                        <select value={assignedReviewer} onChange={e => setAssignedReviewer(e.target.value)} className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none">
+                          <option value="">Unassigned</option>
+                          {reviewerUsers.map(u => <option key={u.id} value={u.email}>{u.full_name || u.email} ({u.role})</option>)}
+                        </select>
                       </div>
                     </div>
                     <div>

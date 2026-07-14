@@ -116,9 +116,6 @@ export default function ReportsCompliance() {
 
     await base44.entities.ReportSchedule.update(selectedSchedule.id, {
       status: newScheduleStatus,
-      reviewer_notes: reviewNotes,
-      reviewed_by: user?.email,
-      reviewed_at: new Date().toISOString(),
     });
 
     if (progressReport) {

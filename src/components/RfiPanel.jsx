@@ -138,7 +138,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
     try {
       const update = {
         status: 'Resolved',
-        resolution_notes: resolveNotes,
+        notes: resolveNotes,
         resolved_by: user?.email,
         resolved_at: new Date().toISOString(),
       };
@@ -238,9 +238,9 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
                   )}
                 </div>
               </div>
-              {task.resolution_notes && (
+              {task.notes && (
                 <div className="text-xs bg-green-50 border border-green-200 text-green-800 rounded p-2">
-                  <span className="font-semibold">Resolution: </span>{task.resolution_notes}
+                  <span className="font-semibold">Resolution: </span>{task.notes}
                 </div>
               )}
               {/* Show submitted response if exists */}
