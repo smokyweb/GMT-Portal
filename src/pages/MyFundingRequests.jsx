@@ -755,8 +755,7 @@ export default function MyFundingRequests() {
                 submitting ||
                 attachments.some(a => a.uploading) ||
                 !form.application_id ||
-                (form.request_type !== 'Modification' && lineItems.length === 0) ||
-                (form.request_type === 'Modification' && !form.modification_type)
+                (form.request_type !== 'Modification' && lineItems.length === 0)
               }
             >
               {submitting ? 'Submitting...' : `Submit ${form.request_type === 'Modification' ? 'Modification' : 'Request'}`}

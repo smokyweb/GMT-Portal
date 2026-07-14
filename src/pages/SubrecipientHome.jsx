@@ -1279,7 +1279,11 @@ export default function SubrecipientHome() {
                             <p className="font-medium">{task.title}</p>
                             {task.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{task.description}</p>}
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
-                              <span className="text-muted-foreground font-mono">{task.application_number}</span>
+                              {task.application_id ? (
+                                <button onClick={() => { const app = apps.find(a => a.id === task.application_id); if (app) setSelected(app); }} className="text-primary font-mono underline hover:no-underline text-xs">{task.application_number}</button>
+                              ) : (
+                                <span className="text-muted-foreground font-mono">{task.application_number}</span>
+                              )}
                               <span className={`px-1.5 py-0.5 rounded border text-[10px] font-semibold ${prioColor}`}>{task.priority}</span>
                               {task.due_date && (
                                 <span className={`flex items-center gap-0.5 ${isOverdue ? 'text-red-600 font-semibold' : 'text-muted-foreground'}`}>
