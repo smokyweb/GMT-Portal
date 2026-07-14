@@ -115,12 +115,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
           `${user?.full_name || user?.email} responded to RFI "${task.title}" for ${applicationNumber}.`,
           'rfi_response', 'Application', applicationId, '/applications'
         ).catch(() => {});
-        // Fire-and-forget email
-        base44.integrations.Core.SendEmail({
-          to: adminEmail,
-          subject: `RFI Response: ${task.title} "" ${applicationNumber}`,
-          body: `A response has been submitted for RFI "${task.title}" on application ${applicationNumber}.\n\nResponse:\n${responseText.trim()}\n\nLog in to review: https://gmt.bluesapps.com/applications`,
-        }).catch(() => {});
+        // Email notification removed - using in-app notifications instead
       } catch {}
       setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: 'PendingAdminReview', notes: responseText.trim() } : t));
       setRespondingTask(null);
@@ -222,7 +217,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
                 </div>
                 <div className="flex gap-1 shrink-0">
                   {!isAdmin && task.status === 'Open' && (
-                    <Button size="sm" variant="outline" onClick={() => { handleStatusChange(task, 'InProgress'); setRespondingTask(task); setResponseText(''); }}>
+                    <Button size="sm" variant="outline" onClick={() => { setRespondingTask(task); setResponseText(''); }}>
                       Respond
                     </Button>
                   )}
