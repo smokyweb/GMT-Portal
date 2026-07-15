@@ -20,7 +20,7 @@ export default function GrantPrograms() {
   const [activeTab, setActiveTab] = useState('programs');
   const [open, setOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
-  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_requirements: [] });
   const [formExtra, setFormExtra] = useState({ type: '', fundingCycle: '' });
   const [customCode, setCustomCode] = useState('');
   const [useCustomCode, setUseCustomCode] = useState(false); // custom codes disabled but setter needed
@@ -42,14 +42,20 @@ export default function GrantPrograms() {
     setCodeError('');
 
     if (editingProgram) {
-      const cleanedFormU = { ...form, code: finalCode,
-        match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
-        award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
-        award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [],
-        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [],
-      };
-      await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
+      // Only send known DB fields on update - same as create
+      const cleanedFormU = { name: form.name, code: finalCode, is_active: form.is_active !== false };
+      if (form.description) cleanedFormU.description = form.description;
+      if (form.federal_agency) cleanedFormU.federal_agency = form.federal_agency;
+      if (form.cfda_number) cleanedFormU.cfda_number = form.cfda_number;
+      if (form.program_type) cleanedFormU.program_type = form.program_type;
+      if (form.program_year) cleanedFormU.program_year = form.program_year;
+      if (form.match_requirement !== '' && form.match_requirement != null) cleanedFormU.match_requirement = Number(form.match_requirement);
+      if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedFormU.award_ceiling = Number(form.award_ceiling);
+      if (form.award_floor !== '' && form.award_floor != null) cleanedFormU.award_floor = Number(form.award_floor);
+      cleanedFormU.reporting_requirements = Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [];
+      cleanedFormU.eligible_applicants = Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [];
+      try { await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU); }
+      catch (err) { alert('Failed to update: ' + (err?.message || err?.detail || 'Please try again.')); return; }
     } else {
       // Build payload - omit any empty string fields entirely to avoid DB type errors
       const cleanedForm = { name: form.name, code: finalCode, is_active: form.is_active !== false };
@@ -67,7 +73,7 @@ export default function GrantPrograms() {
 
     setOpen(false);
     setEditingProgram(null);
-    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_requirements: [] });
     setFormExtra({ type: '', fundingCycle: '' });
     setCustomCode('');
     setUseCustomCode(false);
@@ -118,7 +124,7 @@ export default function GrantPrograms() {
       federal_agency: program.federal_agency || '',
       cfda_number: program.cfda_number || '',
       is_active: program.is_active !== false,
-      reporting_frequency: program.reporting_frequency || ''
+      reporting_requirements: program.reporting_requirements || []
     });
     setFormExtra({ type: program.code || '', fundingCycle: 'Annual' });
     setOpen(true);
@@ -134,7 +140,7 @@ export default function GrantPrograms() {
   const openNewForm = () => {
     console.log("[GMT] openNewForm called");
     setEditingProgram(null);
-    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_requirements: [] });
     setFormExtra({ type: '', fundingCycle: '' });
     setCustomCode('');
     setUseCustomCode(false);
@@ -163,7 +169,7 @@ export default function GrantPrograms() {
 
         <TabsContent value="programs" className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {programs.filter((p) => p.is_active !== false).map((p) =>
+            {programs.map((p) =>
             <div key={p.id} className="bg-card rounded-xl border p-5 space-y-3">
                 <div className="flex items-start justify-between">
                   <div>
@@ -176,7 +182,7 @@ export default function GrantPrograms() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   {p.federal_agency && <p>Agency: {p.federal_agency}</p>}
                   {p.cfda_number && <p>CFDA: {p.cfda_number}</p>}
-                  {p.reporting_frequency && <p className="text-primary font-medium">Reports: {p.reporting_frequency}</p>}
+                  {p.reporting_requirements?.length > 0 && <p className="text-primary font-medium">Reports: {p.reporting_requirements.join(', ')}</p>}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className={`text-xs font-medium ${p.is_active !== false ? 'text-green-600' : 'text-red-600'}`}>
@@ -206,13 +212,13 @@ export default function GrantPrograms() {
                   </tr>
                 </thead>
                 <tbody>
-                  {programs.filter((p) => p.is_active !== false).map((program) =>
+                  {programs.map((program) =>
                   <tr key={program.id} className="border-b last:border-0 hover:bg-muted/20">
                       <td className="p-3 font-medium">{program.name}</td>
                       <td className="p-3 font-mono text-xs bg-primary/5 rounded">{program.code}</td>
                       <td className="p-3 text-xs">{program.federal_agency || '-'}</td>
                       <td className="p-3 text-xs text-muted-foreground">{program.cfda_number || '-'}</td>
-                      <td className="p-3 text-xs font-medium">{program.reporting_frequency || '-'}</td>
+                      <td className="p-3 text-xs font-medium">{program.reporting_requirements?.length > 0 ? program.reporting_requirements.join(', ') : '-'}</td>
                       <td className="p-3 flex items-center gap-2">
                         <Button size="sm" variant="outline" onClick={() => { handleEdit(program); }}><Pencil className="h-3 w-3" /> Edit</Button>
                         <Button size="sm" variant="outline" onClick={() => setViewing(program)}>Requirements</Button>
@@ -220,7 +226,7 @@ export default function GrantPrograms() {
                       </td>
                     </tr>
                   )}
-                  {programs.filter((p) => p.is_active !== false).length === 0 &&
+                  {programs.length === 0 &&
                   <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No programs configured. Create one to get started.</td></tr>
                   }
                 </tbody>
@@ -283,13 +289,16 @@ export default function GrantPrograms() {
               </Select>
             </div>
             <div>
-              <Label>Reporting Frequency</Label>
-              <Select value={form.reporting_frequency} onValueChange={(v) => setForm((f) => ({ ...f, reporting_frequency: v }))}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select reporting frequency" /></SelectTrigger>
-                <SelectContent>
-                  {REPORTING_FREQUENCIES.map((f) => <SelectItem key={f} value={f}>{f}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              <Label>Reporting Requirements</Label>
+              <div className="mt-1 flex flex-wrap gap-2">
+                {REPORTING_FREQUENCIES.map(freq => (
+                  <label key={freq} className="flex items-center gap-1.5 text-sm cursor-pointer">
+                    <input type="checkbox" checked={(form.reporting_requirements || []).includes(freq)}
+                      onChange={e => setForm(f => ({ ...f, reporting_requirements: e.target.checked ? [...(f.reporting_requirements||[]), freq] : (f.reporting_requirements||[]).filter(r => r !== freq) }))} />
+                    {freq}
+                  </label>
+                ))}
+              </div>
             </div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>

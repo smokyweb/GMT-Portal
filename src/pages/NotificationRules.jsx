@@ -132,14 +132,17 @@ export default function NotificationRules() {
 
     setSaving(true);
     try {
+      // Only send columns that exist in the workflow_rules DB table
       const payload = {
         name: editingRule.name.trim(),
-        trigger: editingRule.trigger,
+        trigger: editingRule.trigger || '',
+        trigger_event: editingRule.trigger || '',
         action_type: 'Send Notification',
-        recipients: editingRule.recipients,
         description: editingRule.description || '',
-        delivery: editingRule.delivery,
         is_active: editingRule.enabled !== false,
+        // Store recipients and delivery as JSON in conditions/actions fields
+        conditions: JSON.stringify({ recipients: editingRule.recipients || [], trigger: editingRule.trigger }),
+        actions: JSON.stringify({ delivery: editingRule.delivery, action_type: 'Send Notification' }),
       };
 
       if (isNew || editingRule.id?.startsWith('default-')) {
