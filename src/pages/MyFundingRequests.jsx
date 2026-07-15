@@ -200,25 +200,16 @@ export default function MyFundingRequests() {
 
     if (!isModification) {
       for (const li of lineItems) {
+        // Only send fields that exist in the funding_request_line_items DB table
         await base44.entities.FundingRequestLineItem.create({
           funding_request_id: fr.id,
           budget_category: li.budget_category,
-          description: li.description,
-          amount: Number(li.amount),
-          quantity: li.quantity ? Number(li.quantity) : undefined,
-          unit_cost: li.unit_cost ? Number(li.unit_cost) : undefined,
-          ael_number: li.ael_number || undefined,
-          ael_category: li.ael_category || undefined,
-          expenditure_name: li.expenditure_name || undefined,
-          item_manufacturer: li.item_manufacturer || undefined,
-          item_model: li.item_model || undefined,
-          item_detail_description: li.item_detail_description || undefined,
-          sole_source_justification: li.sole_source_justification || undefined,
-          thira_spr_capability_action: li.thira_spr_capability_action || undefined,
-          thira_spr_primary_capability: li.thira_spr_primary_capability || undefined,
-          resource_type: li.resource_type || undefined,
-          discipline: li.discipline || undefined,
+          description: li.description || li.expenditure_name || '',
+          amount: Number(li.amount) || 0,
+          amount_requested: Number(li.amount) || 0,
           is_allowable: true,
+          vendor: li.item_manufacturer || undefined,
+          reviewer_notes: li.item_detail_description || undefined,
         });
       }
     }
