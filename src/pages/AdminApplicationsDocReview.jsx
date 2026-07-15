@@ -17,7 +17,14 @@ export default function AdminApplicationsDocReview() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const appList = await base44.entities.Application.list('-created_date', 200);
+      const allApps = await base44.entities.Application.list('-created_date', 200);
+      // Scope to state admin's state
+      let appList = allApps;
+      if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
+        const orgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
+        const orgIds = new Set((orgs || []).map(o => o.id));
+        appList = allApps.filter(a => orgIds.has(a.organization_id));
+      }
       setApplications(appList);
       setLoading(false);
     });
