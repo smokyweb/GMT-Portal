@@ -454,7 +454,7 @@ export default function MyFundingRequests() {
                   A modification request changes the terms of your existing grant award. All modifications are subject to state approval before taking effect.
                 </div>
                 <div>
-                  <Label>Modification Type</Label>
+                  <Label>Modification Type <span className="text-red-500">*</span></Label>
                   <Select value={form.modification_type} onValueChange={v => setForm(f => ({ ...f, modification_type: v }))}>
                     <SelectTrigger><SelectValue placeholder="Select modification type" /></SelectTrigger>
                     <SelectContent>{MODIFICATION_TYPES.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent>
