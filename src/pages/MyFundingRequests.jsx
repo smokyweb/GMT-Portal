@@ -167,6 +167,12 @@ export default function MyFundingRequests() {
   const removeAttachment = (name) => setAttachments(prev => prev.filter(a => a.name !== name));
 
   const handleSubmit = async () => {
+    // Validate required fields
+    if (!form.application_id) { alert('Please select a grant.'); return; }
+    if (form.request_type === 'Modification' && !form.modification_type) {
+      alert('Please select a Modification Type before submitting.');
+      return;
+    }
     setSubmitting(true);
     try {
     const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000).catch(() => []);
@@ -190,7 +196,7 @@ export default function MyFundingRequests() {
       expenditure_rate: Number(selectedApp?.expenditure_rate) || 0,
       remaining_balance: Number(selectedApp?.remaining_balance) || 0,
       ...(isModification && {
-        modification_type: form.modification_type,
+        modification_type: form.modification_type || null,
         modification_justification: form.modification_justification,
         scope_of_work_current: form.scope_of_work_current,
         scope_of_work_proposed: form.scope_of_work_proposed,
