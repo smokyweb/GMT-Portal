@@ -121,12 +121,16 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
   const [loading, setLoading] = useState(true);
   const [internalFilters, setInternalFilters] = useState({ fy: 'All', program: 'All', nofo: 'All', grant: 'All', status: 'All' });
   // Use external filters (shared with dashboard) if provided, otherwise use internal
-  const filters = externalFilters ? { ...externalFilters, grant: externalFilters.grant || 'All' } : internalFilters;
+  // Merge external filters with internal (external controls fy/program/nofo/status; internal controls grant)
+  const filters = externalFilters
+    ? { ...externalFilters, grant: internalFilters.grant, nofo: externalFilters.nofo ?? internalFilters.nofo, status: externalFilters.status ?? internalFilters.status }
+    : internalFilters;
   const setFilters = externalFilters ? (updater) => {
     const next = typeof updater === 'function' ? updater(filters) : updater;
-    // Only push back the fields the parent DashboardFilterBar knows about
+    // Push shared fields back to parent dashboard
     setExternalFilters(f => ({ ...f, fy: next.fy, program: next.program, nofo: next.nofo, status: next.status }));
-    setInternalFilters(next);
+    // Keep grant in internal state so it doesn't snap back
+    setInternalFilters(prev => ({ ...prev, grant: next.grant }));
   } : setInternalFilters;
 
   useEffect(() => {
