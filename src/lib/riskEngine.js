@@ -129,7 +129,7 @@ export async function computeRiskScores() {
         score,
         level,
         breakdown: {
-          scopedFlags: org.flagCount,
+          flags: org.flagCount,
           overdueReports: org.overdueCount,
           varianceIssues: org.varianceCount,
           auditAnomalies: org.auditAnomalies,
