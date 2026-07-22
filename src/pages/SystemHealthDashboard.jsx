@@ -64,7 +64,7 @@ export default function SystemHealthDashboard() {
         const scopedAppIds = new Set(scopedApps.map(a => a.id));
         const stateOrgNames = new Set(orgs.filter(o => o.state === u.scope_state).map(o => o.name));
         scopedMilestones = milestones.filter(a => stateOrgs.includes(a.organization_id) || stateOrgNames.has(a.organization_name));
-        scopedFlags = flags.filter(a => scopedAppIds.has(a.application_id) || stateOrgNames.has(a.organization_name));
+        scopedFlags = flags.filter(a => scopedAppIds.has(a.application_id));
         scopedDocs = docs.filter(a => stateOrgs.includes(a.organization_id) || scopedAppIds.has(a.application_id));
         scopedMsgs = messages.filter(a => stateOrgs.includes(a.organization_id));
       }
