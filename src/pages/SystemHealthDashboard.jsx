@@ -7,8 +7,8 @@ const KPI_CONFIG = {
   pending_apps: { label: 'Pending Applications', icon: AlertCircle, color: 'text-amber-600', bg: 'bg-amber-50', path: '/applications' },
   pending_frs: { label: 'Pending Funding Requests', icon: Clock, color: 'text-blue-600', bg: 'bg-blue-50', path: '/funding-requests' },
   overdue_milestones: { label: 'Overdue Milestones', icon: Clock, color: 'text-red-600', bg: 'bg-red-50', path: '/milestones' },
-  open_flags: { label: 'Open Compliance Flags', icon: AlertCircle, color: 'text-destructive', bg: 'bg-destructive/5', path: '/compliance' },
-  docs_review: { label: 'Documents Awaiting Review', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50', path: '/documents' },
+  open_flags: { label: 'Open Compliance Flags', icon: AlertCircle, color: 'text-destructive', bg: 'bg-destructive/5', path: '/compliance-flags' },
+  docs_review: { label: 'Documents Uploaded', icon: FileText, color: 'text-purple-600', bg: 'bg-purple-50', path: '/documents' },
   unread_msgs: { label: 'Unread Messages', icon: MessageSquare, color: 'text-teal-600', bg: 'bg-teal-50', path: '/messages' },
 };
 
@@ -61,9 +61,11 @@ export default function SystemHealthDashboard() {
         const stateOrgs = orgs.filter(o => o.state === u.scope_state).map(o => o.id);
         scopedApps = apps.filter(a => stateOrgs.includes(a.organization_id));
         scopedFRs = frs.filter(a => stateOrgs.includes(a.organization_id));
-        scopedMilestones = milestones.filter(a => stateOrgs.includes(a.organization_id));
-        scopedFlags = flags.filter(a => stateOrgs.includes(a.organization_id));
-        scopedDocs = docs.filter(a => stateOrgs.includes(a.organization_id));
+        const scopedAppIds = new Set(scopedApps.map(a => a.id));
+        const stateOrgNames = new Set(orgs.filter(o => o.state === u.scope_state).map(o => o.name));
+        scopedMilestones = milestones.filter(a => stateOrgs.includes(a.organization_id) || stateOrgNames.has(a.organization_name));
+        scopedFlags = flags.filter(a => scopedAppIds.has(a.application_id) || stateOrgNames.has(a.organization_name));
+        scopedDocs = docs.filter(a => stateOrgs.includes(a.organization_id) || scopedAppIds.has(a.application_id));
         scopedMsgs = messages.filter(a => stateOrgs.includes(a.organization_id));
       }
 
@@ -72,9 +74,9 @@ export default function SystemHealthDashboard() {
       setMetrics({
         pending_apps: scopedApps.filter(a => a.status === 'Submitted').length,
         pending_frs: scopedFRs.filter(r => r.status === 'Submitted' || r.status === 'UnderReview').length,
-        overdue_milestones: scopedMilestones.filter(m => m.due_date < today && m.status !== 'Completed').length,
+        overdue_milestones: scopedMilestones.filter(m => m.due_date && m.due_date < today && m.status !== 'Completed' && m.status !== 'Waived').length,
         open_flags: scopedFlags.filter(f => !f.is_resolved).length,
-        docs_review: scopedDocs.filter(d => d.review_status === 'Pending').length,
+        docs_review: scopedDocs.length,
         unread_msgs: scopedMsgs.filter(m => m.is_read === false).length,
       });
 

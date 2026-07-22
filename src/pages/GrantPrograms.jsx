@@ -32,7 +32,7 @@ export default function GrantPrograms() {
   const [scrapeError, setScrapeError] = useState('');
 
   useEffect(() => {
-    base44.entities.GrantProgram.list().then((p) => {setPrograms(p);setLoading(false);});
+    base44.entities.GrantProgram.filter({ is_active: true }).then((p) => {setPrograms(p);setLoading(false);}).catch(() => base44.entities.GrantProgram.list().then((p) => {setPrograms(p.filter(x => x.is_active !== false));setLoading(false);}));
   }, []);
 
   const handleSave = async () => {
@@ -61,6 +61,9 @@ export default function GrantPrograms() {
       if (form.match_requirement !== '' && form.match_requirement != null) cleanedForm.match_requirement = Number(form.match_requirement);
       if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedForm.award_ceiling = Number(form.award_ceiling);
       if (form.award_floor !== '' && form.award_floor != null) cleanedForm.award_floor = Number(form.award_floor);
+      if (form.reporting_frequency) cleanedForm.reporting_frequency = form.reporting_frequency;
+      if (form.eligibility_criteria) cleanedForm.eligibility_criteria = form.eligibility_criteria;
+      if (form.allowable_costs) cleanedForm.allowable_costs = form.allowable_costs;
       try { await base44.entities.GrantProgram.create(cleanedForm); }
       catch (err) { alert('Failed: ' + (err?.message || err?.detail || 'Try again')); return; }
     }
@@ -72,7 +75,7 @@ export default function GrantPrograms() {
     setCustomCode('');
     setUseCustomCode(false);
     const p = await base44.entities.GrantProgram.list();
-    setPrograms(p);
+    setPrograms(p.filter(x => x.is_active !== false));
   };
 
   const handleScrape = async () => {
@@ -125,8 +128,13 @@ export default function GrantPrograms() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Delete this program?')) {
-      await base44.entities.GrantProgram.update(id, { is_active: false });
+    if (window.confirm('Delete this program? It will be marked inactive and hidden from all lists.')) {
+      try {
+        await base44.entities.GrantProgram.delete(id);
+      } catch (e) {
+        // Fallback: mark inactive if delete fails (FK constraint)
+        await base44.entities.GrantProgram.update(id, { is_active: false });
+      }
       setPrograms((prev) => prev.filter((p) => p.id !== id));
     }
   };

@@ -126,11 +126,14 @@ export default function Documents() {
       if (u.role === 'admin' && u.scope_state) {
         // State admin: see docs from orgs in their state
         const allOrgs = await base44.entities.Organization.list();
-        const orgIds = allOrgs.filter(o => o.state === u.scope_state).map(o => o.id);
+        const stateOrgs = allOrgs.filter(o => o.state === u.scope_state);
+        const orgIds = stateOrgs.map(o => o.id);
+        setOrgs(stateOrgs);
         docList = await base44.entities.Document.list('-uploaded_at', 200);
-        docList = docList.filter(d => orgIds.includes(d.organization_id));
-        appList = await base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200);
-        appList = appList.filter(a => orgIds.includes(a.organization_id));
+        const allAppsForDocs = await base44.entities.Application.list('-created_date', 200);
+        const stateAppIds = new Set(allAppsForDocs.filter(a => orgIds.includes(a.organization_id)).map(a => a.id));
+        docList = docList.filter(d => orgIds.includes(d.organization_id) || stateAppIds.has(d.application_id));
+        appList = allAppsForDocs.filter(a => orgIds.includes(a.organization_id));
         receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
         receivedList = receivedList.filter(gd => orgIds.includes(gd.organization_id));
       } else if (u.role === 'user' && u.organization_id) {
@@ -317,7 +320,7 @@ export default function Documents() {
         const linkedApp = apps.find(a => a.id === d.application_id);
         const appLabel = linkedApp
           ? `${linkedApp.application_number || 'Draft'} - ${linkedApp.project_title || linkedApp.organization_name || ''}`
-          : (d.application_number || d.application_id ? (d.application_number || d.application_id.slice(0, 8)) : null);
+          : (d.application_number ? `${d.application_number} - ${d.organization_name || ''}` : null);
         g[key] = { label: appLabel || 'Unassigned Documents', appId: d.application_id, docs: [] };
       }
       g[key].docs.push(d);
