@@ -127,9 +127,11 @@ export default function MilestoneTracker() {
         }
 
         setMilestones(milestonesData || []);
-        // Deduplicate by id
+        // Deduplicate by id, sort by application_number
     const seen = new Set();
-    setApplications((appsData || []).filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; }));
+    const deduped = (appsData || []).filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+    deduped.sort((a, b) => (a.application_number || '').localeCompare(b.application_number || ''));
+    setApplications(deduped);
         setOrganizations(orgsData || []);
         // Load users for assigned_to lookup
         base44.entities.User.list('-created_date', 200).then(u => setUserList(u || [])).catch(() => {});
