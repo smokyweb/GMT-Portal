@@ -126,6 +126,14 @@ export default function MilestoneTracker() {
           orgsData = await base44.entities.Organization.list();
         }
 
+        // Auto-mark overdue: milestones past due_date that aren't Completed/Waived/Overdue
+        const today = new Date().toISOString().split('T')[0];
+        const toUpdate = (milestonesData || []).filter(m =>
+          m.due_date && m.due_date < today && m.status !== 'Completed' && m.status !== 'Waived' && m.status !== 'Overdue'
+        );
+        for (const m of toUpdate) {
+          base44.entities.Milestone.update(m.id, { status: 'Overdue' }).then(() => { m.status = 'Overdue'; }).catch(() => {});
+        }
         setMilestones(milestonesData || []);
         // Deduplicate by id, sort by application_number
     const seen = new Set();

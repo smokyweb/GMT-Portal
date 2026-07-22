@@ -23,9 +23,10 @@ export async function runVarianceScanner(triggeredByUser) {
 
   for (const app of applications) {
     if (!app.awarded_amount || app.awarded_amount === 0) continue;
-
-    const expended = app.total_expended || 0;
-    const variance = Math.abs(expended - app.awarded_amount) / app.awarded_amount;
+    // Skip grants with $0 expended — not yet started, not a real discrepancy
+    const expended = Number(app.total_expended) || 0;
+    if (expended === 0) continue;
+    const variance = Math.abs(expended - app.awarded_amount) / Number(app.awarded_amount);
 
     if (variance > VARIANCE_THRESHOLD && !alreadyFlaggedIds.has(app.id)) {
       const variancePct = (variance * 100).toFixed(1);

@@ -322,7 +322,8 @@ export default function Documents() {
         const appLabel = linkedApp
           ? `${linkedApp.application_number || 'Draft'} - ${linkedApp.project_title || linkedApp.organization_name || ''}`
           : (d.application_number ? `${d.application_number} - ${d.organization_name || ''}` : null);
-        g[key] = { label: appLabel || 'Unassigned Documents', appId: d.application_id, docs: [] };
+        const orgSuffix = d.organization_name ? ` (${d.organization_name})` : '';
+        g[key] = { label: appLabel || `Unassigned Documents${orgSuffix}`, appId: d.application_id, docs: [] };
       }
       g[key].docs.push(d);
     });
