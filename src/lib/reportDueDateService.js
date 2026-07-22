@@ -15,8 +15,8 @@ export async function runReportDueDateService() {
   const lastRun = localStorage.getItem(SERVICE_KEY);
   if (lastRun && moment().diff(moment(lastRun), 'hours') < 24) return;
 
-  const today = moment().startOf('day');
-  const in7Days = moment().add(7, 'days').endOf('day');
+  const today = moment.utc().startOf('day');
+  const in7Days = moment.utc().add(7, 'days').endOf('day');
 
   // Fetch all non-submitted schedules
   const schedules = await base44.entities.ReportSchedule.filter({ status: 'Pending' }, 'due_date', 500);
@@ -32,7 +32,7 @@ export async function runReportDueDateService() {
   let reminderCount = 0;
 
   for (const schedule of schedules) {
-    const dueDate = moment(schedule.due_date);
+    const dueDate = moment.utc(schedule.due_date);
     if (!dueDate.isValid()) continue;
 
     const app = appMap[schedule.application_id];

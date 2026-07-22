@@ -46,10 +46,12 @@ export default function GrantPrograms() {
         match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
         award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : [],
-        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : [],
+        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : (form.reporting_requirements ? [form.reporting_requirements] : []),
+        eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : (form.eligible_applicants ? [form.eligible_applicants] : []),
       };
-      await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
+      try {
+        await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
+      } catch (err) { alert('Update failed: ' + (err?.message || 'Please try again.')); setSaving && setSaving(false); return; }
     } else {
       // Build payload - omit any empty string fields entirely to avoid DB type errors
       const cleanedForm = { name: form.name, code: finalCode, is_active: form.is_active !== false };
@@ -300,6 +302,8 @@ export default function GrantPrograms() {
               </Select>
             </div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
+            <div><Label>Eligibility Criteria</Label><Textarea rows={3} value={form.eligibility_criteria || ''} onChange={(e) => setForm((f) => ({ ...f, eligibility_criteria: e.target.value }))} placeholder="Who is eligible to apply..." /></div>
+            <div><Label>Allowable Costs</Label><Textarea rows={3} value={form.allowable_costs || ''} onChange={(e) => setForm((f) => ({ ...f, allowable_costs: e.target.value }))} placeholder="Eligible expenditures..." /></div>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>
             <div><Label>CFDA Number</Label><Input value={form.cfda_number} onChange={(e) => setForm((f) => ({ ...f, cfda_number: e.target.value }))} /></div>
           </div>

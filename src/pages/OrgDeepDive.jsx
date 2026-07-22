@@ -220,8 +220,16 @@ export default function OrgDeepDive() {
                               tab === 'messages' ? orgData.messages :
                               orgData.milestones)?.slice(0, 10).map((item, i) => (
                               <tr key={i} className="border-b last:border-0 hover:bg-muted/20">
-                                <td className="p-3 text-xs font-mono">{item.application_number || item.request_number || item.name || item.flag_type || item.subject || item.title}</td>
-                                <td className="p-3 text-xs">{item.status}</td>
+                                <td className="p-3 text-xs font-mono">
+                                  {tab === 'flags'
+                                    ? (item.flag_type || '-')
+                                    : (item.application_number || item.request_number || item.name || item.subject || item.title || '-')}
+                                </td>
+                                <td className="p-3 text-xs">
+                                  {tab === 'flags'
+                                    ? (item.is_resolved ? 'Resolved' : 'Open')
+                                    : (item.status || '-')}
+                                </td>
                                 <td className="p-3 text-xs text-muted-foreground">{item.created_date || item.updated_date ? new Date(item.created_date || item.updated_date).toLocaleDateString() : ' - '}</td>
                               </tr>
                             ))}

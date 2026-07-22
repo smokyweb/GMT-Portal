@@ -54,7 +54,7 @@ const PAYMENT_STATUS_CONFIG = {
 };
 
 function PaymentBadge({ status }) {
-  if (!status) return <span className="text-xs text-muted-foreground">""</span>;
+  if (!status || status === '""' || status === '') return <span className="text-xs text-muted-foreground">N/A</span>;
   const cfg = PAYMENT_STATUS_CONFIG[status] || PAYMENT_STATUS_CONFIG.PendingDisbursement;
   return (
     <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${cfg.bg} ${cfg.text}`}>
@@ -171,6 +171,10 @@ export default function MyFundingRequests() {
     if (!form.application_id) { alert('Please select a grant.'); return; }
     if (form.request_type === 'Modification' && !form.modification_type) {
       alert('Please select a Modification Type before submitting.');
+      return;
+    }
+    if (form.period_start && form.period_end && form.period_end < form.period_start) {
+      alert('Period End date cannot be before Period Start date. Please correct the dates before submitting.');
       return;
     }
     setSubmitting(true);
