@@ -20,9 +20,13 @@ function DocRow({ item, uploaded, canUpload, applicationId, applicationNumber, o
   const inputRef = useRef();
 
   // Match by name (NOFO docs) or by doc_type (fallback hardcoded docs)
-  const matchingDocs = item.matchByName
+  // Only show the latest upload per doc slot (in case of replacements)
+  const allMatchingDocs = item.matchByName
     ? uploaded.filter(d => d.name === item.key || d.doc_type === item.key)
     : uploaded.filter(d => d.doc_type === item.key);
+  const matchingDocs = allMatchingDocs.length > 1
+    ? [allMatchingDocs.sort((a, b) => new Date(b.created_date || b.uploaded_at || 0) - new Date(a.created_date || a.uploaded_at || 0))[0]]
+    : allMatchingDocs;
   const fulfilled = matchingDocs.length > 0;
 
   const handleUpload = async (e) => {

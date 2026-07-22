@@ -47,7 +47,7 @@ export default function NofoManagement() {
   const loadData = async () => {
     const [n, p, u] = await Promise.all([
       base44.entities.Nofo.list('-created_date', 50),
-      base44.entities.GrantProgram.filter({ is_active: true }),
+      base44.entities.GrantProgram.list('-name', 100),
       base44.auth.me(),
     ]);
     setUser(u);
@@ -384,7 +384,9 @@ setLoading(false);
               >
                 <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
                 <SelectContent>
-                  {programs.map(p => <SelectItem key={p.id} value={p.id}>{p.name} ({p.code})</SelectItem>)}
+                  {programs.filter(p => p.is_active || p.id === form.program_id).map(p => (
+                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.code}){!p.is_active ? ' ⚠ inactive' : ''}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
