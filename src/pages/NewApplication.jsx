@@ -29,6 +29,7 @@ export default function NewApplication() {
   const [budgetItems, setBudgetItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
@@ -122,8 +123,19 @@ export default function NewApplication() {
     setLoading(false);
   };
 
+  const validateStep = () => {
+    if (step === 0) {
+      if (!org && !orgForm.name) {
+        alert('Please select or enter an organization before continuing.');
+        return false;
+      }
+    }
+    return true;
+  };
+
   const saveDraft = async () => {
     setSaving(true);
+    setSaveError('');
     const data = {
       ...form,
       nofo_id: nofo?.id || app?.nofo_id,
