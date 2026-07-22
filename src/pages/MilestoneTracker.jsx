@@ -127,7 +127,9 @@ export default function MilestoneTracker() {
         }
 
         setMilestones(milestonesData || []);
-        setApplications(appsData || []);
+        // Deduplicate by id
+    const seen = new Set();
+    setApplications((appsData || []).filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; }));
         setOrganizations(orgsData || []);
         // Load users for assigned_to lookup
         base44.entities.User.list('-created_date', 200).then(u => setUserList(u || [])).catch(() => {});
@@ -143,7 +145,7 @@ export default function MilestoneTracker() {
 
   // Filter milestones
   const filteredMilestones = milestones.filter((m) => {
-    if (filterOrg && m.organization_id !== filterOrg) return false;
+    if (filterOrg && m.organization_id !== filterOrg && m.organization_name !== organizations.find(o => o.id === filterOrg)?.name) return false;
     if (filterStatus && m.status !== filterStatus) return false;
     if (filterType && m.milestone_type !== filterType) return false;
     return true;

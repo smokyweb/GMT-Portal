@@ -418,12 +418,7 @@ setLoading(false);
                 <Input type="date" value={form.close_date ? form.close_date.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, close_date: e.target.value }))} />
               </div>
             </div>
-            {form.program_id && (
-              <div className="flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
-                <Info className="h-3.5 w-3.5 shrink-0" />
-                <span>Eligibility and Allowable Costs below are pre-filled from the selected program's defaults. You can refine them for this specific NOFO.</span>
-              </div>
-            )}
+
             <div>
               <Label>Eligibility Criteria</Label>
               <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Pre-filled from program when a program is selected..." />

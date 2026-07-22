@@ -246,7 +246,14 @@ export default function NewApplication() {
 
       // Generate application number
       const allApps = await base44.entities.Application.list('-created_date', 1000);
-      const appNum = `APP-${new Date().getFullYear()}-${String(allApps.length + 1).padStart(5, '0')}`;
+      // Generate unique app number — use count+1 but check for collision
+      const existingNums = new Set((allApps || []).map(a => a.application_number).filter(Boolean));
+      let numCandidate, counter = (allApps || []).length + 1;
+      do {
+        numCandidate = `APP-${new Date().getFullYear()}-${String(counter).padStart(5, '0')}`;
+        counter++;
+      } while (existingNums.has(numCandidate));
+      const appNum = numCandidate;
 
       // Submit
       await base44.entities.Application.update(savedApp.id, {
