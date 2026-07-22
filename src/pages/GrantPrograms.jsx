@@ -248,7 +248,7 @@ export default function GrantPrograms() {
       
 
       <Dialog open={open} onOpenChange={(v) => {setOpen(v);if (!v) {setScrapeUrl('');setScrapeError('');}}}>
-         <DialogContent className="max-w-lg">
+         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
            <DialogHeader><DialogTitle>{editingProgram ? 'Edit Grant Program' : 'Add Grant Program'}</DialogTitle></DialogHeader>
           <div className="space-y-4">
 
