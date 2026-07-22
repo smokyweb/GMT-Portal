@@ -340,7 +340,7 @@ export default function MilestoneTracker() {
                   <SelectItem value={null}>All Statuses</SelectItem>
                   {STATUSES.map((status) => (
                     <SelectItem key={status} value={status}>
-                      {status}
+                      {status.replace(/([A-Z])/g, ' $1').trim()}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -434,7 +434,7 @@ export default function MilestoneTracker() {
                               <td className="px-6 py-4">
                                 <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${config.bg} ${config.text}`}>
                                   <IconComponent className="w-4 h-4" />
-                                  {milestone.status}
+                                  {milestone.status?.replace(/([A-Z])/g, ' $1').trim()}
                                 </div>
                               </td>
                               <td className="px-6 py-4 text-sm text-foreground">

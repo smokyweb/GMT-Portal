@@ -1281,7 +1281,7 @@ export default function SubrecipientHome() {
                             {task.description && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-2">{task.description}</p>}
                             <div className="flex items-center gap-2 mt-1.5 flex-wrap text-xs">
                               {task.application_id ? (
-                                <button onClick={() => { const app = apps.find(a => a.id === task.application_id); if (app) setSelected(app); }} className="text-primary font-mono underline hover:no-underline text-xs">{task.application_number}</button>
+                                <Link to={`/my-applications?id=${task.application_id}`} className="text-primary font-mono underline hover:no-underline text-xs">{task.application_number}</Link>
                               ) : (
                                 <span className="text-muted-foreground font-mono">{task.application_number}</span>
                               )}
@@ -1301,7 +1301,7 @@ export default function SubrecipientHome() {
                               </div>
                             )}
                           </div>
-                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${task.status === 'InProgress' ? 'bg-blue-50 text-blue-700' : task.status === 'PendingAdminReview' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'}`}>{task.status}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full font-medium flex-shrink-0 ${task.status === 'InProgress' ? 'bg-blue-50 text-blue-700' : task.status === 'PendingAdminReview' ? 'bg-purple-50 text-purple-700' : 'bg-amber-50 text-amber-700'}`}>{task.status?.replace(/([A-Z])/g, ' $1').trim()}</span>
                         </div>
                       </div>
                     </div>

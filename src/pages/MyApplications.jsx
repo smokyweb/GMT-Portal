@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -213,6 +213,7 @@ function ExpenditureHistory({ applicationId, application }) {
 
 export default function MyApplications() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [apps, setApps] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -232,6 +233,12 @@ export default function MyApplications() {
         setApps(a);
       }
       setLoading(false);
+      // Auto-open app from ?id= param (e.g. from Tasks & Actions link)
+      const idParam = searchParams.get('id');
+      if (idParam && a?.length) {
+        const target = a.find(app => app.id === idParam);
+        if (target) setSelected(target);
+      }
     });
     base44.entities.Nofo.filter({ status: 'Published' }).then(setNofos);
   }, []);

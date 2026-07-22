@@ -204,7 +204,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
                     <p className="text-sm font-medium">{task.title}</p>
                     {task.description && <p className="text-xs text-muted-foreground mt-0.5">{task.description}</p>}
                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.color}`}>{task.status}</span>
+                      <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${cfg.color}`}>{task.status?.replace(/([A-Z])/g, ' $1').trim()}</span>
                       <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${
                         task.priority === 'Critical' ? 'bg-red-100 text-red-700' :
                         task.priority === 'High' ? 'bg-orange-100 text-orange-700' :
