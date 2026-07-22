@@ -141,13 +141,18 @@ export default function NewApplication() {
     };
 
     let savedApp;
-    if (app) {
-      await base44.entities.Application.update(app.id, data);
-      savedApp = { ...app, ...data };
-    } else {
-      savedApp = await base44.entities.Application.create(data);
+    try {
+      if (app) {
+        await base44.entities.Application.update(app.id, data);
+        savedApp = { ...app, ...data };
+      } else {
+        savedApp = await base44.entities.Application.create(data);
+      }
+      setApp(savedApp);
+    } catch (err) {
+      setSaving(false);
+      throw err; // re-throw so handleNext can catch it
     }
-    setApp(savedApp);
 
     // Save budget items
     for (const item of budgetItems) {
@@ -178,6 +183,23 @@ export default function NewApplication() {
     }
 
     setSaving(false);
+  };
+
+  const handleNext = async () => {
+    if (!validateStep()) return;
+    try {
+      await saveDraft();
+    } catch (err) {
+      setSaveError('Auto-save failed: ' + (err?.message || 'Please try again.'));
+      return;
+    }
+    setStep(s => s + 1);
+  };
+
+  const handleCancel = () => {
+    if (window.confirm('Cancel this application? Any unsaved changes will be lost.')) {
+      navigate(-1);
+    }
   };
 
   const submitApplication = async () => {
@@ -500,17 +522,25 @@ export default function NewApplication() {
       </div>
 
       {/* Navigation */}
+      {saveError && (
+        <div className="mb-2 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-2">{saveError}</div>
+      )}
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
-          <ChevronLeft className="h-4 w-4 mr-1" /> Previous
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
+            <ChevronLeft className="h-4 w-4 mr-1" /> Previous
+          </Button>
+          <Button variant="outline" onClick={handleCancel} className="text-red-600 border-red-200 hover:bg-red-50">
+            Cancel
+          </Button>
+        </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={saveDraft} disabled={saving}>
             {saving ? 'Saving...' : 'Save Draft'}
           </Button>
           {step < STEPS.length - 1 ? (
-            <Button onClick={() => { saveDraft(); setStep(s => s + 1); }}>
-              Next <ChevronRight className="h-4 w-4 ml-1" />
+            <Button onClick={handleNext} disabled={saving}>
+              {saving ? 'Saving...' : <><span>Next</span> <ChevronRight className="h-4 w-4 ml-1" /></>}
             </Button>
           ) : (
             <Button

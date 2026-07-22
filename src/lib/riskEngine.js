@@ -38,8 +38,9 @@ export async function computeRiskScores() {
     applications = allApplications.filter(a => stateOrgIds.has(a.organization_id));
   }
 
-  // Filter scopedFlags and reports to state scope if applicable
-  const scopedFlags = stateOrgIds ? flags.filter(f => stateOrgIds.has(f.organization_id)) : flags;
+  // Filter scopedFlags by application_id (organization_id is often empty on flags)
+  const scopedAppIds = new Set(applications.map(a => a.id));
+  const scopedFlags = stateOrgIds ? flags.filter(f => scopedAppIds.has(f.application_id) || f.organization_name && applications.some(a => a.organization_name === f.organization_name)) : flags;
   const scopedReports = stateOrgIds ? reports.filter(r => applications.some(a => a.id === r.application_id)) : reports;
 
   // Build org map from approved applications

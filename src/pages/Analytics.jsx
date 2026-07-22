@@ -196,13 +196,7 @@ export default function Analytics() {
           <p className="text-muted-foreground text-sm">Grant portfolio performance and pipeline insights</p>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Scan status indicator */}
-          {scanStatus === 'running' && (
-            <span className="flex items-center gap-1.5 text-xs text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-lg">
-              <div className="w-3 h-3 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
-              Running variance scan…
-            </span>
-          )}
+          {/* Scan status indicator (only shows after manual scan completes) */}
           {scanStatus && scanStatus !== 'running' && (
             <span className="flex items-center gap-1.5 text-xs text-green-700 bg-green-50 border border-green-200 px-3 py-1.5 rounded-lg">
               <CheckCircle2 className="h-3.5 w-3.5" />
@@ -210,12 +204,13 @@ export default function Analytics() {
             </span>
           )}
           <button
-            onClick={() => base44.auth.me().then(me => runScan(me))}
+            onClick={() => { setScanStatus('running'); base44.auth.me().then(me => runScan(me)); }}
             disabled={scanStatus === 'running'}
             className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 disabled:opacity-50 transition"
           >
-            <ScanSearch className="h-3.5 w-3.5" />
-            Run Variance Scan
+            {scanStatus === 'running'
+              ? <><div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" /> Scanning…</>
+              : <><ScanSearch className="h-3.5 w-3.5" /> Run Variance Scan</>}
           </button>
           <Filter className="h-4 w-4 text-muted-foreground" />
           <Select value={fyFilter} onValueChange={setFyFilter}>
