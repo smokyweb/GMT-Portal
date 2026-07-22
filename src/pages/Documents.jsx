@@ -131,9 +131,10 @@ export default function Documents() {
         setOrgs(stateOrgs);
         docList = await base44.entities.Document.list('-uploaded_at', 200);
         const allAppsForDocs = await base44.entities.Application.list('-created_date', 200);
-        const stateAppIds = new Set(allAppsForDocs.filter(a => orgIds.includes(a.organization_id)).map(a => a.id));
+        const stateApps = allAppsForDocs.filter(a => orgIds.includes(a.organization_id));
+        const stateAppIds = new Set(stateApps.map(a => a.id));
         docList = docList.filter(d => orgIds.includes(d.organization_id) || stateAppIds.has(d.application_id));
-        appList = allAppsForDocs.filter(a => orgIds.includes(a.organization_id));
+        appList = stateApps; // all statuses so doc grouping labels resolve correctly
         receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
         receivedList = receivedList.filter(gd => orgIds.includes(gd.organization_id));
       } else if (u.role === 'user' && u.organization_id) {
