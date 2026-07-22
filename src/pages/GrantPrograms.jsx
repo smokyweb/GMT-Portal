@@ -32,7 +32,7 @@ export default function GrantPrograms() {
   const [scrapeError, setScrapeError] = useState('');
 
   useEffect(() => {
-    base44.entities.GrantProgram.filter({ is_active: true }).then((p) => {setPrograms(p);setLoading(false);}).catch(() => base44.entities.GrantProgram.list().then((p) => {setPrograms(p.filter(x => x.is_active !== false));setLoading(false);}));
+    base44.entities.GrantProgram.list().then((p) => {setPrograms(p);setLoading(false);});
   }, []);
 
   const handleSave = async () => {
@@ -46,7 +46,8 @@ export default function GrantPrograms() {
         match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
         award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-        reporting_requirements: Array.isArray(form.reporting_requirements) ? form.reporting_requirements : (form.reporting_requirements ? [form.reporting_requirements] : []),
+        // Map reporting_frequency UI field → reporting_requirements DB array
+      reporting_requirements: form.reporting_frequency ? [form.reporting_frequency] : (Array.isArray(form.reporting_requirements) ? form.reporting_requirements : []),
         eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : (form.eligible_applicants ? [form.eligible_applicants] : []),
       };
       try {
@@ -63,7 +64,7 @@ export default function GrantPrograms() {
       if (form.match_requirement !== '' && form.match_requirement != null) cleanedForm.match_requirement = Number(form.match_requirement);
       if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedForm.award_ceiling = Number(form.award_ceiling);
       if (form.award_floor !== '' && form.award_floor != null) cleanedForm.award_floor = Number(form.award_floor);
-      if (form.reporting_frequency) cleanedForm.reporting_frequency = form.reporting_frequency;
+      if (form.reporting_frequency) cleanedForm.reporting_requirements = [form.reporting_frequency];
       if (form.eligibility_criteria) cleanedForm.eligibility_criteria = form.eligibility_criteria;
       if (form.allowable_costs) cleanedForm.allowable_costs = form.allowable_costs;
       try { await base44.entities.GrantProgram.create(cleanedForm); }
@@ -77,7 +78,7 @@ export default function GrantPrograms() {
     setCustomCode('');
     setUseCustomCode(false);
     const p = await base44.entities.GrantProgram.list();
-    setPrograms(p.filter(x => x.is_active !== false));
+    setPrograms(p);
   };
 
   const handleScrape = async () => {
@@ -123,7 +124,8 @@ export default function GrantPrograms() {
       federal_agency: program.federal_agency || '',
       cfda_number: program.cfda_number || '',
       is_active: program.is_active !== false,
-      reporting_frequency: program.reporting_frequency || ''
+      // Load reporting_requirements[0] into the reporting_frequency UI field
+      reporting_frequency: Array.isArray(program.reporting_requirements) && program.reporting_requirements.length > 0 ? program.reporting_requirements[0] : (program.reporting_frequency || '')
     });
     setFormExtra({ type: program.code || '', fundingCycle: 'Annual' });
     setOpen(true);
@@ -186,7 +188,7 @@ export default function GrantPrograms() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   {p.federal_agency && <p>Agency: {p.federal_agency}</p>}
                   {p.cfda_number && <p>CFDA: {p.cfda_number}</p>}
-                  {p.reporting_frequency && <p className="text-primary font-medium">Reports: {p.reporting_frequency}</p>}
+                  {(p.reporting_frequency || (Array.isArray(p.reporting_requirements) && p.reporting_requirements[0])) && <p className="text-primary font-medium">Reports: {p.reporting_frequency || p.reporting_requirements[0]}</p>}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className={`text-xs font-medium ${p.is_active !== false ? 'text-green-600' : 'text-red-600'}`}>
@@ -222,7 +224,7 @@ export default function GrantPrograms() {
                       <td className="p-3 font-mono text-xs bg-primary/5 rounded">{program.code}</td>
                       <td className="p-3 text-xs">{program.federal_agency || '-'}</td>
                       <td className="p-3 text-xs text-muted-foreground">{program.cfda_number || '-'}</td>
-                      <td className="p-3 text-xs font-medium">{program.reporting_frequency || '-'}</td>
+                      <td className="p-3 text-xs font-medium">{program.reporting_frequency || (Array.isArray(program.reporting_requirements) && program.reporting_requirements[0]) || '-'}</td>
                       <td className="p-3 flex items-center gap-2">
                         <Button size="sm" variant="outline" onClick={() => { handleEdit(program); }}><Pencil className="h-3 w-3" /> Edit</Button>
                         <Button size="sm" variant="outline" onClick={() => setViewing(program)}>Requirements</Button>
