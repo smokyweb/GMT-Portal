@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -94,7 +95,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
   };
 
   const handleResponse = async (task) => {
-    if (!responseText.trim()) { alert('Please enter a response.'); return; }
+    if (!responseText.trim()) { toast('Please enter a response.', 'warning'); return; }
     setSubmittingResponse(true);
     try {
       // Save the response on the task
@@ -122,7 +123,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
       setResponseText('');
     } catch (err) {
       console.error('RFI response error:', err);
-      alert('Failed to submit response: ' + (err?.message || 'Please try again.'));
+      toast('Failed to submit response: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setSubmittingResponse(false);
     }
@@ -153,7 +154,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
       setResolveNotes('');
     } catch (err) {
       console.error('RFI resolve error:', err);
-      alert('Failed to resolve RFI: ' + (err?.message || 'Please try again.'));
+      toast('Failed to resolve RFI: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setSaving(false);
     }

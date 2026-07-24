@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { runGrantMonitor } from '../lib/monitoringService';
@@ -182,7 +183,7 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
       setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
     } catch (err) {
       console.error('Export failed:', err);
-      alert('Export failed. Please try again.');
+      toast('Export failed. Please try again.', 'error');
     }
   };
 

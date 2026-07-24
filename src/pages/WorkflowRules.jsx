@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import {
   Zap, CheckCircle2, FileText, Flag, DollarSign, BarChart3, Play, Clock,
@@ -108,7 +109,7 @@ export default function WorkflowRules() {
     const logs = await base44.entities.AuditLog.filter({ user_email: 'workflow-engine@system' }, '-created_date', 30);
     setRecentLogs(logs);
     setRunning(false);
-    alert(`Overdue check complete. Processed ${overdue.length} overdue report(s).`);
+    toast(`Overdue check complete. Processed ${overdue.length} overdue report(s, 'warning').`);
   };
 
   const openNew = () => {

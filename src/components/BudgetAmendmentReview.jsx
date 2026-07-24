@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -198,7 +199,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
       }
     } catch (err) {
       console.error('Amendment action error:', err);
-      alert('Failed to save: ' + (err?.message || 'Please try again.'));
+      toast('Failed to save: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setActioning(null);
       onActioned?.();
@@ -330,7 +331,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
                     });
                     onActioned?.();
                     onClose();
-                  } catch(e) { alert('Resubmit failed.'); }
+                  } catch(e) { toast('Resubmit failed.', 'error'); }
                   finally { setActioning(null); }
                 }}
               >

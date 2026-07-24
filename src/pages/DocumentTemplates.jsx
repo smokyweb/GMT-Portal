@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -115,7 +116,7 @@ export default function DocumentTemplates() {
   const handleSave = async () => {
     setSaving(true);
     if (!form.name || (!form.template_body && !form.file_url)) {
-      alert('Please provide a template name and either a template body or an uploaded file.');
+      toast('Please provide a template name and either a template body or an uploaded file.', 'warning');
       setSaving(false);
       return;
     }
@@ -198,7 +199,7 @@ export default function DocumentTemplates() {
     });
     setSending(false);
     setSendTemplate(null);
-    alert(`Document sent to ${app.organization_name} for review and signature.`);
+    toast(`Document sent to ${app.organization_name} for review and signature.`, 'warning');
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;

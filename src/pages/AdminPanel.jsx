@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -165,7 +166,7 @@ export default function AdminPanel() {
       setEditUser(null);
     } catch (err) {
       console.error('Edit user error:', err);
-      alert('Failed to save changes. Please try again.');
+      toast('Failed to save changes. Please try again.', 'error');
     } finally {
       setEditSaving(false);
     }

@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Send, Reply, ChevronDown, ChevronUp, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -42,7 +43,7 @@ function MessageBubble({ msg, user, replies, getReplies, onReply, topicColors, d
       onReply();
     } catch (err) {
       console.error('Reply error:', err);
-      alert('Failed to send reply. Please try again.');
+      toast('Failed to send reply. Please try again.', 'error');
     } finally {
       setSending(false);
     }
@@ -163,7 +164,7 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
       onMessageSent();
     } catch (err) {
       console.error('Send message error:', err);
-      alert('Failed to send message. Please try again.');
+      toast('Failed to send message. Please try again.', 'error');
     } finally {
       setSending(false);
     }

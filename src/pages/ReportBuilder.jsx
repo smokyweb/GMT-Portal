@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { ArrowLeft, Save, Play, Download, Copy } from 'lucide-react';
@@ -118,7 +119,7 @@ export default function ReportBuilder() {
       setDirty(false);
     } catch (err) {
       console.error('Failed to save report:', err);
-      alert('Failed to save report: ' + (err.message || 'Unknown error'));
+      toast('Failed to save report: ' + (err.message || 'Unknown error', 'error'));
     } finally {
       setSaveLoading(false);
     }
@@ -126,7 +127,7 @@ export default function ReportBuilder() {
 
   const handleRunFull = async () => {
     if (!config.data_source || !config.selected_fields.length) {
-      alert('Please select a data source and at least one field before running.');
+      toast('Please select a data source and at least one field before running.', 'warning');
       return;
     }
     setPreviewLoading(true);
@@ -149,7 +150,7 @@ export default function ReportBuilder() {
       }
     } catch (err) {
       console.error('Run report error:', err);
-      alert('Failed to run report: ' + (err?.message || 'Unknown error'));
+      toast('Failed to run report: ' + (err?.message || 'Unknown error', 'error'));
       setPreviewRows([]);
     } finally {
       setPreviewLoading(false);

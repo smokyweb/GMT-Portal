@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { useSearchParams } from 'react-router-dom';
 import { getFYDateRange } from '../hooks/useDateRangeFilter';
 import { base44 } from '@/api/base44Client';
@@ -142,11 +143,11 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
     const scoreNum = Number(reviewScore);
     if (scoringRequired) {
       if (reviewScore === '' || reviewScore === null || reviewScore === undefined) {
-        alert('A review score is required before approving (this NOFO has scoring enabled). Please enter a score between 0 and 100.');
+        toast('A review score is required before approving (scoring enabled). Please enter a score between 0 and 100.', 'error');
         return;
       }
       if (isNaN(scoreNum) || scoreNum < 0 || scoreNum > 100) {
-        alert('Score must be a number between 0 and 100.');
+        toast('Score must be a number between 0 and 100.', 'warning');
         return;
       }
     }

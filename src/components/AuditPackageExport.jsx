@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { PackageOpen, Loader2, Lock } from 'lucide-react';
@@ -20,7 +21,7 @@ export default function AuditPackageExport({ application }) {
 
       if (!response.ok) {
         const err = await response.json();
-        alert(`Export failed: ${err.error}`);
+        toast(`Export failed: ${err.error}`, 'error');
         return;
       }
 
@@ -32,7 +33,7 @@ export default function AuditPackageExport({ application }) {
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      alert(`Export failed: ${e.message}`);
+      toast(`Export failed: ${e.message}`, 'error');
     } finally {
       setLoading(false);
     }

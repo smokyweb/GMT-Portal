@@ -157,7 +157,7 @@ export default function MyFundingRequests() {
         if (res.ok) { const data = await res.json(); file_url = data.url || ''; }
       } catch (uploadErr) {
         console.warn('Upload failed:', uploadErr.message);
-        alert('File upload failed: ' + (uploadErr.name === 'AbortError' ? 'Request timed out. Try a smaller file.' : uploadErr.message));
+        toast('File upload failed: ' + (uploadErr.name === 'AbortError' ? 'Request timed out. Try a smaller file.' : uploadErr.message, 'error'));
       }
       setAttachments(prev => prev.map(a => a.name === item.name && a.uploading ? { ...a, uploading: false, url: file_url } : a));
     }
@@ -168,13 +168,13 @@ export default function MyFundingRequests() {
 
   const handleSubmit = async () => {
     // Validate required fields
-    if (!form.application_id) { alert('Please select a grant.'); return; }
+    if (!form.application_id) { toast('Please select a grant.', 'warning'); return; }
     if (form.request_type === 'Modification' && !form.modification_type) {
-      alert('Please select a Modification Type before submitting.');
+      toast('Please select a Modification Type before submitting.', 'warning');
       return;
     }
     if (form.period_start && form.period_end && form.period_end < form.period_start) {
-      alert('Period End date cannot be before Period Start date. Please correct the dates before submitting.');
+      toast('Period End date cannot be before Period Start date. Please correct the dates before submitting.', 'warning');
       return;
     }
     setSubmitting(true);
@@ -263,7 +263,7 @@ export default function MyFundingRequests() {
     loadData();
     } catch (err) {
       console.error('FR submit error:', err);
-      alert('Failed to submit funding request: ' + (err?.message || err?.detail || 'Please try again.'));
+      toast('Failed to submit funding request: ' + (err?.message || err?.detail || 'Please try again.', 'error'));
       setSubmitting(false);
     }
   };

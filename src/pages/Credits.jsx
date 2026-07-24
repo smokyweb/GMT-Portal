@@ -128,7 +128,7 @@ export default function Credits() {
     load();
     } catch (err) {
       console.error('Credit issue error:', err);
-      alert('Failed to issue credit: ' + (err?.message || err?.detail || 'Please try again.'));
+      toast('Failed to issue credit: ' + (err?.message || err?.detail || 'Please try again.', 'error'));
       setSubmitting(false);
     }
   };

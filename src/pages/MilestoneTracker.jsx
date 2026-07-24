@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -172,9 +173,9 @@ export default function MilestoneTracker() {
 
   // Handle save
   const handleSave = async () => {
-    if (!form.title) { alert('Please enter a milestone title.'); return; }
-    if (!form.due_date) { alert('Please select a due date.'); return; }
-    if (!form.application_id) { alert('Please select an application.'); return; }
+    if (!form.title) { toast('Please enter a milestone title.', 'warning'); return; }
+    if (!form.due_date) { toast('Please select a due date.', 'warning'); return; }
+    if (!form.application_id) { toast('Please select an application.', 'warning'); return; }
 
     try {
       setSaving(true);
@@ -215,7 +216,7 @@ export default function MilestoneTracker() {
       resetForm();
     } catch (error) {
       console.error('Error saving milestone:', error);
-      alert('Failed to save milestone: ' + (error?.message || error?.detail || 'Please try again.'));
+      toast('Failed to save milestone: ' + (error?.message || error?.detail || 'Please try again.', 'error'));
     } finally {
       setSaving(false);
     }

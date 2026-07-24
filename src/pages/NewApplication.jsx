@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -126,7 +127,7 @@ export default function NewApplication() {
   const validateStep = () => {
     if (step === 0) {
       if (!org && !orgForm.name) {
-        alert('Please select or enter an organization before continuing.');
+        toast('Please select or enter an organization before continuing.', 'warning');
         return false;
       }
     }

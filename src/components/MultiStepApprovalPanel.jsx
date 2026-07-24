@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { ShieldCheck, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -53,7 +54,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
       await base44.entities.FundingRequest.update(selected.id, updates);
     } catch (err) {
       console.error('MultiStep approval error:', err);
-      alert('Failed to save approval: ' + (err?.detail || err?.message || 'Please try again.'));
+      toast('Failed to save approval: ' + (err?.detail || err?.message || 'Please try again.', 'error'));
     } finally {
       setActionStep(null);
       setNotes('');

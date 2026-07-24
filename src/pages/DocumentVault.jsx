@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import {
   Upload, FileText, Download, Eye, Check, X, Tag, History,
@@ -104,7 +105,7 @@ export default function DocumentVault() {
 
   const handleUpload = async () => {
     if (!uploadFile && !uploadForm.version_of) {
-      alert('Please select a file to upload.');
+      toast('Please select a file to upload.', 'warning');
       return;
     }
     setUploading(true);

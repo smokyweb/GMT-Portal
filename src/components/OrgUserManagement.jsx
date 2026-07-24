@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,7 +105,7 @@ export default function OrgUserManagement({ user, org }) {
       setTimeout(() => setInviteSuccess(false), 15000);
       load();
     } catch (err) {
-      alert('Failed to invite user: ' + (err?.message || 'Please try again.'));
+      toast('Failed to invite user: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setInviting(false);
     }

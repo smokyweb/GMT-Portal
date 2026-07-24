@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Search, Building2, Pencil, Plus } from 'lucide-react';
@@ -57,7 +58,7 @@ export default function Organizations() {
       setEditOrg(null);
     } catch (err) {
       console.error('Failed to save organization:', err);
-      alert('Failed to save. Please try again.');
+      toast('Failed to save. Please try again.', 'error');
     } finally {
       setSaving(false);
     }

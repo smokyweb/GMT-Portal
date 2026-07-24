@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -52,7 +53,7 @@ function FlagActionRow({ flag, user, onResolved }) {
       setResponseText('');
       onResolved();
     } catch (err) {
-      alert('Failed to submit response: ' + (err?.message || 'Please try again.'));
+      toast('Failed to submit response: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setSubmitting(false);
     }
@@ -459,8 +460,8 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
     let file_url = '';
     try {
       file_url = await uploadFileToServer(file);
-      if (!file_url) { alert('Upload failed - could not get file URL. Please try again.'); setUploading(false); setUploadProgress(0); return; }
-    } catch(uploadErr) { alert('Upload failed: ' + uploadErr.message); setUploading(false); setUploadProgress(0); return; }
+      if (!file_url) { toast('Upload failed - could not get file URL. Please try again.', 'error'); setUploading(false); setUploadProgress(0); return; }
+    } catch(uploadErr) { toast('Upload failed: ' + uploadErr.message, 'error'); setUploading(false); setUploadProgress(0); return; }
     setUploadProgress(70);
     const app = apps.find(a => a.id === appId);
     await base44.entities.Document.create({
@@ -1297,7 +1298,7 @@ export default function SubrecipientHome() {
                             {(task.type === 'RFI' || task.type === 'rfi' || !task.type) && (task.status === 'Open' || task.status === 'Pending') && (
                               <div className="mt-3 space-y-2">
                                 <textarea className="w-full text-sm border rounded-lg p-2 resize-none focus:outline-none focus:ring-1 focus:ring-ring" rows={3} placeholder="Type your response to this RFI..." id={`rfi-${task.id}`} />
-                                <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium" onClick={async()=>{const el=document.getElementById('rfi-'+task.id);const r=el?.value?.trim();if(!r){alert('Please enter a response.');return;}try{await base44.entities.Task.update(task.id,{status:'PendingAdminReview',notes:r,resolved_by:user?.email,resolved_at:new Date().toISOString()});await loadData();}catch(e){alert('Failed to submit.');}}}>Submit Response</button>
+                                <button className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-md font-medium" onClick={async()=>{const el=document.getElementById('rfi-'+task.id);const r=el?.value?.trim();if(!r){toast('Please enter a response.', 'warning');return;}try{await base44.entities.Task.update(task.id,{status:'PendingAdminReview',notes:r,resolved_by:user?.email,resolved_at:new Date().toISOString()});await loadData();}catch(e){toast('Failed to submit.', 'error');}}}>Submit Response</button>
                               </div>
                             )}
                           </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import {
   Upload, FileText, Download, Eye, History,
@@ -172,9 +173,9 @@ export default function Documents() {
   };
 
   const handleUpload = async () => {
-    if (!uploadForm.doc_type) { alert('Please select a document type.'); return; }
+    if (!uploadForm.doc_type) { toast('Please select a document type.', 'warning'); return; }
     if (!uploadFile && !uploadForm.version_of) {
-      alert('Please select a file to upload.');
+      toast('Please select a file to upload.', 'warning');
       return;
     }
     setUploading(true);

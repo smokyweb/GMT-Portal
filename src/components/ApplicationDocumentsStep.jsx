@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,7 +69,7 @@ export default function ApplicationDocumentsStep({ nofo: nofoProp, app, user, or
       setUploadedDocs(prev => [...prev.filter(d => d.name !== doc.name), created]);
     } catch (err) {
       console.error('Required doc upload error:', err);
-      alert('Upload failed: ' + (err?.message || 'Please try again.'));
+      toast('Upload failed: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setUploading(u => ({ ...u, [doc.name]: false }));
     }
@@ -95,7 +96,7 @@ export default function ApplicationDocumentsStep({ nofo: nofoProp, app, user, or
       setUploadedDocs(prev => [...prev, created]);
     } catch (err) {
       console.error('Supporting doc upload error:', err);
-      alert('Upload failed: ' + (err?.message || 'Please try again.'));
+      toast('Upload failed: ' + (err?.message || 'Please try again.', 'error'));
     } finally {
       setUploading(u => ({ ...u, [tempKey]: false }));
     }

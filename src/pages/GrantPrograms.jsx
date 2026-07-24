@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Plus, Eye, Wand2, Loader2, Link, Pencil, Trash2 } from 'lucide-react';
 import GrantProgramDetail from '../components/GrantProgramDetail';
@@ -36,7 +37,7 @@ export default function GrantPrograms() {
   }, []);
 
   const handleSave = async () => {
-    if (!form.name?.trim()) { alert('Program Name is required.'); return; }
+    if (!form.name?.trim()) { toast('Program Name is required.', 'error'); return; }
     const finalCode = useCustomCode ? customCode.trim().toUpperCase() : form.code;
     if (!finalCode) { setCodeError('Code is required.'); return; }
     setCodeError('');
@@ -52,7 +53,7 @@ export default function GrantPrograms() {
       };
       try {
         await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
-      } catch (err) { alert('Update failed: ' + (err?.message || 'Please try again.')); setSaving && setSaving(false); return; }
+      } catch (err) { toast('Update failed: ' + (err?.message || 'Please try again.', 'error')); setSaving && setSaving(false); return; }
     } else {
       // Build payload - omit any empty string fields entirely to avoid DB type errors
       const cleanedForm = { name: form.name, code: finalCode, is_active: form.is_active !== false };
@@ -68,7 +69,7 @@ export default function GrantPrograms() {
       if (form.eligibility_criteria) cleanedForm.eligibility_criteria = form.eligibility_criteria;
       if (form.allowable_costs) cleanedForm.allowable_costs = form.allowable_costs;
       try { await base44.entities.GrantProgram.create(cleanedForm); }
-      catch (err) { alert('Failed: ' + (err?.message || err?.detail || 'Try again')); return; }
+      catch (err) { toast('Failed: ' + (err?.message || err?.detail || 'Try again', 'error')); return; }
     }
 
     setOpen(false);

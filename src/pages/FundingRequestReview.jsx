@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Eye, FileText, Search, X, Plus, Trash2, AlertCircle, CreditCard, Send, CheckCircle, XCircle, ShieldCheck, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -140,7 +141,7 @@ export default function FundingRequestReview() {
     try {
     // Require payment date when marking as Paid
     if (paymentAction === 'Paid' && !paymentDate) {
-      alert('A payment date is required when marking a request as Paid.');
+      toast('A payment date is required when marking a request as Paid.', 'error');
       return;
     }
     const updates = { payment_status: paymentAction };
@@ -177,7 +178,7 @@ export default function FundingRequestReview() {
     }).catch(() => {});
     } catch (err) {
       console.error('Payment update error:', err);
-      alert('Failed to update payment status: ' + (err?.detail || err?.message || 'Please try again.'));
+      toast('Failed to update payment status: ' + (err?.detail || err?.message || 'Please try again.', 'error'));
     }
   };
 
@@ -501,7 +502,7 @@ export default function FundingRequestReview() {
                           setPaymentReference('');
                           setPaymentDate('');
                         } catch (err) {
-                          alert('Failed to update: ' + (err?.detail || err?.message || 'Please try again.'));
+                          toast('Failed to update: ' + (err?.detail || err?.message || 'Please try again.', 'error'));
                         }
                       }}
                     >
