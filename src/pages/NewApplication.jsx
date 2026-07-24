@@ -33,6 +33,7 @@ export default function NewApplication() {
   const [saveError, setSaveError] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [allOrgs, setAllOrgs] = useState([]);
+  const [allNofos, setAllNofos] = useState([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
@@ -63,9 +64,13 @@ export default function NewApplication() {
     const u = await base44.auth.me();
     setUser(u);
 
-    // Load all orgs for admin dropdown; for regular users just load their own org
-    const allOrgsList = await base44.entities.Organization.list('-name', 200).catch(() => []);
+    // Load all orgs + NOFOs for admin dropdown
+    const [allOrgsList, allNofosList] = await Promise.all([
+      base44.entities.Organization.list('-name', 200).catch(() => []),
+      base44.entities.Nofo.list('-created_date', 100).catch(() => []),
+    ]);
     setAllOrgs(allOrgsList || []);
+    setAllNofos((allNofosList || []).filter(n => n.status === 'Published' || n.status === 'Active' || !n.status));
     if (u.organization_id) {
       const myOrg = (allOrgsList || []).find(o => o.id === u.organization_id);
       if (myOrg) { setOrg(myOrg); setOrgForm(myOrg); }
@@ -365,6 +370,23 @@ export default function NewApplication() {
                     <SelectTrigger className="mt-1"><SelectValue placeholder="Select an organization..." /></SelectTrigger>
                     <SelectContent className="max-h-60 overflow-y-auto">
                       {allOrgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name} {o.state ? `(${o.state})` : ''}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {/* Optional NOFO selector */}
+                <div>
+                  <Label>NOFO / Grant Program (optional)</Label>
+                  <Select
+                    value={nofo?.id || '__none__'}
+                    onValueChange={v => {
+                      if (v === '__none__') { setNofo(null); return; }
+                      base44.entities.Nofo.filter({ id: v }).then(ns => { if (ns[0]) setNofo(ns[0]); });
+                    }}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select a NOFO (optional)" /></SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      <SelectItem value="__none__">No NOFO selected</SelectItem>
+                      {(allNofos || []).map(n => <SelectItem key={n.id} value={n.id}>{n.title}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
