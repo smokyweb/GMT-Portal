@@ -32,6 +32,7 @@ export default function NewApplication() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
   const [submitError, setSubmitError] = useState('');
+  const [allOrgs, setAllOrgs] = useState([]);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
@@ -62,12 +63,12 @@ export default function NewApplication() {
     const u = await base44.auth.me();
     setUser(u);
 
+    // Load all orgs for admin dropdown; for regular users just load their own org
+    const allOrgsList = await base44.entities.Organization.list('-name', 200).catch(() => []);
+    setAllOrgs(allOrgsList || []);
     if (u.organization_id) {
-      const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
-      if (orgs.length > 0) {
-        setOrg(orgs[0]);
-        setOrgForm(orgs[0]);
-      }
+      const myOrg = (allOrgsList || []).find(o => o.id === u.organization_id);
+      if (myOrg) { setOrg(myOrg); setOrgForm(myOrg); }
     }
 
     if (appId) {
@@ -126,8 +127,8 @@ export default function NewApplication() {
 
   const validateStep = () => {
     if (step === 0) {
-      if (!org && !orgForm.name) {
-        toast('Please select or enter an organization before continuing.', 'warning');
+      if (!org) {
+        toast('Please select an organization before continuing.', 'warning');
         return false;
       }
     }
@@ -348,26 +349,46 @@ export default function NewApplication() {
         {/* Step 1: Organization */}
         {step === 0 && (
           <div className="space-y-4">
-            <h2 className="font-semibold text-lg">Organization Profile</h2>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Organization Name</Label><Input value={orgForm.name} onChange={e => setOrgForm(f => ({ ...f, name: e.target.value }))} /></div>
-              <div>
-                <Label>Type</Label>
-                <Select value={orgForm.type} onValueChange={v => setOrgForm(f => ({ ...f, type: v }))}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {['County', 'Municipality', 'Nonprofit', 'Tribe'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <h2 className="font-semibold text-lg">Select Organization</h2>
+            {/* Admin: pick from existing orgs */}
+            {user && ['admin','reviewer','isc_admin','federal_admin','federal_officer'].includes(user.role) && allOrgs.length > 0 ? (
+              <div className="space-y-4">
+                <div>
+                  <Label>Organization <span className="text-red-500">*</span></Label>
+                  <Select
+                    value={org?.id || ''}
+                    onValueChange={v => {
+                      const selected = allOrgs.find(o => o.id === v);
+                      if (selected) { setOrg(selected); setOrgForm(selected); }
+                    }}
+                  >
+                    <SelectTrigger className="mt-1"><SelectValue placeholder="Select an organization..." /></SelectTrigger>
+                    <SelectContent className="max-h-60 overflow-y-auto">
+                      {allOrgs.map(o => <SelectItem key={o.id} value={o.id}>{o.name} {o.state ? `(${o.state})` : ''}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                {org && (
+                  <div className="bg-muted/40 rounded-xl border p-4 grid grid-cols-2 gap-3 text-sm">
+                    <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium">{org.type || '-'}</p></div>
+                    <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono">{org.ein || '-'}</p></div>
+                    <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono">{org.sam_uei || '-'}</p></div>
+                    <div><p className="text-xs text-muted-foreground">State</p><p>{org.state || '-'}</p></div>
+                    <div className="col-span-2"><p className="text-xs text-muted-foreground">Address</p><p>{[org.address, org.city, org.state, org.zip].filter(Boolean).join(', ') || '-'}</p></div>
+                  </div>
+                )}
               </div>
-              <div><Label>EIN</Label><Input value={orgForm.ein} onChange={e => setOrgForm(f => ({ ...f, ein: e.target.value }))} /></div>
-              <div><Label>SAM UEI</Label><Input value={orgForm.sam_uei} onChange={e => setOrgForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
-              <div className="col-span-2"><Label>Address</Label><Input value={orgForm.address} onChange={e => setOrgForm(f => ({ ...f, address: e.target.value }))} /></div>
-              <div><Label>City</Label><Input value={orgForm.city} onChange={e => setOrgForm(f => ({ ...f, city: e.target.value }))} /></div>
-              <div><Label>State</Label><Input value={orgForm.state} onChange={e => setOrgForm(f => ({ ...f, state: e.target.value }))} /></div>
-              <div><Label>ZIP</Label><Input value={orgForm.zip} onChange={e => setOrgForm(f => ({ ...f, zip: e.target.value }))} /></div>
-              <div><Label>County</Label><Input value={orgForm.county} onChange={e => setOrgForm(f => ({ ...f, county: e.target.value }))} /></div>
-            </div>
+            ) : (
+              /* Subrecipient: show their own org (read-only) */
+              <div className="bg-muted/40 rounded-xl border p-4 grid grid-cols-2 gap-3 text-sm">
+                <div className="col-span-2"><p className="text-xs text-muted-foreground">Organization</p><p className="font-semibold">{orgForm.name || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Type</p><p>{orgForm.type || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono">{orgForm.ein || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono">{orgForm.sam_uei || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">State</p><p>{orgForm.state || '-'}</p></div>
+                <div className="col-span-2"><p className="text-xs text-muted-foreground">Address</p><p>{[orgForm.address, orgForm.city, orgForm.state, orgForm.zip].filter(Boolean).join(', ') || '-'}</p></div>
+              </div>
+            )}
           </div>
         )}
 
