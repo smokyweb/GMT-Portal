@@ -131,8 +131,8 @@ export default function GrantPrograms() {
       federal_agency: program.federal_agency || '',
       cfda_number: program.cfda_number || '',
       is_active: program.is_active !== false,
-      // Load reporting_requirements[0] into the reporting_frequency UI field
-      reporting_frequency: Array.isArray(program.reporting_requirements) && program.reporting_requirements.length > 0 ? program.reporting_requirements[0] : (program.reporting_frequency || '')
+      // Load reporting_requirements[0] into the reporting_frequency UI field (API returns it as a JSON string)
+      reporting_frequency: (() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return rr[0] || program.reporting_frequency || ''; })()
     });
     setFormExtra({ type: program.code || '', fundingCycle: 'Annual' });
     setOpen(true);
@@ -195,7 +195,7 @@ export default function GrantPrograms() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   {p.federal_agency && <p>Agency: {p.federal_agency}</p>}
                   {p.cfda_number && <p>CFDA: {p.cfda_number}</p>}
-                  {(p.reporting_frequency || (Array.isArray(p.reporting_requirements) && p.reporting_requirements[0])) && <p className="text-primary font-medium">Reports: {p.reporting_frequency || p.reporting_requirements[0]}</p>}
+                  {(() => { const rr = typeof p.reporting_requirements === 'string' ? JSON.parse(p.reporting_requirements || '[]') : (p.reporting_requirements || []); const freq = p.reporting_frequency || rr[0]; return freq ? <p className="text-primary font-medium">Reports: {freq}</p> : null; })()}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className={`text-xs font-medium ${p.is_active !== false ? 'text-green-600' : 'text-red-600'}`}>
@@ -231,7 +231,7 @@ export default function GrantPrograms() {
                       <td className="p-3 font-mono text-xs bg-primary/5 rounded">{program.code}</td>
                       <td className="p-3 text-xs">{program.federal_agency || '-'}</td>
                       <td className="p-3 text-xs text-muted-foreground">{program.cfda_number || '-'}</td>
-                      <td className="p-3 text-xs font-medium">{program.reporting_frequency || (Array.isArray(program.reporting_requirements) && program.reporting_requirements[0]) || '-'}</td>
+                      <td className="p-3 text-xs font-medium">{(() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return program.reporting_frequency || rr[0] || '-'; })()}</td>
                       <td className="p-3 flex items-center gap-2">
                         <Button size="sm" variant="outline" onClick={() => { handleEdit(program); }}><Pencil className="h-3 w-3" /> Edit</Button>
                         <Button size="sm" variant="outline" onClick={() => setViewing(program)}>Requirements</Button>
