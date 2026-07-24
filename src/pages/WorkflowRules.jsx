@@ -161,7 +161,30 @@ export default function WorkflowRules() {
     if (!form.name || !form.trigger || !form.action_type) return;
     setSaving(true);
     try {
-      const payload = { ...form, is_active: true, created_by_name: user?.full_name || user?.email };
+      // Only send columns that exist in the DB
+      const payload = {
+        name: form.name,
+        trigger: form.trigger,
+        condition: form.condition || null,
+        action_type: form.action_type,
+        action_detail: form.action_detail || null,
+        target_status: form.target_status || null,
+        email_subject: form.email_subject || null,
+        email_body: form.email_body || null,
+        entity: form.entity || null,
+        description: form.description || null,
+        is_active: true,
+        created_by_name: user?.full_name || user?.email,
+        // Store extra condition params as JSON in conditions field
+        conditions: JSON.stringify({
+          program: form.condition_program,
+          amount: form.condition_amount,
+          severity: form.condition_severity,
+          flag_type: form.flag_type,
+          flag_severity: form.flag_severity,
+          payment_target_status: form.payment_target_status,
+        }),
+      };
       if (editingRule) {
         await base44.entities.WorkflowRule.update(editingRule.id, payload);
       } else {
