@@ -421,11 +421,11 @@ setLoading(false);
 
             <div>
               <Label>Eligibility Criteria</Label>
-              <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Pre-filled from program when a program is selected..." />
+              <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Enter eligibility criteria for this NOFO..." />
             </div>
             <div>
               <Label>Allowable Costs</Label>
-              <Textarea value={form.allowable_costs} onChange={e => setForm(f => ({ ...f, allowable_costs: e.target.value }))} rows={3} placeholder="Pre-filled from program when a program is selected..." />
+              <Textarea value={form.allowable_costs} onChange={e => setForm(f => ({ ...f, allowable_costs: e.target.value }))} rows={3} placeholder="Enter allowable costs for this NOFO..." />
             </div>
             <div>
               <Label>Evaluation Criteria</Label>
