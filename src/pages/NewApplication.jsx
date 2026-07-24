@@ -157,6 +157,9 @@ export default function NewApplication() {
       requested_amount: Number(form.requested_amount),
       match_amount: Number(form.match_amount),
       version: (Number(app?.version) || 0) + 1,
+      // Send null for empty date fields (empty string fails date column)
+      performance_start: form.performance_start || null,
+      performance_end: form.performance_end || null,
     };
 
     let savedApp;
@@ -241,6 +244,8 @@ export default function NewApplication() {
         requested_amount: Number(form.requested_amount),
         match_amount: Number(form.match_amount),
         version: (Number(app?.version) || 0) + 1,
+        performance_start: form.performance_start || null,
+        performance_end: form.performance_end || null,
       };
       let savedApp = app;
       if (app) {
