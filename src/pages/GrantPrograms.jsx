@@ -43,17 +43,28 @@ export default function GrantPrograms() {
     setCodeError('');
 
     if (editingProgram) {
-      const cleanedFormU = { ...form, code: finalCode,
+      // Only send columns that exist in the DB — do NOT spread ...form (includes reporting_frequency etc.)
+      const cleanedFormU = {
+        name: form.name,
+        code: finalCode,
+        description: form.description || null,
+        federal_agency: form.federal_agency || null,
+        cfda_number: form.cfda_number || null,
+        program_type: form.program_type || null,
+        program_year: form.program_year || null,
+        is_active: form.is_active !== false,
+        eligibility_criteria: form.eligibility_criteria || null,
+        allowable_costs: form.allowable_costs || null,
         match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
         award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
         // Map reporting_frequency UI field → reporting_requirements DB array
-      reporting_requirements: form.reporting_frequency ? [form.reporting_frequency] : (Array.isArray(form.reporting_requirements) ? form.reporting_requirements : []),
+        reporting_requirements: form.reporting_frequency ? [form.reporting_frequency] : (Array.isArray(form.reporting_requirements) ? form.reporting_requirements : []),
         eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : (form.eligible_applicants ? [form.eligible_applicants] : []),
       };
       try {
         await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
-      } catch (err) { toast('Update failed: ' + (err?.message || 'Please try again.', 'error')); setSaving && setSaving(false); return; }
+      } catch (err) { toast('Update failed: ' + (err?.message || 'Please try again.'), 'error'); return; }
     } else {
       // Build payload - omit any empty string fields entirely to avoid DB type errors
       const cleanedForm = { name: form.name, code: finalCode, is_active: form.is_active !== false };
