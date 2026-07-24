@@ -8,26 +8,28 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Loader2, Edit2, Trash2, Plus } from 'lucide-react';
-import { toast } from 'sonner';
+import { toast } from '@/components/ui/toast-simple';
 
+// These must match the workflow_rules_trigger_check constraint exactly
 const TRIGGER_OPTIONS = [
   'Application Submitted',
-  'Application Approved',
-  'Application Rejected',
-  'Milestone Due Date Passed',
-  'Milestone Completed',
+  'Application Status Changed',
   'Compliance Flag Created',
   'Compliance Flag Resolved',
   'Document Uploaded',
-  'Document Approved',
-  'Document Rejected',
   'Funding Request Submitted',
   'Funding Request Approved',
-  'Funding Request Rejected',
-  'Credit Issued',
-  'User Registered',
-  'Report Submitted',
+  'Report Due Date Passed',
+  'Milestone Due Date Passed',
 ];
+
+// Valid action_type values per workflow_rules_action_type_check constraint
+const ACTION_TYPE_FOR_DELIVERY = {
+  email: 'Send Email Notification',
+  in_app: 'Send Email to Admins',
+  both: 'Send Email Notification',
+  'in-app': 'Send Email to Admins',
+};
 
 const DELIVERY_OPTIONS = [
   { value: 'email', label: 'Email' },
@@ -54,7 +56,7 @@ const BLANK_RULE = {
 
 const DEFAULT_RULES = [
   { name: 'Application Submitted', trigger: 'Application Submitted', recipients: ['admin', 'reviewer'], description: 'Notify state admins when a new application is submitted', delivery: 'both', enabled: true },
-  { name: 'Milestone Overdue', trigger: 'Milestone Due Date Passed', recipients: ['admin', 'reviewer'], description: 'Notify state admins when a milestone is overdue', delivery: 'both', enabled: true },
+  { name: 'Milestone Due Date', trigger: 'Milestone Due Date Passed', recipients: ['admin', 'reviewer'], description: 'Notify state admins when a milestone is overdue', delivery: 'both', enabled: true },
   { name: 'Compliance Flag Created', trigger: 'Compliance Flag Created', recipients: ['admin'], description: 'Notify state admins when a compliance flag is opened', delivery: 'both', enabled: true },
   { name: 'Document Uploaded', trigger: 'Document Uploaded', recipients: ['reviewer'], description: 'Notify reviewers when a document is uploaded', delivery: 'in_app', enabled: true },
   { name: 'Funding Request Submitted', trigger: 'Funding Request Submitted', recipients: ['admin'], description: 'Notify state admins when a funding request is submitted', delivery: 'both', enabled: true },
@@ -137,7 +139,7 @@ export default function NotificationRules() {
         name: editingRule.name.trim(),
         trigger: editingRule.trigger || '',
         trigger_event: editingRule.trigger || '',
-        action_type: 'Send Notification',
+        action_type: ACTION_TYPE_FOR_DELIVERY[editingRule.delivery] || 'Send Email Notification',
         description: editingRule.description || '',
         is_active: editingRule.enabled !== false,
         // Store recipients and delivery as JSON in conditions/actions fields
@@ -151,19 +153,19 @@ export default function NotificationRules() {
           ...prev.filter(r => r.id !== editingRule.id),
           { ...editingRule, ...payload, id: created.id, enabled: payload.is_active },
         ]);
-        toast.success('Notification rule created');
+        toast('Rule saved', 'success');
       } else {
         await base44.entities.WorkflowRule.update(editingRule.id, payload);
         setRules(prev => prev.map(r => r.id === editingRule.id
           ? { ...editingRule, ...payload, enabled: payload.is_active }
           : r
         ));
-        toast.success('Notification rule updated');
+        toast('Rule saved', 'success');
       }
       setShowDialog(false);
       setEditingRule(null);
     } catch (err) {
-      toast.error('Failed to save rule - please try again');
+      toast('Failed to save rule', 'error');
       console.error(err);
     } finally {
       setSaving(false);
@@ -177,9 +179,9 @@ export default function NotificationRules() {
         await base44.entities.WorkflowRule.delete(rule.id);
       }
       setRules(prev => prev.filter(r => r.id !== rule.id));
-      toast.success('Rule deleted');
+      toast('Rule saved', 'success');
     } catch {
-      toast.error('Failed to delete rule');
+      toast('Failed to save rule', 'error');
     }
   };
 
