@@ -541,8 +541,8 @@ setLoading(false);
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available ? `$${Number(viewNofo.total_funding_available).toLocaleString()}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Award Range</p><p className="font-medium">{viewNofo.min_award || viewNofo.max_award ? `$${Number(viewNofo.min_award||0).toLocaleString()} - $${Number(viewNofo.max_award||0).toLocaleString()}` : '-'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date || '-'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date ? new Date(viewNofo.open_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date ? new Date(viewNofo.close_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Available States</p><p className="font-medium">{viewNofo.scope_states?.length ? viewNofo.scope_states.join(', ') : 'All States'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Scoring Enabled</p><p className="font-medium">{viewNofo.scoring_enabled ? 'Yes' : 'No'}</p></div>
               </div>
