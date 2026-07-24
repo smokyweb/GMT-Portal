@@ -43,7 +43,7 @@ export default function GrantPrograms() {
     setCodeError('');
 
     if (editingProgram) {
-      // Only send columns that exist in the DB — do NOT spread ...form (includes reporting_frequency etc.)
+      // Only send columns that exist in the DB
       const cleanedFormU = {
         name: form.name,
         code: finalCode,
@@ -53,12 +53,9 @@ export default function GrantPrograms() {
         program_type: form.program_type || null,
         program_year: form.program_year || null,
         is_active: form.is_active !== false,
-        eligibility_criteria: form.eligibility_criteria || null,
-        allowable_costs: form.allowable_costs || null,
         match_requirement: form.match_requirement !== '' && form.match_requirement != null ? Number(form.match_requirement) : null,
         award_ceiling: form.award_ceiling !== '' && form.award_ceiling != null ? Number(form.award_ceiling) : null,
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
-        // Map reporting_frequency UI field → reporting_requirements DB array
         reporting_requirements: form.reporting_frequency ? [form.reporting_frequency] : (Array.isArray(form.reporting_requirements) ? form.reporting_requirements : []),
         eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : (form.eligible_applicants ? [form.eligible_applicants] : []),
       };
@@ -77,10 +74,8 @@ export default function GrantPrograms() {
       if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedForm.award_ceiling = Number(form.award_ceiling);
       if (form.award_floor !== '' && form.award_floor != null) cleanedForm.award_floor = Number(form.award_floor);
       if (form.reporting_frequency) cleanedForm.reporting_requirements = [form.reporting_frequency];
-      if (form.eligibility_criteria) cleanedForm.eligibility_criteria = form.eligibility_criteria;
-      if (form.allowable_costs) cleanedForm.allowable_costs = form.allowable_costs;
       try { await base44.entities.GrantProgram.create(cleanedForm); }
-      catch (err) { toast('Failed: ' + (err?.message || err?.detail || 'Try again', 'error')); return; }
+      catch (err) { toast('Failed: ' + (err?.message || err?.detail || 'Try again.'), 'error'); return; }
     }
 
     setOpen(false);
@@ -316,8 +311,6 @@ export default function GrantPrograms() {
               </Select>
             </div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
-            <div><Label>Eligibility Criteria</Label><Textarea rows={3} value={form.eligibility_criteria || ''} onChange={(e) => setForm((f) => ({ ...f, eligibility_criteria: e.target.value }))} placeholder="Who is eligible to apply..." /></div>
-            <div><Label>Allowable Costs</Label><Textarea rows={3} value={form.allowable_costs || ''} onChange={(e) => setForm((f) => ({ ...f, allowable_costs: e.target.value }))} placeholder="Eligible expenditures..." /></div>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>
             <div><Label>CFDA Number</Label><Input value={form.cfda_number} onChange={(e) => setForm((f) => ({ ...f, cfda_number: e.target.value }))} /></div>
           </div>
