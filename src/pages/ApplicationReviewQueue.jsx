@@ -683,6 +683,10 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   submittedBy={selected.submitted_by}
                   user={user}
                   isAdmin={true}
+                  onRefresh={async () => {
+                    const t = await base44.entities.Task.filter({ application_id: selected.id }, '-created_date', 50).catch(() => []);
+                    setAppTasks(t);
+                  }}
                 />
               </TabsContent>
 

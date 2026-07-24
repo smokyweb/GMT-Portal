@@ -19,7 +19,7 @@ const STATUS_CONFIG = {
   Cancelled: { color: 'bg-slate-100 text-slate-500', icon: null },
 };
 
-export default function RfiPanel({ applicationId, applicationNumber, organizationName, submittedBy, user, isAdmin = false }) {
+export default function RfiPanel({ applicationId, applicationNumber, organizationName, submittedBy, user, isAdmin = false, onRefresh }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -152,6 +152,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
       setTasks(prev => prev.map(t => t.id === resolvingTask.id ? { ...t, ...update } : t));
       setResolvingTask(null);
       setResolveNotes('');
+      if (onRefresh) onRefresh();
     } catch (err) {
       console.error('RFI resolve error:', err);
       toast('Failed to resolve RFI: ' + (err?.message || 'Please try again.', 'error'));
@@ -163,6 +164,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
   const handleStatusChange = async (task, newStatus) => {
     await base44.entities.Task.update(task.id, { status: newStatus });
     setTasks(prev => prev.map(t => t.id === task.id ? { ...t, status: newStatus } : t));
+    if (onRefresh) onRefresh();
   };
 
   if (loading) return <div className="p-6 text-center text-sm text-muted-foreground">Loading RFIs...</div>;
