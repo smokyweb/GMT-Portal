@@ -33,6 +33,8 @@ export default function NofoManagement() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [viewNofo, setViewNofo] = useState(null);
+  const [revisionNofo, setRevisionNofo] = useState(null); // NOFO awaiting revision feedback
+  const [revisionNotes, setRevisionNotes] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProgram, setFilterProgram] = useState('all');
@@ -174,7 +176,34 @@ setLoading(false);
     setHistoryLoading(false);
   };
 
+  const handleRequestChanges = (nofo) => {
+    setRevisionNofo(nofo);
+    setRevisionNotes('');
+    if (viewNofo) setViewNofo(null); // close view dialog
+  };
+
+  const submitRevisionRequest = async () => {
+    if (!revisionNofo) return;
+    const updates = { status: 'RevisionRequested', reviewer_notes: revisionNotes || null };
+    await base44.entities.Nofo.update(revisionNofo.id, updates);
+    await logAudit(base44, user, 'Revision Requested', 'Nofo', revisionNofo.id,
+      `${revisionNofo.title} → Changes Requested: ${revisionNotes || 'No notes provided'}`);
+    // Notify NOFO creator
+    if (revisionNofo.created_by) {
+      await createNotification(base44, revisionNofo.created_by,
+        'Changes Requested for NOFO',
+        `Your NOFO "${revisionNofo.title}" requires revisions: ${revisionNotes || 'Please see notes.'}`,
+        'nofo_revision', 'Nofo', revisionNofo.id, '/nofo-management'
+      ).catch(() => {});
+    }
+    setRevisionNofo(null);
+    setRevisionNotes('');
+    loadData();
+    toast('Changes requested — submitter has been notified.', 'success');
+  };
+
   const changeStatus = async (nofo, newStatus) => {
+    if (newStatus === 'RevisionRequested') { handleRequestChanges(nofo); return; }
     const updates = { status: newStatus };
     if (newStatus === 'Published') {
       updates.published_at = new Date().toISOString();
@@ -594,6 +623,36 @@ setLoading(false);
             <DialogFooter>
               <Button variant="outline" onClick={() => openEdit(viewNofo)} className="mr-auto">Edit</Button>
               <Button variant="outline" onClick={() => setViewNofo(null)}>Close</Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* Request Changes Modal */}
+      {revisionNofo && (
+        <Dialog open={true} onOpenChange={() => setRevisionNofo(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Request Changes — {revisionNofo.title}</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-2">
+              <p className="text-sm text-muted-foreground">Describe the changes needed before this NOFO can be published. The submitter will be notified.</p>
+              <div>
+                <Label>Revision Notes <span className="text-red-500">*</span></Label>
+                <Textarea
+                  rows={5}
+                  value={revisionNotes}
+                  onChange={e => setRevisionNotes(e.target.value)}
+                  placeholder="Describe what needs to be changed or corrected..."
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setRevisionNofo(null)}>Cancel</Button>
+              <Button onClick={submitRevisionRequest} disabled={!revisionNotes.trim()} className="bg-amber-600 hover:bg-amber-700 text-white">
+                Submit Revision Request
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
