@@ -9,6 +9,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import moment from 'moment';
+const uploadFileToServer = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = localStorage.getItem('gmt_token');
+  try {
+    const res = await fetch('/api/upload', { method: 'POST', body: formData, headers: token ? { Authorization: `Bearer ${token}` } : {} });
+    if (res.ok) { const data = await res.json(); return data.url || ''; }
+  } catch (e) { console.warn('Upload error:', e.message); }
+  return '';
+};
 
 const DOC_TYPES = [
   'Invoice', 'PerformanceEvidence', 'Contract', 'BudgetJustification',

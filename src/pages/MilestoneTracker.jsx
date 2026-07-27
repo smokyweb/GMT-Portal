@@ -136,9 +136,13 @@ export default function MilestoneTracker() {
           base44.entities.Milestone.update(m.id, { status: 'Overdue' }).then(() => { m.status = 'Overdue'; }).catch(() => {});
         }
         setMilestones(milestonesData || []);
-        // Deduplicate by id, sort by application_number
+        // Only show Approved apps in milestone dropdown; deduplicate and sort
     const seen = new Set();
-    const deduped = (appsData || []).filter(a => { if (seen.has(a.id)) return false; seen.add(a.id); return true; });
+    const deduped = (appsData || []).filter(a => {
+      if (a.status !== 'Approved') return false;
+      if (seen.has(a.id)) return false;
+      seen.add(a.id); return true;
+    });
     deduped.sort((a, b) => (a.application_number || '').localeCompare(b.application_number || ''));
     setApplications(deduped);
         setOrganizations(orgsData || []);

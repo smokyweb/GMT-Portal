@@ -528,7 +528,7 @@ export default function FundingRequestReview() {
                 <TabsTrigger value="documents" className="flex items-center gap-1.5">
                   <Paperclip className="h-3.5 w-3.5" /> Documents
                 </TabsTrigger>
-                <TabsTrigger value="required-templates">Required Templates</TabsTrigger>
+                {/* Required Templates tab hidden until functionality is implemented */}
                 <TabsTrigger value="messages">Messages</TabsTrigger>
               </TabsList>
               <TabsContent value="review">

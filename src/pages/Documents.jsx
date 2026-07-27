@@ -692,40 +692,21 @@ export default function Documents() {
             {/* Searchable Application */}
             <div>
               <Label>Linked Application</Label>
-              <div className="relative mt-1">
-                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  className="pl-8 text-sm"
-                  placeholder="Search app number or title…"
-                  value={appSearch}
-                  onChange={e => { setAppSearch(e.target.value); if (!e.target.value) setUploadForm(f => ({ ...f, application_id: '' })); }}
-                />
-              </div>
-              {appSearch && (
-                <div className="border rounded-lg mt-1 max-h-40 overflow-y-auto bg-background shadow-md">
-                  <div className="px-3 py-2 text-sm text-muted-foreground cursor-pointer hover:bg-muted/50" onClick={() => { setUploadForm(f => ({ ...f, application_id: '' })); setAppSearch(''); }}>None / Clear</div>
-                  {apps.filter(a =>
-                    a.application_number?.toLowerCase().includes(appSearch.toLowerCase()) ||
-                    a.project_title?.toLowerCase().includes(appSearch.toLowerCase()) ||
-                    a.organization_name?.toLowerCase().includes(appSearch.toLowerCase())
-                  ).map(a => (
-                    <div key={a.id}
-                      className={`px-3 py-2 text-sm cursor-pointer hover:bg-muted/50 ${uploadForm.application_id === a.id ? 'bg-primary/10 font-medium' : ''}`}
-                      onClick={() => { setUploadForm(f => ({ ...f, application_id: a.id })); setAppSearch(`${a.application_number || 'Draft'} - ${a.project_title || 'Untitled'}`); }}
-                    >
-                      <span className="font-medium">{a.application_number || 'Draft'}</span> - {a.project_title || 'Untitled'}
-                      {a.organization_name && <span className="text-xs text-muted-foreground ml-1">({a.organization_name})</span>}
-                    </div>
+              <Select
+                value={uploadForm.application_id || '__none__'}
+                onValueChange={v => setUploadForm(f => ({ ...f, application_id: v === '__none__' ? '' : v }))}
+              >
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Select application (optional)" /></SelectTrigger>
+                <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectItem value="__none__">None</SelectItem>
+                  {apps.sort((a,b) => (a.application_number||'').localeCompare(b.application_number||'')).map(a => (
+                    <SelectItem key={a.id} value={a.id}>
+                      {a.application_number || 'Draft'} — {a.project_title || a.organization_name || 'Untitled'}
+                    </SelectItem>
                   ))}
-                </div>
-              )}
-              {uploadForm.application_id && (
-                <p className="text-xs text-green-700 mt-1 font-medium">
-                  ✓ Linked: {apps.find(a => a.id === uploadForm.application_id)?.application_number || 'Selected'}
-                  {' '}<a href={`/applications/${uploadForm.application_id}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline ml-1">Open ↗</a>
-                  {' '}<button className="text-red-400 hover:text-red-600 ml-1" onClick={() => { setUploadForm(f => ({ ...f, application_id: '' })); setAppSearch(''); }}>✕ Clear</button>
-                </p>
-              )}
+                </SelectContent>
+              </Select>
+
             </div>
 
             <div>
