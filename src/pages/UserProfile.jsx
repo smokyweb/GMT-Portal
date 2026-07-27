@@ -13,6 +13,10 @@ export default function UserProfile() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState('');
+  const [pwForm, setPwForm] = useState({ current: '', newPw: '', confirm: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwError, setPwError] = useState('');
+  const [pwSaved, setPwSaved] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +57,31 @@ export default function UserProfile() {
       setSaveError('Failed to save. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleChangePassword = async () => {
+    setPwError('');
+    if (!pwForm.current) { setPwError('Please enter your current password.'); return; }
+    if (pwForm.newPw.length < 8) { setPwError('New password must be at least 8 characters.'); return; }
+    if (pwForm.newPw !== pwForm.confirm) { setPwError('New passwords do not match.'); return; }
+    setPwSaving(true);
+    try {
+      const token = localStorage.getItem('gmt_token');
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ current_password: pwForm.current, new_password: pwForm.newPw }),
+      });
+      const data = await res.json();
+      if (!res.ok) { setPwError(data.error || 'Failed to change password.'); return; }
+      setPwSaved(true);
+      setPwForm({ current: '', newPw: '', confirm: '' });
+      setTimeout(() => setPwSaved(false), 4000);
+    } catch (e) {
+      setPwError('Network error. Please try again.');
+    } finally {
+      setPwSaving(false);
     }
   };
 
@@ -134,6 +163,23 @@ export default function UserProfile() {
               <AlertCircle className="h-4 w-4" /> {saveError}
             </span>
           )}
+        </div>
+      </div>
+
+      {/* Change Password */}
+      <div className="bg-card border rounded-xl p-6 space-y-4">
+        <h2 className="text-sm font-semibold flex items-center gap-2"><Shield className="h-4 w-4" /> Change Password</h2>
+        <div className="grid grid-cols-1 gap-4 max-w-sm">
+          <div><Label>Current Password</Label><Input type="password" value={pwForm.current} onChange={e => setPwForm(f => ({ ...f, current: e.target.value }))} className="mt-1" /></div>
+          <div><Label>New Password</Label><Input type="password" value={pwForm.newPw} onChange={e => setPwForm(f => ({ ...f, newPw: e.target.value }))} className="mt-1" /></div>
+          <div><Label>Confirm New Password</Label><Input type="password" value={pwForm.confirm} onChange={e => setPwForm(f => ({ ...f, confirm: e.target.value }))} className="mt-1" /></div>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button onClick={handleChangePassword} disabled={pwSaving}>
+            {pwSaving ? 'Updating…' : 'Update Password'}
+          </Button>
+          {pwSaved && <span className="text-sm text-green-600 flex items-center gap-1.5"><CheckCircle className="h-4 w-4" /> Password updated</span>}
+          {pwError && <span className="text-sm text-red-600 flex items-center gap-1.5"><AlertCircle className="h-4 w-4" /> {pwError}</span>}
         </div>
       </div>
 
