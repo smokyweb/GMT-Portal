@@ -80,9 +80,18 @@ export default function OrgUserManagement({ user, org }) {
     setInviting(true);
     try {
       const tempPassword = 'GMT_Welcome_2026!';
-      await base44.auth.register(inviteEmail, tempPassword, inviteEmail.split('@')[0], 'user').catch(async () => {
-        await base44.entities.User.create({ email: inviteEmail, role: 'user', full_name: inviteEmail.split('@')[0] }).catch(() => {});
+      // Use fetch directly so we don't switch the active session to the new user
+      // (base44.auth.register stores the returned token and logs you in as the new user)
+      const token = localStorage.getItem('gmt_token');
+      const regRes = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+        body: JSON.stringify({ email: inviteEmail, password: tempPassword, full_name: inviteEmail.split('@')[0], role: 'user' }),
       });
+      if (!regRes.ok && regRes.status !== 409) {
+        // If registration fails for reasons other than 'already exists', create via entity
+        await base44.entities.User.create({ email: inviteEmail, role: 'user', full_name: inviteEmail.split('@')[0] }).catch(() => {});
+      }
       // Poll briefly to find the new user and set their org
       let attempts = 0;
       while (attempts < 5) {
