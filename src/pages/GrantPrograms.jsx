@@ -21,7 +21,7 @@ export default function GrantPrograms() {
   const [activeTab, setActiveTab] = useState('programs');
   const [open, setOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
-  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '', compliance_requirements_text: '', allowable_costs_text: '', eligibility_criteria_text: '', reporting_requirements_text: '' });
   const [formExtra, setFormExtra] = useState({ type: '', fundingCycle: '' });
   const [customCode, setCustomCode] = useState('');
   const [useCustomCode, setUseCustomCode] = useState(false); // custom codes disabled but setter needed
@@ -58,6 +58,10 @@ export default function GrantPrograms() {
         award_floor: form.award_floor !== '' && form.award_floor != null ? Number(form.award_floor) : null,
         reporting_requirements: form.reporting_frequency ? [form.reporting_frequency] : (Array.isArray(form.reporting_requirements) ? form.reporting_requirements : []),
         eligible_applicants: Array.isArray(form.eligible_applicants) ? form.eligible_applicants : (form.eligible_applicants ? [form.eligible_applicants] : []),
+        compliance_requirements_text: form.compliance_requirements_text || null,
+        allowable_costs_text: form.allowable_costs_text || null,
+        eligibility_criteria_text: form.eligibility_criteria_text || null,
+        reporting_requirements_text: form.reporting_requirements_text || null,
       };
       try {
         await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
@@ -132,7 +136,11 @@ export default function GrantPrograms() {
       cfda_number: program.cfda_number || '',
       is_active: program.is_active !== false,
       // Load reporting_requirements[0] into the reporting_frequency UI field (API returns it as a JSON string)
-      reporting_frequency: (() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return rr[0] || program.reporting_frequency || ''; })()
+      reporting_frequency: (() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return rr[0] || program.reporting_frequency || ''; })(),
+      compliance_requirements_text: program.compliance_requirements_text || '',
+      allowable_costs_text: program.allowable_costs_text || '',
+      eligibility_criteria_text: program.eligibility_criteria_text || '',
+      reporting_requirements_text: program.reporting_requirements_text || '',
     });
     setFormExtra({ type: program.code || '', fundingCycle: 'Annual' });
     setOpen(true);
@@ -313,6 +321,11 @@ export default function GrantPrograms() {
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>
             <div><Label>CFDA Number</Label><Input value={form.cfda_number} onChange={(e) => setForm((f) => ({ ...f, cfda_number: e.target.value }))} /></div>
+            <div className="col-span-2 border-t pt-4 mt-2"><p className="text-sm font-semibold text-muted-foreground mb-3">Program Requirements (editable by State Admin)</p></div>
+            <div className="col-span-2"><Label>Compliance Requirements</Label><Textarea rows={4} value={form.compliance_requirements_text || ''} onChange={(e) => setForm((f) => ({ ...f, compliance_requirements_text: e.target.value }))} placeholder="Enter one requirement per line..." className="mt-1" /></div>
+            <div className="col-span-2"><Label>Allowable Costs</Label><Textarea rows={4} value={form.allowable_costs_text || ''} onChange={(e) => setForm((f) => ({ ...f, allowable_costs_text: e.target.value }))} placeholder="Enter one cost item per line..." className="mt-1" /></div>
+            <div className="col-span-2"><Label>Eligibility Criteria</Label><Textarea rows={4} value={form.eligibility_criteria_text || ''} onChange={(e) => setForm((f) => ({ ...f, eligibility_criteria_text: e.target.value }))} placeholder="Enter eligibility requirements per line..." className="mt-1" /></div>
+            <div className="col-span-2"><Label>Reporting Requirements</Label><Textarea rows={4} value={form.reporting_requirements_text || ''} onChange={(e) => setForm((f) => ({ ...f, reporting_requirements_text: e.target.value }))} placeholder="Enter reporting requirements per line..." className="mt-1" /></div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>

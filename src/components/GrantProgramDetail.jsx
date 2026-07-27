@@ -127,13 +127,20 @@ export default function GrantProgramDetail({ program, onClose, isAdmin = false, 
 
   const defaults = FEMA_DEFAULTS[program.code] || DEFAULT_FALLBACK;
 
-  // Merge saved data over defaults
+  // Helper: parse text field (newline-delimited) into array, fallback to DB array or defaults
+  const parseTextOrArray = (textField, arrayField, defaultArr) => {
+    if (textField) return textField.split('\n').map(s => s.trim()).filter(Boolean);
+    if (arrayField?.length) return arrayField;
+    return defaultArr;
+  };
+
+  // Merge saved data over defaults — prefer new _text fields (editable by state admin)
   const req = {
     purpose: program.purpose || defaults.purpose,
-    eligibility_requirements: program.eligibility_requirements?.length ? program.eligibility_requirements : defaults.eligibility_requirements,
-    allowable_costs: program.allowable_costs?.length ? program.allowable_costs : defaults.allowable_costs,
-    compliance_requirements: program.compliance_requirements?.length ? program.compliance_requirements : defaults.compliance_requirements,
-    reporting_requirements: program.reporting_requirements?.length ? program.reporting_requirements : defaults.reporting_requirements,
+    eligibility_requirements: parseTextOrArray(program.eligibility_criteria_text, program.eligibility_requirements, defaults.eligibility_requirements),
+    allowable_costs: parseTextOrArray(program.allowable_costs_text, program.allowable_costs, defaults.allowable_costs),
+    compliance_requirements: parseTextOrArray(program.compliance_requirements_text, program.compliance_requirements, defaults.compliance_requirements),
+    reporting_requirements: parseTextOrArray(program.reporting_requirements_text, program.reporting_requirements, defaults.reporting_requirements),
     performance_period: program.performance_period || defaults.performance_period,
     match_requirement: program.match_requirement || defaults.match_requirement,
   };
