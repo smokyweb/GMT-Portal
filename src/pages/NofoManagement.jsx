@@ -79,7 +79,9 @@ setLoading(false);
   };
 
   const openCreate = () => {
-    setForm(emptyNofo);
+    // Pre-fill scope_states with the state admin's assigned state
+    const defaultState = user?.scope_state && ['admin','reviewer'].includes(user?.role) ? [user.scope_state] : [];
+    setForm({ ...emptyNofo, scope_states: defaultState });
     setEditing(null);
     setOpen(true);
   };
