@@ -3,7 +3,8 @@ import { toast } from '@/components/ui/toast-simple';
 import { useSearchParams } from 'react-router-dom';
 import { getFYDateRange } from '../hooks/useDateRangeFilter';
 import { base44 } from '@/api/base44Client';
-import { Eye, Search, FileText, Lock } from 'lucide-react';
+import { Eye, Search, FileText, Lock, Pencil, Trash2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -28,6 +29,7 @@ import { formatCurrency, formatDateShort, logAudit, createNotification } from '.
 import moment from 'moment';
 
 export default function ApplicationReviewQueue() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [apps, setApps] = useState([]);
   const [budgets, setBudgets] = useState([]);
@@ -99,6 +101,17 @@ export default function ApplicationReviewQueue() {
     if (reviewId) {
       const target = visibleApps.find(a => a.id === reviewId);
       if (target) openReview(target);
+    }
+  };
+
+  const handleDeleteApp = async (app) => {
+    if (!window.confirm(`Delete "${app.project_title || app.application_number || 'this application'}"? This cannot be undone.`)) return;
+    try {
+      await base44.entities.Application.delete(app.id);
+      setApps(prev => prev.filter(a => a.id !== app.id));
+      toast('Application deleted.', 'success');
+    } catch (err) {
+      toast('Failed to delete: ' + (err?.message || 'Try again.'), 'error');
     }
   };
 
@@ -435,6 +448,16 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                       <Button variant="ghost" size="sm" onClick={() => openReview(app)}>
                         <Eye className="h-3.5 w-3.5 mr-1" /> Review
                       </Button>
+                    )}
+                    {user && ['admin','reviewer','isc_admin'].includes(user.role) && !app.submitted_at && (
+                      <>
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/new-application?id=${app.id}`)} title="Edit draft">
+                          <Pencil className="h-3.5 w-3.5 mr-1" /> Edit
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteApp(app)} title="Delete draft" className="text-red-500 hover:text-red-700 hover:bg-red-50">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </>
                     )}
                   </td>
                 </tr>
