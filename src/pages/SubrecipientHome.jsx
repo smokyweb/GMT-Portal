@@ -31,11 +31,9 @@ function FlagActionRow({ flag, user, onResolved }) {
     if (!responseText.trim()) return;
     setSubmitting(true);
     try {
+      // Use only valid DB columns for ComplianceFlag
       await base44.entities.ComplianceFlag.update(flag.id, {
-        subrecipient_response: responseText.trim(),
-        response_submitted_at: new Date().toISOString(),
-        response_submitted_by: user?.email,
-        status: 'PendingReview',
+        resolution_notes: `Response from ${user?.email || 'subrecipient'} on ${new Date().toLocaleDateString()}: ${responseText.trim()}`,
       });
       // Notify state admin
       const allUsers = await base44.entities.User.list('-created_date', 100).catch(() => []);
@@ -1372,12 +1370,15 @@ export default function SubrecipientHome() {
               <div className="divide-y divide-red-100">
                 {overdueMilestones.map(m => (
                   <div key={m.id} className="flex items-center justify-between p-4">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-red-800">{m.title}</p>
                       <p className="text-xs text-red-600">{m.application_number} · Was due {formatDateShort(m.due_date)}</p>
                       {m.notes && <p className="text-xs text-red-500 mt-0.5">{m.notes}</p>}
                     </div>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{m.milestone_type?.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-medium">{m.milestone_type?.replace(/([A-Z])/g, ' $1').trim()}</span>
+                      <Link to="/milestones"><Button size="sm" variant="outline" className="h-7 text-xs border-red-200 text-red-700 hover:bg-red-50">Update →</Button></Link>
+                    </div>
                   </div>
                 ))}
               </div>

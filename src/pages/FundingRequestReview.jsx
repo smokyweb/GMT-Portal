@@ -536,6 +536,23 @@ export default function FundingRequestReview() {
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{selected.organization_name}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Type</Label><p className="font-medium">{selected.request_type}</p></div>
+                <div className="col-span-2 flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+                  <div>
+                    <p className="text-sm font-medium">Advance Payment</p>
+                    <p className="text-xs text-muted-foreground">Allow subrecipient to receive payment before expenditure</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={`text-xs font-medium ${selected.is_advance ? 'text-green-600' : 'text-muted-foreground'}`}>{selected.is_advance ? 'Enabled' : 'Disabled'}</span>
+                    <Button size="sm" variant="outline" onClick={async () => {
+                      await base44.entities.FundingRequest.update(selected.id, { is_advance: !selected.is_advance });
+                      setSelected(s => ({ ...s, is_advance: !s.is_advance }));
+                      await refreshRequests();
+                      toast(`Advance payment ${!selected.is_advance ? 'enabled' : 'disabled'}.`, 'success');
+                    }} className="h-7 text-xs">
+                      {selected.is_advance ? 'Disable' : 'Enable'}
+                    </Button>
+                  </div>
+                </div>
                 <div><Label className="text-muted-foreground text-xs">Amount Requested</Label><p className="font-bold text-lg">{formatCurrency(selected.amount_requested)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(selected.period_start)} - {formatDateShort(selected.period_end)}</p></div>
                 {selected.payment_status && (

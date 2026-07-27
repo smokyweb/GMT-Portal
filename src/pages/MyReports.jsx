@@ -126,6 +126,19 @@ export default function MyReports() {
         'report_submitted', 'ProgressReport', selected.id, '/reports');
     }
     await logAudit(base44, user, 'Submitted', 'ProgressReport', selected.id, `Submitted ${selected.report_type} report for ${selected.application_number}`);
+
+    // Resolve any open OverdueReport compliance flags for this application
+    try {
+      const flags = await base44.entities.ComplianceFlag.filter({ application_id: selected.application_id, flag_type: 'OverdueReport', is_resolved: false }).catch(() => []);
+      for (const flag of (flags || [])) {
+        await base44.entities.ComplianceFlag.update(flag.id, {
+          is_resolved: true,
+          resolved_by: user.email,
+          resolved_at: new Date().toISOString(),
+        }).catch(() => {});
+      }
+    } catch (e) { console.warn('Flag resolve error:', e); }
+
     setSubmitting(false);
     setOpen(false);
     loadData();
