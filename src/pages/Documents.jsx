@@ -71,6 +71,7 @@ export default function Documents() {
   const [apps, setApps] = useState([]);
   const [orgs, setOrgs] = useState([]);
   const [appSearch, setAppSearch] = useState('');
+  const [uploadOrgFilter, setUploadOrgFilter] = useState('');
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [customDocTypes, setCustomDocTypes] = useState([]);
@@ -689,24 +690,40 @@ export default function Documents() {
               </>
             )}
 
-            {/* Searchable Application */}
-            <div>
-              <Label>Linked Application</Label>
-              <Select
-                value={uploadForm.application_id || '__none__'}
-                onValueChange={v => setUploadForm(f => ({ ...f, application_id: v === '__none__' ? '' : v }))}
-              >
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Select application (optional)" /></SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
-                  <SelectItem value="__none__">None</SelectItem>
-                  {apps.sort((a,b) => (a.application_number||'').localeCompare(b.application_number||'')).map(a => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.application_number || 'Draft'} — {a.project_title || a.organization_name || 'Untitled'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
+            {/* Organization filter + Application dropdown */}
+            <div className="space-y-2">
+              <div>
+                <Label>Filter by Organization</Label>
+                <Select value={uploadOrgFilter || '__all__'} onValueChange={v => { setUploadOrgFilter(v === '__all__' ? '' : v); setUploadForm(f => ({ ...f, application_id: '' })); }}>
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="All Organizations" /></SelectTrigger>
+                  <SelectContent className="max-h-48 overflow-y-auto">
+                    <SelectItem value="__all__">All Organizations</SelectItem>
+                    {orgs.sort((a,b) => (a.name||'').localeCompare(b.name||'')).map(o => (
+                      <SelectItem key={o.id} value={o.id}>{o.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Linked Application</Label>
+                <Select
+                  value={uploadForm.application_id || '__none__'}
+                  onValueChange={v => setUploadForm(f => ({ ...f, application_id: v === '__none__' ? '' : v }))}
+                >
+                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select application (optional)" /></SelectTrigger>
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    <SelectItem value="__none__">None</SelectItem>
+                    {apps
+                      .filter(a => !uploadOrgFilter || a.organization_id === uploadOrgFilter)
+                      .sort((a,b) => (a.application_number||'').localeCompare(b.application_number||''))
+                      .map(a => (
+                        <SelectItem key={a.id} value={a.id}>
+                          {a.application_number || 'Draft'} — {a.project_title || a.organization_name || 'Untitled'}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div>
