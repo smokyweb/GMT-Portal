@@ -80,6 +80,7 @@ const EMPTY_LINE_ITEM = {
 };
 
 export default function MyFundingRequests() {
+  const [advanceEnabled, setAdvanceEnabled] = useState(true);
   const [requests, setRequests] = useState([]);
   const [apps, setApps] = useState([]);
   const [user, setUser] = useState(null);
@@ -103,7 +104,13 @@ export default function MyFundingRequests() {
   const [attachDocType, setAttachDocType] = useState('Other');
   const fileInputRef = useRef(null);
 
-  useEffect(() => { loadData(); }, []);
+  useEffect(() => {
+    loadData();
+    // Load system settings to check if advance payment is enabled
+    const token = localStorage.getItem('gmt_token');
+    fetch('/api/settings', { headers: token ? { Authorization: `Bearer ${token}` } : {} })
+      .then(r => r.json()).then(s => { setAdvanceEnabled(s.advance_payment_enabled !== 'false'); }).catch(() => {});
+  }, []);
 
   const loadData = async () => {
     const u = await base44.auth.me();
@@ -307,7 +314,7 @@ export default function MyFundingRequests() {
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
             <SelectItem value="Reimbursement">Reimbursement</SelectItem>
-            <SelectItem value="Advance">Advance</SelectItem>
+            {advanceEnabled && <SelectItem value="Advance">Advance</SelectItem>}
             <SelectItem value="Modification">Modification</SelectItem>
           </SelectContent>
         </Select>
@@ -435,7 +442,7 @@ export default function MyFundingRequests() {
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Reimbursement">Reimbursement</SelectItem>
-                    <SelectItem value="Advance">Advance</SelectItem>
+                    {advanceEnabled && <SelectItem value="Advance">Advance</SelectItem>}
                     <SelectItem value="Modification">Modification</SelectItem>
                   </SelectContent>
                 </Select>

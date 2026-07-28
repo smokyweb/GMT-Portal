@@ -97,8 +97,32 @@ export default function AdminHub() {
    const [user, setUser] = useState(null);
    const [counts, setCounts] = useState({});
    const [loadingCounts, setLoadingCounts] = useState(true);
+   const [settings, setSettings] = useState({});
+   const [savingSettings, setSavingSettings] = useState(false);
+
+   const loadSettings = async () => {
+     try {
+       const token = localStorage.getItem('gmt_token');
+       const res = await fetch('/api/settings', { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+       if (res.ok) setSettings(await res.json());
+     } catch (e) {}
+   };
+
+   const updateSetting = async (key, value) => {
+     setSavingSettings(true);
+     try {
+       const token = localStorage.getItem('gmt_token');
+       await fetch(`/api/settings/${key}`, {
+         method: 'PUT',
+         headers: { 'Content-Type': 'application/json', ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+         body: JSON.stringify({ value }),
+       });
+       setSettings(prev => ({ ...prev, [key]: value }));
+     } catch (e) {} finally { setSavingSettings(false); }
+   };
 
    useEffect(() => {
+     loadSettings();
      base44.auth.me().then(async (u) => {
        setUser(u);
        try {
@@ -185,7 +209,31 @@ export default function AdminHub() {
         ))}
       </div>
 
-
+      {/* System Settings */}
+      {user && ['admin','isc_admin'].includes(user.role) && (
+        <div className="bg-card border rounded-xl p-6 space-y-4">
+          <h2 className="font-semibold flex items-center gap-2"><Settings className="h-4 w-4" /> System Settings</h2>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border">
+              <div>
+                <p className="text-sm font-medium">Advance Payment Requests</p>
+                <p className="text-xs text-muted-foreground">Allow subrecipients to submit Advance payment type requests</p>
+              </div>
+              <button
+                onClick={() => updateSetting('advance_payment_enabled', settings.advance_payment_enabled === 'true' ? 'false' : 'true')}
+                disabled={savingSettings}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
+                  settings.advance_payment_enabled === 'true' ? 'bg-green-500' : 'bg-gray-300'
+                }`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  settings.advance_payment_enabled === 'true' ? 'translate-x-6' : 'translate-x-1'
+                }`} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
