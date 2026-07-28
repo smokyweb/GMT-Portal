@@ -247,6 +247,10 @@ setLoading(false);
         actions.push({ label: 'Approve & Publish', status: 'Published' });
         actions.push({ label: 'Request Changes', status: 'RevisionRequested' });
         break;
+      case 'RevisionRequested':
+        actions.push({ label: 'Submit for Re-Review', status: 'UnderReview' });
+        actions.push({ label: 'Approve & Publish', status: 'Published' });
+        break;
       case 'Published': actions.push({ label: 'Close', status: 'Closed' }); break;
       case 'Closed': actions.push({ label: 'Archive', status: 'Archived' }); break;
     }
