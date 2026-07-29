@@ -761,11 +761,7 @@ export default function SubrecipientHome() {
           <h1 className="text-2xl font-bold tracking-tight">My Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Welcome back, {user?.full_name?.split(' ')[0] || 'there'}</p>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <Link to="/my-funding-requests?new=1">
-            <Button size="sm" variant="outline"><DollarSign className="h-4 w-4 mr-1.5" /> Funding Request</Button>
-          </Link>
-        </div>
+
       </div>
 
       {/* Compliance Alert */}
