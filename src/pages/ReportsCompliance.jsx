@@ -170,12 +170,7 @@ export default function ReportsCompliance() {
   return (
     <div className="space-y-6">
       <div>
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold tracking-tight">Reports & Compliance</h1>
-          <a href="/report-builder" className="inline-flex items-center gap-1.5 text-sm font-medium px-3 py-1.5 rounded-lg border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition">
-            📊 Open Report Builder
-          </a>
-        </div>
+        <h1 className="text-2xl font-bold tracking-tight">Reports & Compliance</h1>
         <p className="text-muted-foreground text-sm mt-1">
           Monitor and review report schedules across all grants
           {submittedCount > 0 && (
