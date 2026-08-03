@@ -11,7 +11,8 @@ export const DATA_SOURCES = {
   application_budgets: {
     label: 'Application Budget Lines',
     group: 'APPLICATIONS',
-    entities: ['ApplicationBudget'],
+    entities: ['ApplicationBudget', 'Application'],
+    join: { ApplicationBudget: { application_id: 'Application' } },
     defaultFilters: [],
   },
   application_reviews: {
@@ -335,7 +336,8 @@ export const FIELD_GROUPS = {
     { key: 'created_date', label: 'Review Date', type: 'date' },
   ],
   ApplicationBudget: [
-    { key: 'application_id', label: 'Application ID', type: 'text' },
+    { key: 'application_number', label: 'Application #', type: 'text', calc: (row) => row.application_application_number || row.application_id },
+    { key: 'application_organization_name', label: 'Organization', type: 'text' },
     { key: 'budget_category', label: 'Category', type: 'dropdown', options: ['Personnel','Equipment','Training','Travel','Contractual','Planning','Other'] },
     { key: 'line_description', label: 'Description', type: 'text' },
     { key: 'amount_requested', label: 'Amount Requested', type: 'currency' },
@@ -343,7 +345,7 @@ export const FIELD_GROUPS = {
     { key: 'is_allowable', label: 'Is Allowable', type: 'boolean' },
   ],
   FundingRequestLineItem: [
-    { key: 'funding_request_id', label: 'Funding Request ID', type: 'text' },
+    { key: 'fund_request_id', label: 'Request #', type: 'text' },
     { key: 'budget_category', label: 'Category', type: 'dropdown', options: ['Personnel','Equipment','Training','Travel','Contractual','Planning','Other'] },
     { key: 'description', label: 'Description', type: 'text' },
     { key: 'amount', label: 'Amount', type: 'currency' },
