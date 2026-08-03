@@ -101,13 +101,15 @@ export default function ReportBuilder() {
     }
     setSaveLoading(true);
     try {
-      // Serialize arrays to JSON strings for TEXT columns
+      // Build payload with only valid DB columns (avoid created_by type mismatch, etc.)
       const payload = {
-        ...config,
         report_name: name,
-        selected_fields: Array.isArray(config.selected_fields) ? JSON.stringify(config.selected_fields) : config.selected_fields,
-        sort_rules: Array.isArray(config.sort_rules) ? JSON.stringify(config.sort_rules) : config.sort_rules,
-        group_by: Array.isArray(config.group_by) ? JSON.stringify(config.group_by) : config.group_by,
+        data_source: config.data_source || '',
+        selected_fields: config.selected_fields || [],
+        filters: config.filters || [],
+        sort_rules: config.sort_rules || [],
+        group_by: config.group_by || [],
+        is_public: false,
       };
       let result;
       if (savedId && !saveAs) {
@@ -119,7 +121,7 @@ export default function ReportBuilder() {
       setDirty(false);
     } catch (err) {
       console.error('Failed to save report:', err);
-      toast('Failed to save report: ' + (err.message || 'Unknown error', 'error'));
+      toast('Failed to save report: ' + (err.message || 'Unknown error'), 'error');
     } finally {
       setSaveLoading(false);
     }
