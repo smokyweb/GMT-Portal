@@ -273,7 +273,7 @@ export default function Analytics() {
                     <Cell key={entry.program} fill={PROGRAM_COLORS[entry.program] || '#64748b'} />
                   ))}
                 </Bar>
-                <Bar dataKey="requested" name="Requested" fill="#e2e8f0" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="requested" name="Requested" fill="#94a3b8" radius={[3, 3, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           )}
