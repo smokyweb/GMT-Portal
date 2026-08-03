@@ -361,6 +361,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
             <SelectItem value="RevisionRequested">Revision Requested</SelectItem>
             <SelectItem value="Approved">Approved</SelectItem>
             <SelectItem value="Denied">Denied</SelectItem>
+                        <SelectItem value="Closed">Closed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={filterProgram} onValueChange={setFilterProgram}>
