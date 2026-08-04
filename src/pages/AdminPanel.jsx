@@ -61,13 +61,22 @@ export default function AdminPanel() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const [userList, orgList, granteeList] = await Promise.all([
+      const [userList, allOrgList, granteeList] = await Promise.all([
         base44.entities.User.list('-created_date', 200),
         base44.entities.Organization.filter({ is_active: true }),
         base44.entities.Grantee.list('-created_date', 200),
       ]);
-      setUsers(userList);
-      setOrganizations(orgList);
+      // Scope orgs and users to state admin's state
+      const isFederal = ['isc_admin','federal_admin','federal_officer'].includes(u.role);
+      const scopedOrgs = (!isFederal && u.scope_state)
+        ? allOrgList.filter(o => o.state === u.scope_state)
+        : allOrgList;
+      const scopedOrgIds = new Set(scopedOrgs.map(o => o.id));
+      const scopedUsers = (!isFederal && u.scope_state)
+        ? userList.filter(usr => !usr.organization_id || scopedOrgIds.has(usr.organization_id) || usr.role === 'admin' || usr.role === 'reviewer')
+        : userList;
+      setUsers(scopedUsers);
+      setOrganizations(scopedOrgs);
       setGrantees(granteeList);
       setLoading(false);
     });
