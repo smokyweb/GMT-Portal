@@ -174,7 +174,7 @@ export const FIELD_GROUPS = {
   ],
   Organization: [
     { key: 'org_name', label: 'Organization Name', type: 'text', sourceKey: 'name' },
-    { key: 'org_type', label: 'Organization Type', type: 'dropdown', sourceKey: 'type', options: ['County','Municipality','Nonprofit','Tribe'] },
+    { key: 'org_type', label: 'Organization Type', type: 'dropdown', sourceKey: 'type', options: ['County','Municipality','Nonprofit','Tribe','State Agency','Federal Agency','University','Other'] },
     { key: 'org_county', label: 'County', type: 'text', sourceKey: 'county' },
     { key: 'org_city', label: 'City', type: 'text', sourceKey: 'city' },
     { key: 'org_state', label: 'State', type: 'text', sourceKey: 'state' },
@@ -252,7 +252,7 @@ export const FIELD_GROUPS = {
   ],
   Organization: [
     { key: 'name', label: 'Organization Name', type: 'text' },
-    { key: 'type', label: 'Type', type: 'dropdown', options: ['County','Municipality','Nonprofit','Tribe'] },
+    { key: 'type', label: 'Type', type: 'dropdown', options: ['County','Municipality','Nonprofit','Tribe','State Agency','Federal Agency','University','Other'] },
     { key: 'county', label: 'County', type: 'text' },
     { key: 'city', label: 'City', type: 'text' },
     { key: 'state', label: 'State', type: 'text' },

@@ -114,7 +114,7 @@ export default function MyOrganization() {
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {['County', 'Municipality', 'Nonprofit', 'Tribe'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

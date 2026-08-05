@@ -14,7 +14,7 @@ import StatusBadge from '../components/StatusBadge';
 import RequiredTemplatesPanel from '@/components/RequiredTemplatesPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 
-const ORG_TYPES = ['County', 'Municipality', 'Nonprofit', 'Tribe'];
+const ORG_TYPES = ['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'];
 
 const emptyNofo = {
   title: '', grant_number: '', summary: '', program_id: '', program_name: '', program_code: '',

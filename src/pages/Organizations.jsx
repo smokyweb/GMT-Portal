@@ -153,7 +153,7 @@ export default function Organizations() {
                   <Select value={editOrg.type} onValueChange={v => setEditOrg(o => ({ ...o, type: v }))}>
                     <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      {['County', 'Municipality', 'Nonprofit', 'Tribe'].map(t => (
+                      {['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'].map(t => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
                       ))}
                     </SelectContent>
