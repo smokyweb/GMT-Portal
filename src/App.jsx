@@ -55,6 +55,15 @@ import TemplateManager from './pages/TemplateManager';
 import PortfolioSummary from './pages/PortfolioSummary';
 import CloseoutChecklist from './pages/CloseoutChecklist';
 
+// Role guard — redirects non-admins to home
+const RequireAdmin = ({ children }) => {
+  const { user } = useAuth();
+  const ADMIN_ROLES = ['admin', 'reviewer', 'isc_admin', 'federal_admin', 'federal_officer'];
+  if (!user) return null;
+  if (!ADMIN_ROLES.includes(user.role)) return <Navigate to="/" replace />;
+  return children;
+};
+
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
@@ -83,16 +92,16 @@ const AuthenticatedApp = () => {
     <Routes>
       <Route element={<Layout />}>
         <Route path="/" element={<Home />} />
-        <Route path="/nofos" element={<NofoManagement />} />
-        <Route path="/applications" element={<ApplicationReviewQueue />} />
-        <Route path="/funding-requests" element={<FundingRequestReview />} />
-        <Route path="/reports-compliance" element={<ReportsCompliance />} />
-        <Route path="/compliance-flags" element={<ComplianceFlags />} />
-        <Route path="/grant-programs" element={<GrantPrograms />} />
-        <Route path="/organizations" element={<Organizations />} />
-        <Route path="/organizations/:id" element={<OrganizationProfile />} />
-        <Route path="/email-settings" element={<EmailSettings />} />
-          <Route path="/audit-log" element={<AuditLogPage />} />
+        <Route path="/nofos" element={<RequireAdmin><NofoManagement /></RequireAdmin>} />
+        <Route path="/applications" element={<RequireAdmin><ApplicationReviewQueue /></RequireAdmin>} />
+        <Route path="/funding-requests" element={<RequireAdmin><FundingRequestReview /></RequireAdmin>} />
+        <Route path="/reports-compliance" element={<RequireAdmin><ReportsCompliance /></RequireAdmin>} />
+        <Route path="/compliance-flags" element={<RequireAdmin><ComplianceFlags /></RequireAdmin>} />
+        <Route path="/grant-programs" element={<RequireAdmin><GrantPrograms /></RequireAdmin>} />
+        <Route path="/organizations" element={<RequireAdmin><Organizations /></RequireAdmin>} />
+        <Route path="/organizations/:id" element={<RequireAdmin><OrganizationProfile /></RequireAdmin>} />
+        <Route path="/email-settings" element={<RequireAdmin><EmailSettings /></RequireAdmin>} />
+        <Route path="/audit-log" element={<RequireAdmin><AuditLogPage /></RequireAdmin>} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/documents" element={<Documents />} />
         <Route path="/grant-timeline" element={<GrantTimeline />} />
@@ -101,13 +110,13 @@ const AuthenticatedApp = () => {
         <Route path="/report-builder" element={<ReportBuilder />} />
         <Route path="/messages" element={<Messages />} />
         <Route path="/milestones" element={<MilestoneTracker />} />
-        <Route path="/workflow" element={<WorkflowRules />} />
+        <Route path="/workflow" element={<RequireAdmin><WorkflowRules /></RequireAdmin>} />
         <Route path="/financials" element={<FinancialOverview />} />
           <Route path="/financial-reporting" element={<Navigate to="/financials" replace />} />
-        <Route path="/document-templates" element={<DocumentTemplates />} />
-        <Route path="/admin" element={<AdminPanel />} />
-        <Route path="/admin-applications" element={<AdminApplicationsDocReview />} />
-        <Route path="/isc" element={<ISCDashboard />} />
+        <Route path="/document-templates" element={<RequireAdmin><DocumentTemplates /></RequireAdmin>} />
+        <Route path="/admin" element={<RequireAdmin><AdminPanel /></RequireAdmin>} />
+        <Route path="/admin-applications" element={<RequireAdmin><AdminApplicationsDocReview /></RequireAdmin>} />
+        <Route path="/isc" element={<RequireAdmin><ISCDashboard /></RequireAdmin>} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/browse-nofos" element={<BrowseNofos />} />
         <Route path="/new-application" element={<NewApplication />} />
@@ -118,10 +127,10 @@ const AuthenticatedApp = () => {
         <Route path="/subrecipient-portal" element={<SubrecipientHome />} />
         <Route path="/subrecipient-dashboard" element={<SubrecipientHome />} />
         <Route path="/documents-inbox" element={<SubrecipientDocumentsInbox />} />
-        <Route path="/admin-hub" element={<AdminHub />} />
+        <Route path="/admin-hub" element={<RequireAdmin><AdminHub /></RequireAdmin>} />
         <Route path="/budget-amendments" element={<BudgetAmendmentsDashboard />} />
         <Route path="/credits" element={<Credits />} />
-        <Route path="/admin-health" element={<SystemHealthDashboard />} />
+        <Route path="/admin-health" element={<RequireAdmin><SystemHealthDashboard /></RequireAdmin>} />
 
         <Route path="/notification-rules" element={<NotificationRules />} />
         <Route path="/org-deep-dive" element={<OrgDeepDive />} />
