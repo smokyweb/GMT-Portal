@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -148,7 +149,7 @@ export default function DocumentTemplates() {
   };
 
   const handleDelete = async (t) => {
-    if (!window.confirm(`Delete template "${t.name}"?`)) return;
+    if (!await confirmAction(`Delete template "${t.name}"?`)) return;
     await base44.entities.DocumentTemplate.delete(t.id);
     setTemplates(prev => prev.filter(x => x.id !== t.id));
   };

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { useSearchParams } from 'react-router-dom';
 import { getFYDateRange } from '../hooks/useDateRangeFilter';
@@ -105,7 +106,7 @@ export default function ApplicationReviewQueue() {
   };
 
   const handleDeleteApp = async (app) => {
-    if (!window.confirm(`Delete "${app.project_title || app.application_number || 'this application'}"? This cannot be undone.`)) return;
+    if (!await confirmAction(`Delete "${app.project_title || app.application_number || 'this application'}"? This cannot be undone.`)) return;
     try {
       await base44.entities.Application.delete(app.id);
       setApps(prev => prev.filter(a => a.id !== app.id));
@@ -139,7 +140,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
   };
 
   const handleClose = async () => {
-    if (!window.confirm(`Close application ${selected.application_number}? This will lock it as read-only.`)) return;
+    if (!await confirmAction(`Close application ${selected.application_number}? This will lock it as read-only.`)) return;
     await base44.entities.Application.update(selected.id, {
       status: 'Closed',
       closed_at: new Date().toISOString(),
@@ -165,7 +166,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
       }
     }
     // Confirmation dialog
-    const confirmed = window.confirm(
+    const confirmed = await confirmAction(
       `Approve application ${selected.application_number}?\n\nScore: ${scoreNum}/100\nAward Amount: $${Number(awardAmount) || selected.requested_amount}\n\nThis action will set the application status to Approved and cannot be undone.`
     );
     if (!confirmed) return;

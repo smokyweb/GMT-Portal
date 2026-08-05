@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import {
@@ -215,7 +216,7 @@ export default function WorkflowRules() {
   };
 
   const deleteRule = async (rule) => {
-    if (!window.confirm(`Delete rule "${rule.name}"?`)) return;
+    if (!await confirmAction(`Delete rule "${rule.name}"?`)) return;
     await base44.entities.WorkflowRule.delete(rule.id);
     setCustomRules(prev => prev.filter(r => r.id !== rule.id));
   };

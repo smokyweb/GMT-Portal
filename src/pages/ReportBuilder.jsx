@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -60,9 +61,9 @@ export default function ReportBuilder() {
     setDirty(true);
   };
 
-  const changeDataSource = (ds) => {
+  const changeDataSource = async (ds) => {
     if (config.selected_fields.length > 0) {
-      if (!window.confirm('Changing the data source will clear your current field selections. Continue?')) return;
+      if (!await confirmAction('Changing the data source will clear your current field selections. Continue?')) return;
     }
     const src = sources[ds];
     update({ data_source: ds, selected_fields: [], filters: src?.defaultFilters || [], sort_rules: [] });

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import {
@@ -233,7 +234,7 @@ export default function Documents() {
   };
 
   const handleDelete = async (doc) => {
-    if (!window.confirm(`Delete "${doc.name}"?`)) return;
+    if (!await confirmAction(`Delete "${doc.name}"?`)) return;
     await base44.entities.Document.delete(doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
   };

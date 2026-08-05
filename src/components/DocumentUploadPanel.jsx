@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
 import { Paperclip, Loader2, X, ExternalLink, Upload } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -104,7 +105,7 @@ export default function DocumentUploadPanel({
   };
 
   const handleDelete = async (doc) => {
-    if (!window.confirm(`Remove "${doc.name}"?`)) return;
+    if (!await confirmAction(`Remove "${doc.name}"?`)) return;
     await base44.entities.Document.delete(doc.id);
     setDocs(prev => prev.filter(d => d.id !== doc.id));
   };

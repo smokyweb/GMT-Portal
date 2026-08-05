@@ -218,11 +218,9 @@ export default function NewApplication() {
     setStep(s => s + 1);
   };
 
-  const handleCancel = () => {
-    if (window.confirm('Cancel this application? Any unsaved changes will be lost.')) {
-      navigate(-1);
-    }
-  };
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
+  const handleCancel = () => setShowCancelConfirm(true);
 
   const submitApplication = async () => {
     setConfirmSubmit(false);
@@ -598,9 +596,17 @@ export default function NewApplication() {
           <Button variant="outline" onClick={() => setStep(s => s - 1)} disabled={step === 0}>
             <ChevronLeft className="h-4 w-4 mr-1" /> Previous
           </Button>
-          <Button variant="outline" onClick={handleCancel} className="text-red-600 border-red-200 hover:bg-red-50">
-            Cancel
-          </Button>
+          {showCancelConfirm ? (
+            <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-1.5">
+              <span className="text-xs text-red-700">Discard changes?</span>
+              <button onClick={() => navigate(-1)} className="text-xs font-medium text-red-700 hover:text-red-900 underline">Yes, cancel</button>
+              <button onClick={() => setShowCancelConfirm(false)} className="text-xs text-muted-foreground hover:text-foreground">No</button>
+            </div>
+          ) : (
+            <Button variant="outline" onClick={handleCancel} className="text-red-600 border-red-200 hover:bg-red-50">
+              Cancel
+            </Button>
+          )}
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={saveDraft} disabled={saving}>

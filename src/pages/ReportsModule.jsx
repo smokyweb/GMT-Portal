@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Plus, Play, Pencil, Trash2, Copy, BarChart3 } from 'lucide-react';
@@ -53,7 +54,7 @@ export default function ReportsModule() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Delete this saved report?')) return;
+    if (!await confirmAction('Delete this saved report?')) return;
     await base44.entities.SavedReport.delete(id);
     setSavedReports(prev => prev.filter(r => r.id !== id));
   };

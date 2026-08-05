@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -64,7 +65,7 @@ export default function TemplateManager() {
   };
 
   const handleRetire = async (id) => {
-    if (window.confirm('Retire this template?')) {
+    if (await confirmAction('Retire this template?')) {
       await base44.entities.DocumentTemplate.update(id, { is_active: false });
       setTemplates(prev => prev.filter(t => t.id !== id));
     }

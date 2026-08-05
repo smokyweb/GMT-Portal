@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -173,7 +174,7 @@ export default function NotificationRules() {
   };
 
   const handleDelete = async (rule) => {
-    if (!window.confirm(`Delete rule "${rule.name}"?`)) return;
+    if (!await confirmAction(`Delete rule "${rule.name}"?`)) return;
     try {
       if (!rule.id.startsWith('default-')) {
         await base44.entities.WorkflowRule.delete(rule.id);

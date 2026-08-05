@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
 import { Plus, Eye, Wand2, Loader2, Link, Pencil, Trash2 } from 'lucide-react';
@@ -147,7 +148,7 @@ export default function GrantPrograms() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('Delete this program? It will be marked inactive and hidden from all lists.')) {
+    if (await confirmAction('Delete this program? It will be marked inactive and hidden from all lists.')) {
       try {
         await base44.entities.GrantProgram.delete(id);
       } catch (e) {

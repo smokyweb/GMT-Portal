@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -244,7 +245,7 @@ export default function MyApplications() {
   }, []);
 
   const handleDelete = async (app) => {
-    if (!window.confirm(`Delete draft "${app.project_title || app.application_number || 'Untitled'}"? This cannot be undone.`)) return;
+    if (!await confirmAction(`Delete draft "${app.project_title || app.application_number || 'Untitled'}"? This cannot be undone.`)) return;
     await base44.entities.Application.delete(app.id);
     setApps(prev => prev.filter(a => a.id !== app.id));
   };
