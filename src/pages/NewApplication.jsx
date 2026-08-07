@@ -69,7 +69,9 @@ export default function NewApplication() {
       base44.entities.Organization.list('-name', 200).catch(() => []),
       base44.entities.Nofo.list('-created_date', 100).catch(() => []),
     ]);
-    setAllOrgs(allOrgsList || []);
+    // State admins only see orgs in their scope_state; federal/admins see all
+    const visibleOrgs = (allOrgsList || []).filter(o => !u?.scope_state || o.state === u.scope_state);
+    setAllOrgs(visibleOrgs);
     setAllNofos((allNofosList || []).filter(n => n.status === 'Published' || n.status === 'Active' || !n.status));
     if (u.organization_id) {
       const myOrg = (allOrgsList || []).find(o => o.id === u.organization_id);
