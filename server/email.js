@@ -16,6 +16,7 @@ export async function sendWelcomeEmail(to, name) {
   try {
     await transporter.sendMail({
       from: FROM,
+      replyTo: 'kevin@knoxwebhq.com',
       to,
       subject: 'Welcome to the GMT Portal',
       html: `
@@ -37,6 +38,7 @@ export async function sendPasswordResetEmail(to, name, resetToken) {
   try {
     await transporter.sendMail({
       from: FROM,
+      replyTo: 'kevin@knoxwebhq.com',
       to,
       subject: 'GMT Portal — Password Reset',
       html: `
@@ -59,6 +61,7 @@ export async function sendInviteEmail(to, name, tempPassword) {
   try {
     await transporter.sendMail({
       from: FROM,
+      replyTo: 'kevin@knoxwebhq.com',
       to,
       subject: 'You have been invited to the GMT Portal',
       html: `
@@ -76,4 +79,25 @@ export async function sendInviteEmail(to, name, tempPassword) {
   } catch (err) {
     console.error('Invite email failed:', err.message);
   }
+}
+
+export async function sendAccountAccessEmail(user, token, purpose) {
+  const escape = value => String(value || '').replace(/[&<>"']/g, char =>
+    ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
+  const link = 'https://gmt.bluesapps.com/reset-password?token=' + encodeURIComponent(token);
+  const invitation = purpose === 'invite';
+  const result = await transporter.sendMail({
+    from: FROM, to: user.email,
+    subject: invitation ? 'GMT Portal invitation — set your password' : 'GMT Portal — reset your password',
+    text: (invitation ? 'You have been invited to GMT Portal. ' : 'An administrator requested a password reset. ') +
+      'Set your password using this one-time link within 24 hours: ' + link +
+      '\nIf this request was unexpected, contact your administrator.',
+    html: '<div style="font-family:sans-serif;max-width:600px"><h2>' +
+      (invitation ? 'Welcome to GMT Portal' : 'Reset your GMT Portal password') +
+      '</h2><p>Hello ' + escape(user.full_name || user.email) + ',</p><p><a href="' + link +
+      '">Set your password</a></p><p>This one-time link expires in 24 hours.</p>' +
+      '<p>If this request was unexpected, contact your administrator.</p></div>',
+  });
+  if (!result.accepted?.length || result.rejected?.length) throw new Error('Account email was not accepted');
+  return {accepted:true};
 }

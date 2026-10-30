@@ -1,0 +1,13 @@
+export function ganPdfData(code='EMPG',projectCount=1) {
+  const programInfo={EMPG:['Emergency Management Performance Grant','97.042','Emergency Management Performance Grants','EMK-2026-EP-05006'],NSGP:['Non-Profit Security Grant Program - States','97.008','Non-Profit Security Program','EMW-2026-UA-05018'],SHSP:['State Homeland Security Program','97.067','Homeland Security Grant Program','EMW-2026-SS-05042'],SLCGP:['State and Local Cybersecurity Grant Program','97.137','State and Local Cybersecurity Grant Program','EMW-2026-CY-00011']}[code];
+  return {application:{id:'qa-app',application_number:'APP-2026-00101',status:'Approved',project_title:'Emergency communications readiness',project_narrative:'Replace aging radios and train emergency personnel.',requested_amount:500},
+    award:{id:'qa-award',fields:{federal_award_number:programInfo[3],subaward_number:'NE-'+code+'-2026-001',state_grant_number:'NE-2026',cfda_number:programInfo[1],federal_award_date:'2026-08-01',award_start:'2026-10-01',award_close:'2027-09-30',awarded_amount:500,match_amount:500,award_status:'Pending'}},
+    nofo:{id:'qa-nofo',title:'FY2026 '+code,program_name:programInfo[0],grant_year:2026,cfda_title:programInfo[2],total_federal_award:1000000,statutory_authority:'Section 662, Post-Katrina Emergency Management Reform Act',federal_award_description:'Support all-hazards preparedness and response capabilities.',indirect_cost_rate:0,is_r_and_d:false,match_requirement:50},
+    program:{id:'qa-program',code,name:programInfo[0],program_year:2026,federal_agency:'U.S. Department of Homeland Security / FEMA',match_requirement:50},
+    organization:{id:'qa-org',name:'QA Lancaster County',address:'100 Test Road',city:'Lincoln',state:'NE',zip:'68508',sam_uei:'QA1234567890',ein:'12-3456789'},
+    authorizedOfficial:{id:'qa-official',organization_id:'qa-org',full_name:'María García',title:'Emergency Manager',email:'official@gan-pdf-qa.invalid',phone:'402-555-0100',active_status:'active'},
+    grantee:{id:'qa-grantee',agency_name:'Nebraska Emergency Management Agency',contact_name:'QA Grant Coordinator',contact_title:'Grant Coordinator',contact_phone:'402-555-0200',contact_email:'grants@gan-pdf-qa.invalid',approving_official_name:'QA Assistant Director',approving_official_title:'Assistant Director'},
+    actor:{id:'qa-admin',full_name:'QA Administrator'},awardDate:'2026-10-29',
+    budgets:[{id:'qa-budget',poete:'Equipment',amount_requested:500,amount_match:500}],
+    projects:Array.from({length:projectCount},(_,index)=>({project_id:'APP-2026-00101-P'+(index+1),name:'Communications project '+(index+1),poete:'Equipment',federal_amount:500/projectCount,match_amount:500/projectCount}))};
+}

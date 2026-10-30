@@ -1,3 +1,7 @@
+import AwardDetailsTabContent from '@/components/awards/AwardDetailsTabContent';
+import AwardDetailsTabTrigger from '@/components/awards/AwardDetailsTabTrigger';
+import EhpReviewPanel from '@/components/ehp/EhpReviewPanel';
+import ApplicationFormValues from '@/components/application-form/ApplicationFormValues';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
@@ -175,9 +179,6 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
     await base44.entities.Application.update(selected.id, {
       status: 'Approved',
       awarded_amount: awarded,
-      remaining_balance: awarded,
-      total_expended: 0,
-      expenditure_rate: 0,
       ...(assignedReviewer ? { internal_review_notes_reviewer: assignedReviewer } : {}),
     });
     await base44.entities.ApplicationReview.create({
@@ -510,6 +511,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               <div><Label className="text-muted-foreground text-xs">Project Narrative</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.project_narrative || 'Not provided'}</p></div>
               <div><Label className="text-muted-foreground text-xs">Work Plan</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.work_plan || 'Not provided'}</p></div>
               <div><Label className="text-muted-foreground text-xs">Risk Assessment</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.risk_assessment || 'Not provided'}</p></div>
+              <ApplicationFormValues applicationId={viewApp.id}/>
               {viewApp.revision_notes && (
                 <div><Label className="text-muted-foreground text-xs">Revision Notes</Label><p className="whitespace-pre-wrap bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg">{viewApp.revision_notes}</p></div>
               )}
@@ -544,6 +546,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                 <TabsTrigger value="summary">Summary</TabsTrigger>
                 {scoringEnabled && <TabsTrigger value="scoring">Scoring</TabsTrigger>}
                 <TabsTrigger value="budget">Budget</TabsTrigger>
+                <AwardDetailsTabTrigger/>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="rfi">
                   RFIs {openRfis.length > 0 && <span className="ml-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{openRfis.length}</span>}
@@ -603,13 +606,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.risk_assessment || 'Not provided'}</p>
                 </div>
 
-                {/* EHP Status */}
-                {selected.ehp_status && selected.ehp_status !== 'NotRequired' && (
-                  <div className="p-3 rounded-lg border border-amber-200 bg-amber-50">
-                    <p className="text-xs font-semibold text-amber-800">EHP Review Required</p>
-                    <p className="text-xs text-amber-700 mt-0.5">Status: {selected.ehp_status} {selected.ehp_notes && ` - ${selected.ehp_notes}`}</p>
-                  </div>
-                )}
+                <EhpReviewPanel applicationId={selected.id} onUpdate={application=>{setSelected(application);setApps(current=>current.map(item=>item.id===application.id?application:item));}} />
 
                 {/* Program-specific highlights */}
                 {selected.ij_title && (
@@ -648,6 +645,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                     )}
                   </div>
                 )}
+              <ApplicationFormValues applicationId={selected.id}/>
               </TabsContent>
 
               {scoringEnabled && (
@@ -699,6 +697,8 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   </tfoot>
                 </table>
               </TabsContent>
+
+              <AwardDetailsTabContent applicationId={selected.id} onUpdate={application=>{setSelected(application);setApps(current=>current.map(item=>item.id===application.id?application:item));setAwardAmount(application.awarded_amount??'');}}/>
 
               <TabsContent value="rfi">
                 <RfiPanel

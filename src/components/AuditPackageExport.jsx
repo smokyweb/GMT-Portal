@@ -14,7 +14,7 @@ export default function AuditPackageExport({ application }) {
     try {
       const response = await fetch(`/api/functions/exportAuditPackage`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', Authorization:'Bearer '+localStorage.getItem('gmt_token') },
         credentials: 'include',
         body: JSON.stringify({ application_id: application.id }),
       });

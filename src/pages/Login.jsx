@@ -20,9 +20,11 @@ export default function Login() {
     setError('');
     setLoading(true);
     try {
-      await base44.auth.login(email, password);
+      const result = await base44.auth.login(email, password);
       await checkAppState();
-      const returnUrl = searchParams.get('returnUrl') || '/';
+      if(result.user?.password_change_required){navigate('/change-password',{replace:true});return;}
+      const requested=searchParams.get('returnUrl')||'/';
+      const returnUrl=requested.startsWith('/')&&!requested.startsWith('//')?requested:'/';
       navigate(returnUrl, { replace: true });
     } catch (err) {
       setError(err.message || 'Login failed');
@@ -40,6 +42,7 @@ export default function Login() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
+            {searchParams.get('passwordUpdated')&&<p role="status" className="text-sm text-green-700">Password updated. Sign in with your new password.</p>}
             {error && (
               <div className="p-3 text-sm text-red-700 bg-red-50 border border-red-200 rounded-md">
                 {error}

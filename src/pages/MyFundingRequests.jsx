@@ -1,3 +1,7 @@
+import FundingSubmissionError from '@/components/ehp/FundingSubmissionError';
+import FundingLineEhp from '@/components/ehp/FundingLineEhp';
+import {useFundingEhpContext} from '@/hooks/useFundingEhpContext';
+import {submitFunding,fundingSubmissionError} from '@/lib/fundingSubmission';
 import { base44 } from '@/api/base44Client';
 import { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Upload, Paperclip, X, Loader2, Eye, Search } from 'lucide-react';
@@ -14,7 +18,7 @@ import StatusBadge from '../components/StatusBadge';
 import LifecycleProgress from '../components/LifecycleProgress';
 import CreditApplicationPanel from '../components/CreditApplicationPanel';
 import ExpenditureBar from '../components/ExpenditureBar';
-import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
+import { formatCurrency, formatDateShort } from '../lib/helpers';
 import { toast } from 'sonner';
 import { AEL_CATEGORY_LABELS, getAELItemsForCategory } from '../lib/aelData';
 
@@ -70,6 +74,7 @@ const MODIFICATION_TYPES = [
 ];
 
 const EMPTY_LINE_ITEM = {
+  application_budget_id: '', ehp_affected: null,
   budget_category: 'Equipment', description: '', amount: 0,
   quantity: '', unit_cost: '',
   ael_category: '', ael_number: '',
@@ -92,6 +97,7 @@ export default function MyFundingRequests() {
   const [csvOpen, setCsvOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [submissionError,setSubmissionError] = useState('');
   const [form, setForm] = useState({
     application_id: '', request_type: 'Reimbursement',
     period_start: '', period_end: '', match_documented: 0,
@@ -128,12 +134,13 @@ export default function MyFundingRequests() {
     if (urlParams.get('new')) setOpen(true);
   };
 
+  const fundingEhp = useFundingEhpContext(form.application_id);
   const selectedApp = apps.find(a => a.id === form.application_id);
   const lineTotal = lineItems.reduce((s, l) => s + (Number(l.amount) || 0), 0);
 
   const resetForm = () => {
     setLineItems([]);
-    setAttachments([]);
+    setAttachments([]);setSubmissionError('');
     setForm({
       application_id: '', request_type: 'Reimbursement',
       period_start: '', period_end: '', match_documented: 0,
@@ -174,105 +181,13 @@ export default function MyFundingRequests() {
   const removeAttachment = (name) => setAttachments(prev => prev.filter(a => a.name !== name));
 
   const handleSubmit = async () => {
-    // Validate required fields
-    if (!form.application_id) { toast('Please select a grant.', 'warning'); return; }
-    if (form.request_type === 'Modification' && !form.modification_type) {
-      toast('Please select a Modification Type before submitting.', 'warning');
-      return;
-    }
-    if (form.period_start && form.period_end && form.period_end < form.period_start) {
-      toast('Period End date cannot be before Period Start date. Please correct the dates before submitting.', 'warning');
-      return;
-    }
-    setSubmitting(true);
+    setSubmitting(true);setSubmissionError('');
     try {
-    const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000).catch(() => []);
-    const reqNum = `REQ-${new Date().getFullYear()}-${String(allReqs.length + 1).padStart(5, '0')}`;
-    const isModification = form.request_type === 'Modification';
-
-    const fr = await base44.entities.FundingRequest.create({
-      application_id: form.application_id,
-      application_number: selectedApp?.application_number,
-      organization_id: user.organization_id,
-      organization_name: selectedApp?.organization_name,
-      submitted_by: user.email,
-      request_number: reqNum,
-      request_type: form.request_type,
-      period_start: form.period_start || null,
-      period_end: form.period_end || null,
-      amount_requested: isModification ? 0 : lineTotal,
-      match_documented: isModification ? 0 : Number(form.match_documented),
-      status: 'Submitted',
-      program_code: selectedApp?.program_code,
-      expenditure_rate: Number(selectedApp?.expenditure_rate) || 0,
-      remaining_balance: Number(selectedApp?.remaining_balance) || 0,
-      ...(isModification && {
-        modification_type: form.modification_type || null,
-        modification_justification: form.modification_justification,
-        scope_of_work_current: form.scope_of_work_current,
-        scope_of_work_proposed: form.scope_of_work_proposed,
-        budget_modification_notes: form.budget_modification_notes,
-      }),
-    });
-
-    if (!isModification) {
-      for (const li of lineItems) {
-        // Only send fields that exist in the funding_request_line_items DB table
-        await base44.entities.FundingRequestLineItem.create({
-          funding_request_id: fr.id,
-          budget_category: li.budget_category,
-          description: li.description || li.expenditure_name || '',
-          amount: Number(li.amount) || 0,
-          amount_requested: Number(li.amount) || 0,
-          is_allowable: true,
-          vendor: li.item_manufacturer || undefined,
-          reviewer_notes: li.item_detail_description || undefined,
-        });
-      }
-    }
-
-    for (const att of attachments.filter(a => a.url)) {
-      await base44.entities.Document.create({
-        name: att.name,
-        doc_type: att.docType || 'Other',
-        file_url: att.url,
-        uploaded_by: user.email,
-        organization_id: user.organization_id,
-        application_id: form.application_id,
-        application_number: selectedApp?.application_number,
-        organization_name: selectedApp?.organization_name,
-        funding_request_id: fr.id,
-        funding_request_number: reqNum,
-        review_status: 'Pending',
-        uploaded_at: new Date().toISOString(),
-        description: `Attached to funding request ${reqNum}`,
-      });
-    }
-
-    const users = await base44.entities.User.list();
-    const reviewers = users.filter(u => u.role === 'admin' || u.role === 'reviewer');
-    for (const r of reviewers) {
-      await createNotification(base44, r.email, 'New Funding Request',
-        `${selectedApp?.organization_name} submitted funding request ${reqNum}.`,
-        'fr_submitted', 'FundingRequest', fr.id, '/funding-requests');
-    }
-
-    await logAudit(base44, user, 'Submitted', 'FundingRequest', fr.id, `Submitted funding request ${reqNum}`);
-    // Cross-log to application audit trail
-    if (form.application_id) {
-      logAudit(base44, user, 'Submitted', 'Application', form.application_id,
-        `Funding Request ${reqNum} submitted for reimbursement`).catch(() => {});
-    }
-    setSubmitting(false);
-    setOpen(false);
-    resetForm();
-    toast.success(`Request ${reqNum} submitted successfully.`);
-    loadData();
-    } catch (err) {
-      console.error('FR submit error:', err);
-      toast('Failed to submit funding request: ' + (err?.message || err?.detail || 'Please try again.', 'error'));
-      setSubmitting(false);
-    }
+      const request=await submitFunding(form,lineItems,attachments);
+      setOpen(false);resetForm();toast.success('Request '+request.request_number+' submitted successfully.');await loadData();
+    } catch(error) {
+      setSubmissionError(fundingSubmissionError(error));
+    } finally {setSubmitting(false);}
   };
 
   const filteredRequests = requests.filter(req => {
@@ -370,7 +285,7 @@ export default function MyFundingRequests() {
         </div>
       </div>
 
-      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} apps={apps} user={user} onSuccess={loadData} />
+      <CsvImportDialog open={csvOpen} onClose={() => setCsvOpen(false)} apps={apps} onSuccess={loadData} />
 
       {/* View Request Dialog */}
       <Dialog open={!!viewRequest} onOpenChange={() => setViewRequest(null)}>
@@ -585,6 +500,8 @@ export default function MyFundingRequests() {
                           <Button variant="ghost" size="icon" onClick={() => setLineItems(prev => prev.filter((_, i) => i !== idx))}><Trash2 className="h-3.5 w-3.5" /></Button>
                         </div>
 
+                        <FundingLineEhp line={li} index={idx} context={fundingEhp.context} error={fundingEhp.error} onChange={(field,value)=>updateLineItem(idx,field,value)} />
+
                         {/* Basic info */}
                         <div className="grid grid-cols-2 gap-3">
                           <div>
@@ -756,6 +673,7 @@ export default function MyFundingRequests() {
             </div>
           </div>
           <DialogFooter>
+            <FundingSubmissionError message={submissionError} />
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button
               onClick={handleSubmit}

@@ -1,3 +1,4 @@
+import OrganizationAwardContacts from '@/components/gan/OrganizationAwardContacts';
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -102,6 +103,7 @@ export default function OrganizationProfile() {
         </div>
       </div>
 
+      <OrganizationAwardContacts organizationId={org.id}/>
       {/* Tabs */}
       <Tabs defaultValue="grants">
         <TabsList>

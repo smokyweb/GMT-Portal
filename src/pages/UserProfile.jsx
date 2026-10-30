@@ -41,8 +41,8 @@ export default function UserProfile() {
     setSaving(true);
     setSaveError('');
     try {
-      // Use User entity update - auth.updateMe() is not supported on this backend
-      await base44.entities.User.update(user.id, {
+      // Save only the signed-in user’s contact fields through the profile endpoint.
+      await base44.auth.updateMe({
         full_name: form.full_name,
         phone: form.phone || null,
         title: form.title || null,

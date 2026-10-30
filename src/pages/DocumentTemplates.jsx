@@ -1,3 +1,5 @@
+import GanBatchLaunchButton from '@/components/gan/GanBatchLaunchButton';
+import GanBatchWorkspace from '@/components/gan/GanBatchWorkspace';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
@@ -55,6 +57,7 @@ function populateTemplate(body, app) {
 }
 
 export default function DocumentTemplates() {
+  const [showGanWorkspace,setShowGanWorkspace]=useState(false);
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [apps, setApps] = useState([]);
@@ -160,6 +163,7 @@ export default function DocumentTemplates() {
   };
 
   const openSendDialog = (t) => {
+    if(t.doc_type==='Grant Award Notice'){setShowGanWorkspace(true);return;}
     setSendTemplate(t);
     setSendAppId('');
     setPreview('');
@@ -212,8 +216,11 @@ export default function DocumentTemplates() {
           <h1 className="text-2xl font-bold">Document Templates</h1>
           <p className="text-muted-foreground text-sm mt-1">Create reusable templates with auto-populated fields to send to subrecipients for review and signature.</p>
         </div>
-        <Button onClick={openNew}><Plus className="h-4 w-4 mr-1.5" /> New Template</Button>
+        <div className="flex flex-wrap gap-2">
+          {['admin','isc_admin'].includes(user?.role)&&<GanBatchLaunchButton onClick={()=>setShowGanWorkspace(true)}/>}
+          <Button onClick={openNew}><Plus className="h-4 w-4 mr-1.5" /> New Template</Button></div>
       </div>
+      {showGanWorkspace&&<GanBatchWorkspace onClose={()=>setShowGanWorkspace(false)}/>}
 
       {/* Template cards */}
       {templates.length === 0 ? (
@@ -253,7 +260,7 @@ export default function DocumentTemplates() {
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => openEdit(t)}><Eye className="h-3.5 w-3.5 mr-1" /> Edit</Button>
                 <Button size="sm" onClick={() => openSendDialog(t)} disabled={!t.is_active}>
-                  <Send className="h-3.5 w-3.5 mr-1" /> Send
+                  <Send className="h-3.5 w-3.5 mr-1" /> {t.doc_type==='Grant Award Notice'?'Generate draft':'Send'}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDelete(t)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>
               </div>

@@ -1,8 +1,16 @@
+import {createProgramFormEntityAccess} from '../middleware/programFormEntityAccess.js';
+import {createApplicationBudgetAccess} from '../middleware/applicationBudgetAccess.js';
+import {createNofoFormEntityAccess} from '../middleware/nofoFormEntityAccess.js';
 import { Router } from 'express';
 import pool from '../db/connection.js';
 import { authRequired } from '../middleware/auth.js';
+import { guardUserMutation } from '../middleware/userEntityAccess.js';
+import { updateManagedAccount } from '../services/accountUpdates.js';
 
 const router = Router();
+router.use('/:entity', authRequired);
+router.use('/:entity/:id?', guardUserMutation);
+router.use('/:entity/:id?',createApplicationBudgetAccess(),createNofoFormEntityAccess(),createProgramFormEntityAccess());
 
 // ── Entity name → Postgres table mapping ──────────────────────
 const TABLE_MAP = {
@@ -186,6 +194,11 @@ router.post('/:entity', authRequired, async (req, res) => {
 router.put('/:entity/:id', authRequired, async (req, res) => {
   const table = resolveTable(req.params.entity);
   if (!table) return res.status(404).json({ error: 'Unknown entity' });
+  if (table === 'users') {
+    try { return res.json(await updateManagedAccount(pool,req.user.id,req.params.id,req.body,req.ip)); }
+    catch(error) { return res.status(error.status||500).json({error:error.status?error.message:'Unable to update account'}); }
+  }
+
 
   const data = { ...req.body };
   delete data.id;

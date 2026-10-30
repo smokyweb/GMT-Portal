@@ -1,3 +1,13 @@
+import {createGanReturnsClient} from './ganReturns';
+import {createGanWorkflowClient} from './ganWorkflow';
+import {createGanPackageClient} from './ganPackages';
+import {createGanSettingsClient} from './ganSettings';
+import {createGanBatchClient} from './ganBatches';
+import {createAwardDetailsClient} from './awardDetails';
+import {createEhpClient} from './ehp';
+import {createNofoFormsClient} from './nofoForms';
+import { createAccountAccessClient } from './accountAccess';
+import { createUploadClient } from './uploads';
 /**
  * Drop-in replacement for the Base44 SDK client.
  *
@@ -143,6 +153,10 @@ const auth = {
     return result;
   },
 
+  async updateMe(input) {
+    const result=await api('PUT','/api/auth/me',input);_cachedUser=result;return result;
+  },
+
   /** Logout - clear token, clear user cache, optionally redirect */
   logout(redirectUrl) {
     clearToken();
@@ -167,7 +181,8 @@ const auth = {
 const integrations = {
   Core: {
     SendEmail: async (opts) => { console.log('[GMT] Email stub (not sent):', opts); return {}; },
+    ...createUploadClient(API_BASE,getToken),
     GeneratePDF: async (opts) => { console.log('[GMT] PDF stub:', opts); return {}; },
   },
 };
-export const base44 = { entities, auth, integrations };
+export const base44 = { ganReturns:createGanReturnsClient(API_BASE,getToken), ganWorkflow:createGanWorkflowClient(api,API_BASE,getToken), entities, auth, integrations, accounts:createAccountAccessClient(api), forms:createNofoFormsClient(api), ehp:createEhpClient(api), awards:createAwardDetailsClient(api), gan:createGanBatchClient(api,API_BASE,getToken), ganSettings:createGanSettingsClient(api), ganPackages:createGanPackageClient(api,API_BASE,getToken) };

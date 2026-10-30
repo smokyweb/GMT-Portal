@@ -1,3 +1,5 @@
+import ProgramMaLimitField from '@/components/awards/ProgramMaLimitField';
+import ProgramFormDefaultsButton from '@/components/nofo-form/ProgramFormDefaultsButton';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
@@ -22,7 +24,7 @@ export default function GrantPrograms() {
   const [activeTab, setActiveTab] = useState('programs');
   const [open, setOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
-  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '', compliance_requirements_text: '', allowable_costs_text: '', eligibility_criteria_text: '', reporting_requirements_text: '' });
+  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', ma_limit_percent: '', is_active: true, reporting_frequency: '', compliance_requirements_text: '', allowable_costs_text: '', eligibility_criteria_text: '', reporting_requirements_text: '' });
   const [formExtra, setFormExtra] = useState({ type: '', fundingCycle: '' });
   const [customCode, setCustomCode] = useState('');
   const [useCustomCode, setUseCustomCode] = useState(false); // custom codes disabled but setter needed
@@ -51,6 +53,7 @@ export default function GrantPrograms() {
         description: form.description || null,
         federal_agency: form.federal_agency || null,
         cfda_number: form.cfda_number || null,
+        ma_limit_percent: form.ma_limit_percent===''||form.ma_limit_percent==null?null:Number(form.ma_limit_percent),
         program_type: form.program_type || null,
         program_year: form.program_year || null,
         is_active: form.is_active !== false,
@@ -73,6 +76,7 @@ export default function GrantPrograms() {
       if (form.description) cleanedForm.description = form.description;
       if (form.federal_agency) cleanedForm.federal_agency = form.federal_agency;
       if (form.cfda_number) cleanedForm.cfda_number = form.cfda_number;
+      if(form.ma_limit_percent!==''&&form.ma_limit_percent!=null)cleanedForm.ma_limit_percent=Number(form.ma_limit_percent);
       if (form.program_type) cleanedForm.program_type = form.program_type;
       if (form.program_year) cleanedForm.program_year = form.program_year;
       if (form.match_requirement !== '' && form.match_requirement != null) cleanedForm.match_requirement = Number(form.match_requirement);
@@ -85,7 +89,7 @@ export default function GrantPrograms() {
 
     setOpen(false);
     setEditingProgram(null);
-    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', ma_limit_percent: '', is_active: true, reporting_frequency: '' });
     setFormExtra({ type: '', fundingCycle: '' });
     setCustomCode('');
     setUseCustomCode(false);
@@ -130,11 +134,13 @@ export default function GrantPrograms() {
   const handleEdit = (program) => {
     setEditingProgram(program);
     setForm({
+      ...program,
       name: program.name,
       code: program.code || 'SHSP',
       description: program.description || '',
       federal_agency: program.federal_agency || '',
       cfda_number: program.cfda_number || '',
+      ma_limit_percent: program.ma_limit_percent??'',
       is_active: program.is_active !== false,
       // Load reporting_requirements[0] into the reporting_frequency UI field (API returns it as a JSON string)
       reporting_frequency: (() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return rr[0] || program.reporting_frequency || ''; })(),
@@ -162,7 +168,7 @@ export default function GrantPrograms() {
   const openNewForm = () => {
     console.log("[GMT] openNewForm called");
     setEditingProgram(null);
-    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', is_active: true, reporting_frequency: '' });
+    setForm({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', ma_limit_percent: '', is_active: true, reporting_frequency: '' });
     setFormExtra({ type: '', fundingCycle: '' });
     setCustomCode('');
     setUseCustomCode(false);
@@ -214,6 +220,7 @@ export default function GrantPrograms() {
                     <Eye className="h-3.5 w-3.5 mr-1" /> View Requirements
                   </Button>
                 </div>
+                <ProgramFormDefaultsButton program={p}/>
               </div>
             )}
           </div>
@@ -320,6 +327,7 @@ export default function GrantPrograms() {
               </Select>
             </div>
             <div><Label>Description</Label><Textarea value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} /></div>
+            <ProgramMaLimitField value={form.ma_limit_percent} onChange={value=>setForm(current=>({...current,ma_limit_percent:value}))}/>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>
             <div><Label>CFDA Number</Label><Input value={form.cfda_number} onChange={(e) => setForm((f) => ({ ...f, cfda_number: e.target.value }))} /></div>
             <div className="col-span-2 border-t pt-4 mt-2"><p className="text-sm font-semibold text-muted-foreground mb-3">Program Requirements (editable by State Admin)</p></div>

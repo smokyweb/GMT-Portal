@@ -29,3 +29,14 @@ dist-ssr
 
 .env
 .vite
+
+# Local releases, private uploads, QA evidence, and generated PDF dependencies
+/.gmt-releases/
+/output/
+/server/uploads/
+/server/email.js.bak
+/public/pdfjs/
+/test-smtp3.mjs
+/test-mailgun.mjs
+/test-ports.mjs
+/test-auth.mjs

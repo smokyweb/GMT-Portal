@@ -88,6 +88,7 @@ CREATE TABLE IF NOT EXISTS users (
   department      TEXT,
   phone           TEXT,
   organization_id TEXT,
+  last_login     TIMESTAMPTZ,
   created_date    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );

@@ -1,11 +1,15 @@
+import {useFundingEhpContext} from '@/hooks/useFundingEhpContext';
+import CsvFundingEhpMapping from '@/components/ehp/CsvFundingEhpMapping';
+import FundingSubmissionError from '@/components/ehp/FundingSubmissionError';
+import {submitFundingCsv} from '@/lib/fundingCsvSubmission';
+import {fundingSubmissionError} from '@/lib/fundingSubmission';
 import { useState, useRef } from 'react';
-import { base44 } from '@/api/base44Client';
 import { Upload, AlertTriangle, CheckCircle2, FileText, X, Download } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { formatCurrency, logAudit, createNotification } from '../lib/helpers';
+import { formatCurrency } from '../lib/helpers';
 
 const VALID_CATEGORIES = ['Personnel', 'Equipment', 'Training', 'Travel', 'Contractual', 'Planning', 'Other'];
 
@@ -53,7 +57,7 @@ function downloadTemplate() {
   URL.revokeObjectURL(url);
 }
 
-export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }) {
+export default function CsvImportDialog({ open, onClose, apps, onSuccess }) {
   const [step, setStep] = useState('select'); // select | preview | submitting
   const [selectedAppId, setSelectedAppId] = useState('');
   const [parsedRows, setParsedRows] = useState([]);
@@ -61,6 +65,7 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
   const [form, setForm] = useState({ period_start: '', period_end: '', match_documented: 0 });
   const fileRef = useRef();
 
+  const fundingEhp=useFundingEhpContext(selectedAppId);
   const selectedApp = apps.find(a => a.id === selectedAppId);
   const remainingBalance = selectedApp?.remaining_balance ?? selectedApp?.awarded_amount ?? null;
   const validatedRows = parsedRows.length ? validateRows(parsedRows, remainingBalance) : [];
@@ -87,51 +92,9 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
   }
 
   async function handleSubmit() {
-    setStep('submitting');
-    const allReqs = await base44.entities.FundingRequest.list('-created_date', 1000);
-    const reqNum = `REQ-${new Date().getFullYear()}-${String(allReqs.length + 1).padStart(5, '0')}`;
-
-    const fr = await base44.entities.FundingRequest.create({
-      application_id: selectedAppId,
-      application_number: selectedApp?.application_number,
-      organization_id: user.organization_id,
-      organization_name: selectedApp?.organization_name,
-      submitted_by: user.email,
-      request_number: reqNum,
-      request_type: 'Reimbursement',
-      period_start: form.period_start,
-      period_end: form.period_end,
-      amount_requested: totalRequested,
-      match_documented: Number(form.match_documented),
-      status: 'Submitted',
-      program_code: selectedApp?.program_code,
-      expenditure_rate: selectedApp?.expenditure_rate || 0,
-      remaining_balance: remainingBalance || 0,
-    });
-
-    for (const row of validatedRows) {
-      await base44.entities.FundingRequestLineItem.create({
-        funding_request_id: fr.id,
-        budget_category: row.budget_category,
-        description: row.description,
-        amount: row.amount,
-        is_allowable: true,
-      });
-    }
-
-    const users = await base44.entities.User.list();
-    const reviewers = users.filter(u => u.role === 'admin' || u.role === 'reviewer');
-    for (const r of reviewers) {
-      await createNotification(base44, r.email, 'New Funding Request (CSV Import)',
-        `${selectedApp?.organization_name} submitted ${reqNum} via CSV import with ${validatedRows.length} line items.`,
-        'fr_submitted', 'FundingRequest', fr.id, '/funding-requests');
-    }
-
-    await logAudit(base44, user, 'CSVImport', 'FundingRequest', fr.id,
-      `CSV import: submitted ${reqNum} with ${validatedRows.length} line items totaling ${formatCurrency(totalRequested)}`);
-
-    handleClose();
-    onSuccess();
+    setStep('submitting');setParseError(null);
+    try {await submitFundingCsv(selectedAppId,form,validatedRows);handleClose();onSuccess();}
+    catch(error){setParseError(fundingSubmissionError(error));setStep('preview');}
   }
 
   function handleClose() {
@@ -221,6 +184,8 @@ export default function CsvImportDialog({ open, onClose, apps, user, onSuccess }
 
         {step === 'preview' && (
           <div className="space-y-4">
+            <FundingSubmissionError message={parseError} />
+            <CsvFundingEhpMapping rows={validatedRows} context={fundingEhp.context} error={fundingEhp.error} onChange={(index,field,value)=>setParsedRows(current=>current.map((row,i)=>i===index?{...row,[field]:value}:row))} />
             {/* Summary banner */}
             <div className={`flex items-center justify-between p-3 rounded-lg border ${exceedsCap || hasErrors ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
               <div className="flex items-center gap-2">

@@ -1,3 +1,4 @@
+import EhpReviewPanel from '@/components/ehp/EhpReviewPanel';
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/toast-simple';
 import { base44 } from '@/api/base44Client';
@@ -202,37 +203,15 @@ export default function FundingRequestReview() {
   };
 
   const handleAction = async (action) => {
+    try {
     const updates = { status: action, reviewer_notes: notes };
     if (action === 'Approved') {
       updates.amount_approved = Number(approvedAmount);
-      // Update application expended/remaining
-      const app = await base44.entities.Application.filter({ id: selected.application_id });
-      if (app.length > 0) {
-        const a = app[0];
-        const newExpended = (Number(a.total_expended) || 0) + Number(approvedAmount);
-        const newRemaining = (Number(a.awarded_amount) || 0) - newExpended;
-        const newRate = a.awarded_amount ? (newExpended / a.awarded_amount) * 100 : 0;
-        await base44.entities.Application.update(a.id, {
-          total_expended: newExpended,
-          remaining_balance: newRemaining,
-          expenditure_rate: Math.round(newRate * 100) / 100,
-        });
-      }
     }
     await base44.entities.FundingRequest.update(selected.id, updates);
-    await createNotification(base44, selected.submitted_by,
-      `Funding Request ${action}`,
-      `Your funding request ${selected.request_number} has been ${action.toLowerCase()}.`,
-      'fr_status', 'FundingRequest', selected.id, '/my-funding-requests');
-    await logAudit(base44, user, action, 'FundingRequest', selected.id,
-      `${action} funding request ${selected.request_number}`);
-    // Cross-log to application audit trail
-    if (selected.application_id) {
-      logAudit(base44, user, action, 'Application', selected.application_id,
-        `Funding Request ${selected.request_number} ${action.toLowerCase()} by ${user?.full_name || user?.email}`).catch(() => {});
-    }
     setSelected(null);
     await refreshRequests();
+    } catch(error) {toast((error.data?.details||[]).map(item=>item.message).join(' · ')||error.message,'error');}
   };
 
   const refreshRequests = async () => {
@@ -568,6 +547,8 @@ export default function FundingRequestReview() {
                   <div><Label className="text-muted-foreground text-xs">Voucher Number</Label><p className="font-medium font-mono">{selected.voucher_number}</p></div>
                 )}
               </div>
+
+              <EhpReviewPanel applicationId={selected.application_id} />
 
               {lineItems.length > 0 && (
                 <div className="space-y-3">

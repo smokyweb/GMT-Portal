@@ -1,3 +1,4 @@
+import OrganizationAwardContacts from '@/components/gan/OrganizationAwardContacts';
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
@@ -144,6 +145,7 @@ export default function MyOrganization() {
               </Button>
             </div>
           </div>
+          {org&&<OrganizationAwardContacts organizationId={org.id}/>}
         </TabsContent>
 
         <TabsContent value="team" className="mt-4">

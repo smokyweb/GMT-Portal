@@ -1,3 +1,7 @@
+import NofoAwardFieldGroup from '@/components/awards/NofoAwardFieldGroup';
+import NofoFederalIdentifiers from '@/components/awards/NofoFederalIdentifiers';
+import {prepareNofoAwardForm,nofoAwardSaveData,applyAwardProgramDefaults} from '@/lib/awards/nofoAwardData';
+import NofoEditContent from '@/components/nofo-form/NofoEditContent';
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Plus, MoreHorizontal, FileText, Info, Search } from 'lucide-react';
@@ -98,7 +102,7 @@ setLoading(false);
   const openEdit = (nofo) => {
     const prog = programs.find(p => p.id === nofo.program_id);
     setForm({
-      ...nofo,
+      ...prepareNofoAwardForm(nofo,prog),
       open_date: toDateInput(nofo.open_date),
       close_date: toDateInput(nofo.close_date),
       eligible_org_types: nofo.eligible_org_types || [],
@@ -124,7 +128,7 @@ setLoading(false);
     try {
       const prog = programs.find(p => p.id === form.program_id);
       let data = {
-        ...form,
+        ...nofoAwardSaveData(form),
         program_name: prog?.name || form.program_name,
         program_code: prog?.code || form.program_code,
         total_funding_available: Number(form.total_funding_available) || 0,
@@ -152,10 +156,10 @@ setLoading(false);
 
       if (editing) {
         await base44.entities.Nofo.update(editing.id, cleanData);
-        await logAudit(base44, user, 'Updated', 'Nofo', editing.id, `Updated NOFO: ${cleanData.title}`);
+
       } else {
-        const created = await base44.entities.Nofo.create(cleanData);
-        await logAudit(base44, user, 'Created', 'Nofo', created.id, `Created NOFO: ${cleanData.title}`);
+        await base44.entities.Nofo.create(cleanData);
+
       }
       setOpen(false);
       loadData();
@@ -389,17 +393,9 @@ setLoading(false);
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit NOFO' : 'Create NOFO'}</DialogTitle>
           </DialogHeader>
+          <NofoEditContent nofo={editing}>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Title</Label>
-                <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="FY2025 SHSP NOFO" />
-              </div>
-              <div>
-                <Label>Grant Number</Label>
-                <Input value={form.grant_number} onChange={e => setForm(f => ({ ...f, grant_number: e.target.value }))} placeholder="e.g. EMS-2025-SS-00001" />
-              </div>
-            </div>
+            <NofoFederalIdentifiers form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
             <div>
               <Label>Grant Program</Label>
               <Select
@@ -407,7 +403,7 @@ setLoading(false);
                 onValueChange={v => {
                   const prog = programs.find(p => p.id === v);
                   setForm(f => ({
-                    ...f,
+                    ...applyAwardProgramDefaults(f,prog),
                     program_id: v,
                     program_name: prog?.name || f.program_name,
                     program_code: prog?.code || f.program_code,
@@ -425,6 +421,7 @@ setLoading(false);
                 </SelectContent>
               </Select>
             </div>
+            <NofoAwardFieldGroup group="Program" form={form} program={programs.find(program=>program.id===form.program_id)} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
             <div>
               <Label>Summary</Label>
               <Textarea value={form.summary} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} rows={3} />
@@ -454,6 +451,7 @@ setLoading(false);
               </div>
             </div>
 
+            <NofoAwardFieldGroup group="Federal Dates" form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
             <div>
               <Label>Eligibility Criteria</Label>
               <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Enter eligibility criteria for this NOFO..." />
@@ -519,6 +517,7 @@ setLoading(false);
               />
             </div>
 
+            <NofoAwardFieldGroup group="Terms" form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
             {/* Required Documents */}
             <div>
               <div className="flex items-center justify-between mb-2">
@@ -559,6 +558,7 @@ setLoading(false);
               <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : (editing ? 'Update' : 'Create')} NOFO</Button>
             </div>
           </DialogFooter>
+          </NofoEditContent>
         </DialogContent>
       </Dialog>
 

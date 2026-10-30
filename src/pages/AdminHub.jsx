@@ -1,3 +1,4 @@
+import GranteeAwardSettings from '@/components/gan/GranteeAwardSettings';
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
@@ -209,6 +210,7 @@ export default function AdminHub() {
         ))}
       </div>
 
+      {user&&['admin','isc_admin'].includes(user.role)&&<GranteeAwardSettings/>}
       {/* System Settings */}
       {user && ['admin','isc_admin'].includes(user.role) && (
         <div className="bg-card border rounded-xl p-6 space-y-4">

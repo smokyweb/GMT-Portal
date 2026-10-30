@@ -28,6 +28,7 @@ export default function ISCDashboard() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
+  const [formError,setFormError]=useState('');
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -57,8 +58,8 @@ export default function ISCDashboard() {
     });
   }, []);
 
-  const openNew = () => { setEditing(null); setForm(EMPTY_FORM); setShowForm(true); };
-  const openEdit = (g) => { setEditing(g); setForm({ ...EMPTY_FORM, ...g }); setShowForm(true); };
+  const openNew = () => { setFormError(''); setEditing(null); setForm(EMPTY_FORM); setShowForm(true); };
+  const openEdit = (g) => { setFormError(''); setEditing(g); setForm({ ...EMPTY_FORM, ...g }); setShowForm(true); };
 
   const handleLogoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -71,16 +72,16 @@ export default function ISCDashboard() {
 
   const handleSave = async () => {
     if (!form.name || !form.state_code) return;
-    setSaving(true);
-    if (editing) {
-      await base44.entities.Grantee.update(editing.id, form);
-      setGrantees(prev => prev.map(g => g.id === editing.id ? { ...g, ...form } : g));
-    } else {
-      const created = await base44.entities.Grantee.create(form);
-      setGrantees(prev => [created, ...prev]);
-    }
-    setSaving(false);
-    setShowForm(false);
+    setSaving(true);setFormError('');
+    try {
+      if (editing) {
+        const updated=await base44.entities.Grantee.update(editing.id,form);
+        setGrantees(prev=>prev.map(grantee=>grantee.id===editing.id?updated:grantee));
+      } else {
+        const created=await base44.entities.Grantee.create(form);setGrantees(prev=>[created,...prev]);
+      }
+      setShowForm(false);
+    } catch(error) {setFormError(error.message);} finally {setSaving(false);}
   };
 
   const handleDelete = async () => {
@@ -252,6 +253,7 @@ export default function ISCDashboard() {
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit Grantee' : 'Add State Grantee'}</DialogTitle>
+            {formError&&<p role="alert" className="text-sm text-red-700">{formError}</p>}
           </DialogHeader>
           <Tabs defaultValue="info">
             <TabsList className="mb-4">

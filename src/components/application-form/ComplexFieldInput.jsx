@@ -1,0 +1,7 @@
+import RepeatingFieldTable from './RepeatingFieldTable';
+export default function ComplexFieldInput({field,value,onChange,onUpload,disabled}) {
+  if(field.type==='table')return <RepeatingFieldTable field={field} value={value} onChange={onChange} disabled={disabled}/>;
+  if(field.type==='file')return <div className="space-y-2"><input id={field.id} aria-label={field.label} type="file" disabled={disabled} onChange={event=>onUpload(event.target.files?.[0])} className="block w-full text-sm border rounded p-3"/>{value&&<p className="text-xs text-muted-foreground">Uploaded: {value.file_name||value.name||value.url||value}</p>}</div>;
+  if(field.type==='multiselect')return <div className="flex flex-wrap gap-3 mt-2">{field.options.map(option=><label key={option} className="flex items-center gap-2 text-sm"><input type="checkbox" disabled={disabled} checked={Array.isArray(value)&&value.includes(option)} onChange={event=>onChange(event.target.checked?[...(Array.isArray(value)?value:[]),option]:(value||[]).filter(item=>item!==option))}/>{option}</label>)}</div>;
+  return <div className="grid grid-cols-2 gap-3">{['start','end'].map(key=><label key={key} className="text-xs">{key==='start'?'Start':'End'}<input type="date" disabled={disabled} aria-label={field.label+' '+key} value={value?.[key]||''} onChange={event=>onChange({...value,[key]:event.target.value})} className="block w-full mt-1 border rounded p-2 bg-background text-sm"/></label>)}</div>;
+}

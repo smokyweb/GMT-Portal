@@ -63,7 +63,8 @@ const stateNavGroups = [
   { label: 'Applications', icon: ClipboardList, path: '/applications' },
   { label: 'Funding Requests', icon: DollarSign, path: '/funding-requests' },
   { label: 'NOFOs', icon: FileText, path: '/nofos', adminOnly: true },
-  { label: 'Grant Timeline', icon: CalendarDays, path: '/grant-timeline' }]
+  { label: 'Grant Timeline', icon: CalendarDays, path: '/grant-timeline' },
+  { label: 'Award Documents', icon: FilePen, path: '/award-documents', requiresRole: ['admin','isc_admin','reviewer'] }]
 },
 {
   label: 'COMPLIANCE',
@@ -110,7 +111,8 @@ const subrecipientNavGroups = [
   items: [
   { label: 'My Applications', icon: ClipboardList, path: '/my-applications' },
   { label: 'Funding Requests', icon: DollarSign, path: '/my-funding-requests' },
-  { label: 'My Reports', icon: FileText, path: '/my-reports' }]
+  { label: 'My Reports', icon: FileText, path: '/my-reports' },
+  { label: 'Award Documents', icon: FilePen, path: '/award-documents' }]
 },
 {
   label: 'Tools',

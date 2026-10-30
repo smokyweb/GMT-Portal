@@ -1,3 +1,7 @@
+import AwardDetailsTabContent from '@/components/awards/AwardDetailsTabContent';
+import AwardDetailsTabTrigger from '@/components/awards/AwardDetailsTabTrigger';
+import {draftForm} from '@/lib/forms/applicationDraft';
+import ApplicationFormValues from '@/components/application-form/ApplicationFormValues';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
@@ -223,6 +227,7 @@ export default function MyApplications() {
   const [nofos, setNofos] = useState([]);
   const [targetNofoId, setTargetNofoId] = useState('');
   const [copying, setCopying] = useState(false);
+  const [copyError,setCopyError]=useState('');
   const [amendmentApp, setAmendmentApp] = useState(null);
   const [selectedBudgets, setSelectedBudgets] = useState([]);
 
@@ -257,25 +262,10 @@ export default function MyApplications() {
 
   const handleCopy = async () => {
     if (!targetNofoId) return;
-    setCopying(true);
+    setCopying(true);setCopyError('');
+    try {
     const nofo = nofos.find(n => n.id === targetNofoId);
-    // Create new draft application copying all fields
-    // Copy all fields from source application, override NOFO-specific ones
-    const { id: _id, created_date: _cd, updated_date: _ud, status: _st, application_number: _an,
-      submitted_at: _sa, awarded_amount: _aw, total_expended: _te, remaining_balance: _rb,
-      expenditure_rate: _er, reviewer_score: _rs, reviewer_notes: _rn, reviewer_email: _re,
-      reviewed_at: _rat, is_locked: _il, lock_reason: _lr, revision_notes: _rv, ...copyFields } = copySource;
-    const newApp = await base44.entities.Application.create({
-      ...copyFields,
-      nofo_id: nofo.id,
-      nofo_title: nofo.title,
-      program_code: nofo.program_code || copySource.program_code,
-      program_name: nofo.program_name || copySource.program_name,
-      grant_number: nofo.grant_number || '',
-      status: 'Draft',
-      version: 1,
-      application_number: null,
-    });
+    const newApp = await base44.entities.Application.create({...draftForm(copySource),nofo_id:nofo.id,organization_id:copySource.organization_id,status:'Draft',version:1});
     // Copy budget items
     const budgetItems = await base44.entities.ApplicationBudget.filter({ application_id: copySource.id }).catch(() => []);
     await Promise.all((budgetItems || []).map(b =>
@@ -307,9 +297,10 @@ export default function MyApplications() {
         uploaded_at: new Date().toISOString(),
       }).catch(() => null)
     ));
-    setCopying(false);
+
     setCopySource(null);
     navigate(`/new-application?id=${newApp.id}`);
+    }catch(error){setCopyError(error.message||'Unable to copy this application');}finally{setCopying(false);}
   };
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
@@ -406,6 +397,7 @@ export default function MyApplications() {
                 <TabsTrigger value="details">Details</TabsTrigger>
                 <TabsTrigger value="expenditures">Expenditures</TabsTrigger>
                 <TabsTrigger value="rfi">RFIs</TabsTrigger>
+                <AwardDetailsTabTrigger/>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="messages">Messages</TabsTrigger>
                 <TabsTrigger value="amendments">Amendments</TabsTrigger>
@@ -446,6 +438,7 @@ export default function MyApplications() {
                     <p className="text-sm text-orange-800 mt-1">{selected.revision_notes}</p>
                   </div>
                 )}
+              <ApplicationFormValues applicationId={selected.id} audience="edit"/>
               </TabsContent>
               <TabsContent value="expenditures">
                 <ExpenditureHistory applicationId={selected.id} application={selected} />
@@ -459,6 +452,7 @@ export default function MyApplications() {
                   isAdmin={false}
                 />}
               </TabsContent>
+              <AwardDetailsTabContent applicationId={selected.id}/>
               <TabsContent value="documents">
                 {user && <ComplianceChecklist
                   applicationId={selected.id}
@@ -546,6 +540,7 @@ export default function MyApplications() {
             </div>
           </div>
           <DialogFooter>
+            {copyError&&<p role="alert" className="text-sm text-red-700">{copyError}</p>}
             <Button variant="outline" onClick={() => setCopySource(null)}>Cancel</Button>
             <Button onClick={handleCopy} disabled={copying || !targetNofoId}>
               {copying ? 'Creating…' : 'Create Copy & Review'}

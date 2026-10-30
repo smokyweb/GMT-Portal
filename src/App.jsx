@@ -3,6 +3,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
+import AccountPassword from './pages/AccountPassword';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import { ThemeProvider } from '@/lib/ThemeContext';
@@ -36,6 +37,8 @@ import MilestoneTracker from './pages/MilestoneTracker';
 import WorkflowRules from './pages/WorkflowRules';
 import FinancialOverview from './pages/FinancialOverview';
 
+import AwardDocuments from './pages/AwardDocuments';
+import AwardDocumentReview from './pages/AwardDocumentReview';
 import DocumentTemplates from './pages/DocumentTemplates';
 import AdminPanel from './pages/AdminPanel';
 import AdminApplicationsDocReview from './pages/AdminApplicationsDocReview';
@@ -65,7 +68,7 @@ const RequireAdmin = ({ children }) => {
 };
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { user, isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
 
   // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
@@ -86,6 +89,8 @@ const AuthenticatedApp = () => {
       return null;
     }
   }
+
+  if(user?.password_change_required)return <Navigate to="/change-password" replace/>;
 
   // Render the main app
   return (
@@ -113,6 +118,8 @@ const AuthenticatedApp = () => {
         <Route path="/workflow" element={<RequireAdmin><WorkflowRules /></RequireAdmin>} />
         <Route path="/financials" element={<FinancialOverview />} />
           <Route path="/financial-reporting" element={<Navigate to="/financials" replace />} />
+        <Route path="/award-documents" element={<AwardDocuments />} />
+        <Route path="/award-documents/:id" element={<AwardDocumentReview />} />
         <Route path="/document-templates" element={<RequireAdmin><DocumentTemplates /></RequireAdmin>} />
         <Route path="/admin" element={<RequireAdmin><AdminPanel /></RequireAdmin>} />
         <Route path="/admin-applications" element={<RequireAdmin><AdminApplicationsDocReview /></RequireAdmin>} />
@@ -153,6 +160,8 @@ function App() {
           <Router>
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/reset-password" element={<AccountPassword />} />
+              <Route path="/change-password" element={<AccountPassword temporary />} />
               <Route path="/*" element={<AuthenticatedApp />} />
             </Routes>
           </Router>
