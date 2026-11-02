@@ -92,7 +92,7 @@ export default function TemplateManager() {
     <div className="space-y-6 max-w-6xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-red-600">Document Template Manager</h1>
+          <h1 className="text-2xl font-bold text-black">Document Template Manager</h1>
           <p className="text-muted-foreground text-sm mt-1">Create, manage, and version control document templates</p>
         </div>
         <Button onClick={handleNew} className="gap-2"><Plus className="h-4 w-4" /> New Template</Button>
