@@ -5,10 +5,15 @@ import {formActor,formNofo,auditForm} from '../forms/formAccess.js';
 import {validateNofoMutation} from '../forms/nofoRecordPolicy.js';
 import {NOFO_AWARD_FIELDS} from '../../../src/lib/awards/awardFields.js';
 import {normalizeNofoAwards,normalizeAwardValue} from './awardValidation.js';
+import {normalizeNofoInput} from '../nofoPolicy.js';
+import {legacyContext,stripNofoLegacyFields,assertLegacyNofoMutation} from '../legacyFields.js';
 export async function mutateAwardNofo(pool,actorId,id,input={},method='PUT') {
   return transaction(pool,async db=>{
     const actor=await formActor(db,actorId),previous=id?await formNofo(db,id,true):null;
     let data=await validateNofoMutation(db,actor,id,input,method);
+    const context=await legacyContext(db,actor);
+    assertLegacyNofoMutation(actor,data,context);
+    if(method!=='DELETE'){data=normalizeNofoInput(data,{isCreate:!previous});if(!context.canEdit)delete data.legacy_grant_id;}
     if(!previous&&method!=='DELETE')data.status=data.status||'Draft';
     if(data.title!==undefined&&(typeof data.title!=='string'||!data.title.trim()||data.title.length>500))throw accountError(400,'Enter a NOFO title under 500 characters');
     if(method==='DELETE') {
@@ -42,6 +47,6 @@ export async function mutateAwardNofo(pool,actorId,id,input={},method='PUT') {
     if(id)saved=(await db.query('UPDATE nofos SET '+keys.map((key,i)=>key+'=$'+(i+2)).join(',')+',updated_date=NOW() WHERE id=$1 RETURNING *',[id,...values])).rows[0];
     else saved=(await db.query('INSERT INTO nofos(id,'+keys.join(',')+') VALUES($1,'+keys.map((_,i)=>'$'+(i+2)).join(',')+') RETURNING *',[randomUUID(),...values])).rows[0];
     await auditForm(db,actor,saved.id,id?'NofoDetailsUpdated':'NofoCreated','Saved NOFO details and federal award information revision '+saved.award_metadata_revision);
-    return saved;
+    return stripNofoLegacyFields(saved,context.enabled);
   });
 }
