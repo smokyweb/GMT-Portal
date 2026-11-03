@@ -83,6 +83,31 @@
         "Denied"
       ]
     },
+    "payment_status": {
+      "type": "string",
+      "enum": [
+        "PendingDisbursement",
+        "SubmittedToFinance",
+        "PendingPMApproval",
+        "PendingFOApproval",
+        "Paid",
+        "PaymentFailed"
+      ],
+      "description": "Tracks off-portal payment processing stage"
+    },
+    "payment_date": {
+      "type": "string",
+      "format": "date",
+      "description": "Date payment was confirmed"
+    },
+    "payment_reference": {
+      "type": "string",
+      "description": "External payment reference or check number"
+    },
+    "voucher_number": {
+      "type": "string",
+      "description": "Alphanumeric voucher number associated with the payment"
+    },
     "reviewer_notes": {
       "type": "string"
     },
@@ -91,6 +116,138 @@
     },
     "program_code": {
       "type": "string"
+    },
+    "requires_multi_step_approval": {
+      "type": "boolean",
+      "description": "If true, payment must be approved by Program Manager and Finance Officer before being marked Paid"
+    },
+    "pm_approval_status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Approved",
+        "Rejected"
+      ],
+      "description": "Program Manager approval status"
+    },
+    "pm_approved_by": {
+      "type": "string",
+      "description": "Email of Program Manager who actioned this step"
+    },
+    "pm_approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "pm_notes": {
+      "type": "string"
+    },
+    "fo_approval_status": {
+      "type": "string",
+      "enum": [
+        "Pending",
+        "Approved",
+        "Rejected"
+      ],
+      "description": "Finance Officer approval status"
+    },
+    "fo_approved_by": {
+      "type": "string",
+      "description": "Email of Finance Officer who actioned this step"
+    },
+    "fo_approved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "fo_notes": {
+      "type": "string"
+    },
+    "resource_type": {
+      "type": "string",
+      "enum": [
+        "Deployable",
+        "Shareable"
+      ],
+      "description": "Whether this resource is deployable or shareable"
+    },
+    "thira_spr_capability_action": {
+      "type": "string",
+      "enum": [
+        "Sustain/Maintain",
+        "Build New Capability"
+      ],
+      "description": "THIRA/SPR capability action \u2014 sustaining existing or building new"
+    },
+    "thira_spr_primary_capability": {
+      "type": "string",
+      "enum": [
+        "Planning",
+        "Public Information and Warning",
+        "Operational Coordination",
+        "Forensics and Attribution",
+        "Intelligence and Information Sharing",
+        "Interdiction and Disruption",
+        "Screening, Search, and Detection",
+        "Access Control and Identity Verification",
+        "Cybersecurity",
+        "Physical Protective Measures",
+        "Risk Management for Protection Programs and Activities",
+        "Supply Chain Integrity and Security",
+        "Community Resilience",
+        "Long-Term Vulnerability Reduction",
+        "Risk and Disaster Resilience Assessment",
+        "Threats and Hazards Identification",
+        "Critical Transportation",
+        "Environmental Response/Health and Safety",
+        "Fatality Management Services",
+        "Fire Management and Suppression",
+        "Infrastructure Systems",
+        "Logistics and Supply Chain Management",
+        "Mass Care Services",
+        "Mass Search and Rescue Operations",
+        "On-Scene Security, Protection, and Law Enforcement",
+        "Operational Communications",
+        "Public Health, Healthcare, and Emergency Medical Services",
+        "Situational Assessment",
+        "Economic Recovery",
+        "Health and Social Services",
+        "Housing",
+        "Natural and Cultural Resources"
+      ],
+      "description": "Primary FEMA core capability addressed by this funding request"
+    },
+    "thira_spr_mission_area": {
+      "type": "string",
+      "enum": [
+        "Prevention",
+        "Protection",
+        "Mitigation",
+        "Response",
+        "Recovery"
+      ],
+      "description": "FEMA mission area associated with the primary capability"
+    },
+    "discipline": {
+      "type": "string",
+      "enum": [
+        "Agriculture and Food",
+        "Cyber Security",
+        "Emergency Management",
+        "Emergency Medical Services - Fire Based",
+        "Emergency Medical Services - Non-Fire Based",
+        "Emergency Management Agency",
+        "Fire Service",
+        "Governmental Administrative",
+        "Hazardous Materials",
+        "Health Care",
+        "Law Enforcement",
+        "Not for Profit / Non-Profit",
+        "Public Health",
+        "Public Safety Communications",
+        "Public Works",
+        "Regional Transit System",
+        "Search and Rescue"
+      ],
+      "description": "Discipline / functional area this request falls under"
     }
   },
   "required": [

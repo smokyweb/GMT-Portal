@@ -36,6 +36,14 @@
     "organization_name": {
       "type": "string"
     },
+    "funding_request_id": {
+      "type": "string",
+      "description": "FK to FundingRequest \u2014 set when a document is attached to a specific funding request"
+    },
+    "funding_request_number": {
+      "type": "string",
+      "description": "Denormalized funding request number for display"
+    },
     "tags": {
       "type": "array",
       "items": {

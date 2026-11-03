@@ -1,0 +1,90 @@
+{
+  "name": "BudgetAmendment",
+  "type": "object",
+  "properties": {
+    "application_id": {
+      "type": "string"
+    },
+    "application_number": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "organization_name": {
+      "type": "string"
+    },
+    "submitted_by": {
+      "type": "string"
+    },
+    "amendment_number": {
+      "type": "string",
+      "description": "e.g. BA-2025-001"
+    },
+    "justification": {
+      "type": "string",
+      "description": "Overall justification for the budget amendment"
+    },
+    "impact_on_scope": {
+      "type": "string",
+      "description": "How does this change impact the scope of work?"
+    },
+    "impact_on_timeline": {
+      "type": "string",
+      "description": "How does this change impact the project timeline?"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "Draft",
+        "Submitted",
+        "UnderReview",
+        "Approved",
+        "Denied",
+        "RevisionRequested"
+      ],
+      "default": "Draft"
+    },
+    "reviewer_notes": {
+      "type": "string"
+    },
+    "reviewed_by": {
+      "type": "string"
+    },
+    "reviewed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "submitted_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "original_budget_snapshot": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Snapshot of ApplicationBudget records at time of submission"
+    },
+    "proposed_budget_lines": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      },
+      "description": "Proposed new budget lines after amendment"
+    },
+    "original_total": {
+      "type": "number"
+    },
+    "proposed_total": {
+      "type": "number"
+    },
+    "net_change": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "application_id",
+    "status"
+  ]
+}

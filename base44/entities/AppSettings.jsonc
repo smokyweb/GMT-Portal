@@ -1,0 +1,20 @@
+{
+  "name": "AppSettings",
+  "type": "object",
+  "properties": {
+    "key": {
+      "type": "string",
+      "description": "Unique settings key identifier (e.g. 'document_review')"
+    },
+    "value": {
+      "type": "object",
+      "description": "JSON value for the setting"
+    },
+    "updated_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "key"
+  ]
+}
