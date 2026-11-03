@@ -80,6 +80,7 @@ app.use('/api/functions',createAuditPackageRouter());
 // rerunning the full schema initializer.
 try {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ');
+  await pool.query('ALTER TABLE grantees ADD COLUMN IF NOT EXISTS legacy_fields_enabled BOOLEAN NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS legacy_system_name TEXT');
   await pool.query('ALTER TABLE organizations ADD COLUMN IF NOT EXISTS legacy_spars_id TEXT, ADD COLUMN IF NOT EXISTS vendor_number TEXT, ADD COLUMN IF NOT EXISTS duns TEXT, ADD COLUMN IF NOT EXISTS region TEXT, ADD COLUMN IF NOT EXISTS nonprofit_category TEXT');
   await pool.query('ALTER TABLE organizations ALTER COLUMN ein TYPE TEXT USING ein::text');
   await pool.query('ALTER TABLE organizations ALTER COLUMN sam_uei TYPE TEXT USING sam_uei::text');

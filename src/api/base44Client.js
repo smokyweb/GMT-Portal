@@ -78,10 +78,11 @@ function createEntityClient(entityName) {
 
   return {
     /** list(sort?, limit?) */
-    async list(sort, limit) {
+    async list(sort, limit, options) {
       const params = new URLSearchParams();
       if (sort) params.set('sort', sort);
       if (limit) params.set('limit', String(limit));
+      Object.entries(options || {}).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== '') params.set(key, String(value)); });
       const qs = params.toString();
       return api('GET', `${base}${qs ? '?' + qs : ''}`).catch(e => { console.warn('[GMT] list', entityName, e.message); return []; });
     },
@@ -96,13 +97,15 @@ function createEntityClient(entityName) {
     },
 
     /** create(data) - returns the created record */
-    async create(data) {
-      return api('POST', base, data);
+    async create(data, options) {
+      const query = new URLSearchParams(options || {}).toString();
+      return api('POST', base + (query ? '?' + query : ''), data);
     },
 
     /** update(id, data) - returns the updated record */
-    async update(id, data) {
-      return api('PUT', `${base}/${id}`, data);
+    async update(id, data, options) {
+      const query = new URLSearchParams(options || {}).toString();
+      return api('PUT', base + '/' + id + (query ? '?' + query : ''), data);
     },
 
     /** delete(id) */

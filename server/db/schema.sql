@@ -48,6 +48,8 @@ CREATE TABLE IF NOT EXISTS grantees (
   portal_title    TEXT,
   portal_subtitle TEXT,
   is_active       BOOLEAN DEFAULT true,
+  legacy_fields_enabled BOOLEAN NOT NULL DEFAULT false,
+  legacy_system_name TEXT,
   max_users       NUMERIC,
   notes           TEXT,
   grant_programs  JSONB DEFAULT '[]',

@@ -36,10 +36,16 @@ export default function ReportBuilder() {
   const [saveLoading, setSaveLoading] = useState(false);
   const [savedId, setSavedId] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [legacyFieldsEnabled, setLegacyFieldsEnabled] = useState(false);
+  const [legacyFieldsLoaded, setLegacyFieldsLoaded] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => {
+    base44.auth.me().then(async u => {
       setUser(u);
+      const grantees = await base44.entities.Grantee.list('-created_date', 200).catch(() => []);
+      const grantee = (grantees || []).find(g => g.id === u.grantee_id || g.state_code === u.scope_state);
+      setLegacyFieldsEnabled(Boolean(grantee?.legacy_fields_enabled));
+      setLegacyFieldsLoaded(true);
       // Load from URL state if passed
       const stored = sessionStorage.getItem('reportBuilderConfig');
       if (stored) {
@@ -52,6 +58,12 @@ export default function ReportBuilder() {
       }
     });
   }, []);
+
+  useEffect(() => {
+    if (!legacyFieldsLoaded || legacyFieldsEnabled) return;
+    const hidden = new Set(['legacy_spars_id', 'vendor_number', 'duns', 'region', 'org_legacy_spars_id', 'org_vendor_number']);
+    setConfig(current => ({ ...current, selected_fields: (current.selected_fields || []).filter(field => !hidden.has(field.key)), filters: (current.filters || []).filter(filter => !hidden.has(filter.field)) }));
+  }, [legacyFieldsLoaded, legacyFieldsEnabled]);
 
   const isSub = isSubrecipient(user?.role);
   const sources = isSub ? SUBRECIPIENT_SOURCES : DATA_SOURCES;
@@ -229,6 +241,7 @@ export default function ReportBuilder() {
                 sourceKey={config.data_source}
                 selectedFields={config.selected_fields}
                 onChange={f => update({ selected_fields: f })}
+                includeLegacy={legacyFieldsEnabled}
               />
             )}
           </StepPanel>
@@ -246,6 +259,7 @@ export default function ReportBuilder() {
                 sourceKey={config.data_source}
                 filters={config.filters}
                 onChange={f => update({ filters: f })}
+                includeLegacy={legacyFieldsEnabled}
                 filterLogic={config.filter_logic}
                 onLogicChange={l => update({ filter_logic: l })}
               />

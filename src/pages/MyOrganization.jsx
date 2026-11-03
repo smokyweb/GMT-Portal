@@ -21,6 +21,7 @@ export default function MyOrganization() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
+  const [legacyConfig, setLegacyConfig] = useState({ enabled: false, systemName: '', canEdit: false });
 
   const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'legacy_spars_id', 'vendor_number', 'duns', 'region', 'nonprofit_category', 'address', 'city', 'state', 'zip', 'county'];
   const extractForm = (o) => FORM_FIELDS.reduce((acc, k) => ({ ...acc, [k]: o[k] || '' }), { type: o.type || 'Municipality' });
@@ -28,6 +29,9 @@ export default function MyOrganization() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
+      const grantees = await base44.entities.Grantee.list('-created_date', 200).catch(() => []);
+      const grantee = (grantees || []).find(g => g.id === u.grantee_id || g.state_code === u.scope_state);
+      setLegacyConfig({ enabled: Boolean(grantee?.legacy_fields_enabled), systemName: grantee?.legacy_system_name?.trim() || '', canEdit: Boolean(grantee?.legacy_fields_enabled && ['admin', 'isc_admin'].includes(u.role)) });
       try {
         if (u.organization_id) {
           // Load org by listing all and finding by id (filter by id not always supported)
@@ -53,13 +57,13 @@ export default function MyOrganization() {
     setSaving(true);
     setError('');
     try {
+      const data = { ...form, is_active: true };
+      if (!legacyConfig.canEdit) ['legacy_spars_id', 'vendor_number', 'duns', 'region'].forEach(key => delete data[key]);
       if (org) {
-        // Update existing org - only send form fields, not raw org object
-        await base44.entities.Organization.update(org.id, { ...form, is_active: true });
-        setOrg(prev => ({ ...prev, ...form }));
+        await base44.entities.Organization.update(org.id, data);
+        setOrg(prev => ({ ...prev, ...data }));
       } else {
-        // Create new org
-        const newOrg = await base44.entities.Organization.create({ ...form, is_active: true });
+        const newOrg = await base44.entities.Organization.create(data);
         setOrg(newOrg);
         // Link org to user - try updateMe, fall back to user entity update
         try {
@@ -121,10 +125,7 @@ export default function MyOrganization() {
               </div>
               <div><Label>EIN</Label><Input value={form.ein} onChange={e => setForm(f => ({ ...f, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
               <div><Label>SAM UEI</Label><Input value={form.sam_uei} onChange={e => setForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
-              <div><Label>Legacy SPARS ID</Label><Input value={form.legacy_spars_id} onChange={e => setForm(f => ({ ...f, legacy_spars_id: e.target.value }))} /> </div>
-              <div><Label>Address Book #</Label><Input value={form.vendor_number} onChange={e => setForm(f => ({ ...f, vendor_number: e.target.value }))} /> </div>
-              <div><Label>DUNS (legacy)</Label><Input value={form.duns} onChange={e => setForm(f => ({ ...f, duns: e.target.value }))} /> </div>
-              <div><Label>Region</Label><Input value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} /> </div>
+              {legacyConfig.enabled && <div className="col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Legacy / Payment Info</Label><p className="text-xs text-muted-foreground">Optional legacy and payment identifiers.</p></div><div className="grid grid-cols-2 gap-4"><div><Label>{legacyConfig.systemName ? legacyConfig.systemName + ' ID' : 'Legacy ID'}</Label><Input disabled={!legacyConfig.canEdit} value={form.legacy_spars_id} onChange={e => setForm(f => ({ ...f, legacy_spars_id: e.target.value }))} /></div><div><Label>Address Book #</Label><Input disabled={!legacyConfig.canEdit} value={form.vendor_number} onChange={e => setForm(f => ({ ...f, vendor_number: e.target.value }))} /></div><div><Label>DUNS (legacy)</Label><Input disabled={!legacyConfig.canEdit} value={form.duns} onChange={e => setForm(f => ({ ...f, duns: e.target.value }))} /></div><div><Label>Region</Label><Input disabled={!legacyConfig.canEdit} value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} /></div></div></div>}
               {form.type === 'Nonprofit' && <div><Label>Nonprofit Category</Label><Select value={form.nonprofit_category || '__none__'} onValueChange={v => setForm(f => ({ ...f, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Not specified</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
               <div><Label>County</Label><Input value={form.county} onChange={e => setForm(f => ({ ...f, county: e.target.value }))} /></div>
               <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>

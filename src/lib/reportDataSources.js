@@ -179,6 +179,8 @@ export const FIELD_GROUPS = {
     { key: 'org_city', label: 'City', type: 'text', sourceKey: 'city' },
     { key: 'org_state', label: 'State', type: 'text', sourceKey: 'state' },
     { key: 'org_ein', label: 'EIN', type: 'text', sourceKey: 'ein' },
+    { key: 'org_legacy_spars_id', label: 'Legacy ID', type: 'text', sourceKey: 'legacy_spars_id', legacy: true },
+    { key: 'org_vendor_number', label: 'Vendor #', type: 'text', sourceKey: 'vendor_number', legacy: true },
   ],
   Nofo: [
     { key: 'nofo_title_field', label: 'NOFO Title', type: 'text', sourceKey: 'title' },
@@ -258,6 +260,10 @@ export const FIELD_GROUPS = {
     { key: 'state', label: 'State', type: 'text' },
     { key: 'ein', label: 'EIN', type: 'text' },
     { key: 'sam_uei', label: 'SAM UEI', type: 'text' },
+    { key: 'legacy_spars_id', label: 'Legacy ID', type: 'text', legacy: true },
+    { key: 'vendor_number', label: 'Vendor #', type: 'text', legacy: true },
+    { key: 'duns', label: 'DUNS (legacy)', type: 'text', legacy: true },
+    { key: 'region', label: 'Region', type: 'text', legacy: true },
     { key: 'is_active', label: 'Is Active', type: 'boolean' },
     { key: 'address', label: 'Address', type: 'text' },
     { key: 'city', label: 'City', type: 'text' },
@@ -354,12 +360,12 @@ export const FIELD_GROUPS = {
 };
 
 // Get all fields for a given data source key
-export function getFieldsForSource(sourceKey) {
+export function getFieldsForSource(sourceKey, options = {}) {
   const src = DATA_SOURCES[sourceKey] || SUBRECIPIENT_SOURCES[sourceKey];
   if (!src) return [];
   const groups = [];
   src.entities.forEach(entity => {
-    const fields = FIELD_GROUPS[entity] || [];
+    const fields = (FIELD_GROUPS[entity] || []).filter(field => options.includeLegacy !== false || !field.legacy);
     if (fields.length) groups.push({ group: entity + ' Fields', fields });
   });
   return groups;

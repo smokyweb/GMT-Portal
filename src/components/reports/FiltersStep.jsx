@@ -41,8 +41,8 @@ function getOps(type) {
 
 const noValueOps = new Set(['is_blank', 'is_not_blank', 'is_true', 'is_false']);
 
-export default function FiltersStep({ sourceKey, filters, onChange, filterLogic, onLogicChange }) {
-  const groups = getFieldsForSource(sourceKey);
+export default function FiltersStep({ sourceKey, filters, onChange, filterLogic, onLogicChange, includeLegacy = true }) {
+  const groups = getFieldsForSource(sourceKey, { includeLegacy });
   const allFields = groups.flatMap(g => g.fields);
 
   const addFilter = () => {

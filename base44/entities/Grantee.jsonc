@@ -51,6 +51,8 @@
       "type": "boolean",
       "default": true
     },
+    "legacy_fields_enabled": { "type": "boolean", "default": false },
+    "legacy_system_name": { "type": "string" },
     "max_users": {
       "type": "number"
     },

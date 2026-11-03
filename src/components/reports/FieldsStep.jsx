@@ -3,14 +3,14 @@ import { X, GripVertical, Pencil, Check } from 'lucide-react';
 import { getFieldsForSource } from '../../lib/reportDataSources';
 import { Input } from '@/components/ui/input';
 
-export default function FieldsStep({ sourceKey, selectedFields, onChange }) {
+export default function FieldsStep({ sourceKey, selectedFields, onChange, includeLegacy = true }) {
   const [search, setSearch] = useState('');
   const [editingIdx, setEditingIdx] = useState(null);
   const [editLabel, setEditLabel] = useState('');
   const [dragIdx, setDragIdx] = useState(null);
   const [dragOverIdx, setDragOverIdx] = useState(null);
 
-  const groups = getFieldsForSource(sourceKey);
+  const groups = getFieldsForSource(sourceKey, { includeLegacy });
   const allAvailable = groups.flatMap(g => g.fields);
   const selectedKeys = new Set(selectedFields.map(f => f.key));
 

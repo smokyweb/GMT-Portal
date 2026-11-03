@@ -16,7 +16,7 @@ const EMPTY_FORM = {
   name: '', state_code: '', agency_name: '', contact_name: '', contact_email: '',
   contact_phone: '', address: '', city: '', state: '', zip: '',
   logo_url: '', primary_color: '#2563eb', secondary_color: '#1e3a5f',
-  portal_title: '', portal_subtitle: '', is_active: true, max_users: 50, notes: '',
+  portal_title: '', portal_subtitle: '', is_active: true, legacy_fields_enabled: false, legacy_system_name: '', max_users: 50, notes: '',
 };
 
 export default function ISCDashboard() {
@@ -376,6 +376,7 @@ export default function ISCDashboard() {
             </TabsContent>
 
             <TabsContent value="config" className="space-y-4">
+              {user?.role === 'isc_admin' && <div className="rounded-lg border p-4 space-y-3"><div><Label>Legacy system fields</Label><p className="text-xs text-muted-foreground">Control whether legacy organization/payment identifiers are shown for this grantee.</p></div><div className="flex items-center gap-3"><Switch checked={Boolean(form.legacy_fields_enabled)} onCheckedChange={v => setForm(f => ({ ...f, legacy_fields_enabled: v }))} /><Label>Show legacy system fields</Label></div><div><Label>Legacy system name</Label><Input className="mt-1" value={form.legacy_system_name || ''} onChange={e => setForm(f => ({ ...f, legacy_system_name: e.target.value }))} placeholder="e.g. SPARS" /></div></div>}
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <Label>Max Users Allowed</Label>
