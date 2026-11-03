@@ -9,7 +9,7 @@ const template=code=>canonicalGanTemplate(source(code));
 function data(code='EMPG') {
   return {application:{id:'app',application_number:'APP-2026-00101',status:'Approved',project_title:'QA communications project',project_narrative:'QA scope of work',requested_amount:500},
     award:{id:'award',fields:{federal_award_number:'EMK-2026-EP-05006',subaward_number:'NE-EMPG-001',state_grant_number:'NE-2026',cfda_number:'97.042',federal_award_date:'2026-08-01',award_start:'2026-10-01',award_close:'2027-09-30',awarded_amount:500,match_amount:500,award_status:'Pending'}},
-    nofo:{id:'nofo',title:'QA FY2026 NOFO',program_name:'QA Federal Program',grant_year:2026,cfda_title:'QA Assistance Listing',total_federal_award:1000000,statutory_authority:'QA authority',federal_award_description:'QA federal purpose',indirect_cost_rate:0,is_r_and_d:false,match_requirement:50},
+    nofo:{id:'nofo',title:'QA FY2026 NOFO',program_name:'QA Federal Program',fiscal_year:2026,cfda_title:'QA Assistance Listing',total_federal_award:1000000,statutory_authority:'QA authority',federal_award_description:'QA federal purpose',indirect_cost_rate:0,is_r_and_d:false,match_requirement:50},
     program:{id:'program',code,name:'QA Full Grant Name',program_year:2026,federal_agency:'QA Federal Agency',match_requirement:50},
     organization:{id:'org',name:'QA County',address:'100 QA Road',city:'Lincoln',state:'NE',zip:'68508',sam_uei:'QA1234567890',ein:'12-3456789'},
     authorizedOfficial:{id:'official',organization_id:'org',full_name:'QA Authorized Official',title:'Emergency Manager',email:'official@gan-qa.invalid',phone:'555-0100',active_status:'active'},

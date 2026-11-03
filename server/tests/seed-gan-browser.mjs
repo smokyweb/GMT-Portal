@@ -24,7 +24,7 @@ try {
     await client.query("SELECT set_config('gmt.gan_settings_action','grantee',true)");
     await client.query("UPDATE grantees SET agency_name='Nebraska Emergency Management Agency',contact_name='QA Grant Coordinator',contact_title='Grant Coordinator',contact_email='grants@gan-browser-qa.invalid',contact_phone='402-555-0200',approving_official_name='QA Assistant Director',approving_official_title='Assistant Director' WHERE id=$1",[grantee.id]);
   });
-  await db.query("UPDATE nofos SET grant_number='EMK-2026-EP-05006',state_grant_number='NE-EMPG-2026',program_name='Emergency Management Performance Grant',grant_year=2026,cfda_number='97.042',cfda_title='Emergency Management Performance Grants',total_federal_award=1000000,federal_award_date='2026-08-01',statutory_authority='Section 662, Post-Katrina Emergency Management Reform Act',federal_award_description='Support all-hazards preparedness and response capabilities.',indirect_cost_rate=0,is_r_and_d=false,match_requirement=50 WHERE id=$1",[nofo.id]);
+  await db.query("UPDATE nofos SET grant_number='EMK-2026-EP-05006',state_grant_number='NE-EMPG-2026',program_name='Emergency Management Performance Grant',fiscal_year=2026,cfda_number='97.042',cfda_title='Emergency Management Performance Grants',total_federal_award=1000000,federal_award_date='2026-08-01',statutory_authority='Section 662, Post-Katrina Emergency Management Reform Act',federal_award_description='Support all-hazards preparedness and response capabilities.',indirect_cost_rate=0,is_r_and_d=false,match_requirement=50 WHERE id=$1",[nofo.id]);
   const cases=[];
   for(const [index,kind] of ['ready','budget','missing'].entries()) {
     const id=randomUUID(),number='APP-2026-0090'+(index+1);

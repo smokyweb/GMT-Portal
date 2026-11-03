@@ -29,7 +29,7 @@ export function resolveGanTokens(body,input) {
   }
   /** @type {Record<string, any>} */
   const values={
-    grant_year:nofo.grant_year||program.program_year,full_grant_name:nofo.full_grant_name||program.name||nofo.program_name,federal_grant_title:nofo.program_name||program.name,
+    grant_year:nofo.fiscal_year||program.program_year,full_grant_name:nofo.full_grant_name||program.name||nofo.program_name,federal_grant_title:nofo.program_name||program.name,
     program_code:program.code||application.program_code,program_name:program.name||application.program_name,nofo_title:nofo.title||application.nofo_title,
     organization_name:organization.name,site_name:organization.site_name||'',organization_address:address,organization_uei:organization.sam_uei,organization_tax_id:organization.ein,
     authorized_official_name:authorizedOfficial.full_name,authorized_official_title:authorizedOfficial.title,authorized_official_email:authorizedOfficial.email,authorized_official_phone:authorizedOfficial.phone,

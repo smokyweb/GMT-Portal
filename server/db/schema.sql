@@ -117,8 +117,6 @@ CREATE TABLE IF NOT EXISTS nofos (
   evaluation_criteria   TEXT,
   total_funding_available NUMERIC,
   fiscal_year INTEGER CHECK (fiscal_year IS NULL OR fiscal_year BETWEEN 1000 AND 9999),
-  federal_period_start DATE,
-  federal_period_end DATE,
   local_share_amount NUMERIC,
   state_share_amount NUMERIC,
   mou_amount NUMERIC,

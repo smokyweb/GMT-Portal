@@ -1,6 +1,5 @@
-import NofoAwardFieldGroup from '@/components/awards/NofoAwardFieldGroup';
-import NofoFederalIdentifiers from '@/components/awards/NofoFederalIdentifiers';
-import {prepareNofoAwardForm,nofoAwardSaveData,applyAwardProgramDefaults} from '@/lib/awards/nofoAwardData';
+import NofoDetailsSections from '@/components/nofo-form/NofoDetailsSections';
+import {prepareNofoAwardForm,nofoAwardSaveData} from '@/lib/awards/nofoAwardData';
 import NofoEditContent from '@/components/nofo-form/NofoEditContent';
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
@@ -15,17 +14,14 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Switch } from '@/components/ui/switch';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import StatusBadge from '../components/StatusBadge';
-import RequiredTemplatesPanel from '@/components/RequiredTemplatesPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 import { toast } from '@/components/ui/toast-simple';
-
-const ORG_TYPES = ['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'];
 
 const emptyNofo = {
   title: '', grant_number: '', summary: '', program_id: '', program_name: '', program_code: '',
   eligibility_criteria: '', allowable_costs: '', evaluation_criteria: '',
   total_funding_available: 0, min_award: 0, max_award: 0,
-  fiscal_year: '', federal_period_start: '', federal_period_end: '', local_share_amount: '', state_share_amount: '', mou_amount: '', local_share_pct: null, state_share_pct: null, legacy_grant_id: '',
+  fiscal_year: '', federal_award_date: '', federal_close_date: '', federal_performance_start: '', federal_performance_end: '', local_share_amount: '', state_share_amount: '', mou_amount: '', local_share_pct: null, state_share_pct: null, legacy_grant_id: '',
   open_date: '', close_date: '', status: 'Draft', required_documents: [],
   eligible_org_types: [], scoring_enabled: false, scope_states: [],
 };
@@ -117,8 +113,6 @@ export default function NofoManagement() {
       eligible_org_types: nofo.eligible_org_types || [],
       scope_states: nofo.scope_states || (user?.scope_state ? [user.scope_state] : []),
       fiscal_year: nofo.fiscal_year ?? '',
-      federal_period_start: toDateInput(nofo.federal_period_start),
-      federal_period_end: toDateInput(nofo.federal_period_end),
       local_share_amount: nofo.local_share_amount ?? '',
       state_share_amount: nofo.state_share_amount ?? '',
       mou_amount: nofo.mou_amount ?? '',
@@ -139,7 +133,7 @@ export default function NofoManagement() {
   const handleSave = async () => {
     if (!form.title?.trim()) { setSaveError('Title is required.'); return; }
     if (!editing && (!form.fiscal_year || !/^\d{4}$/.test(String(form.fiscal_year)))) { setSaveError('Fiscal Year is required and must be 4 digits for new NOFOs.'); return; }
-    if (form.federal_period_start && form.federal_period_end && form.federal_period_end < form.federal_period_start) { setSaveError('Federal period end must be on or after the start date.'); return; }
+    if (form.federal_performance_start && form.federal_performance_end && form.federal_performance_end < form.federal_performance_start) { setSaveError('Federal PoP End must be on or after Federal PoP Start.'); return; }
     setSaving(true);
     setSaveError('');
     try {
@@ -153,8 +147,6 @@ export default function NofoManagement() {
         max_award: Number(form.max_award) || 0,
         eligible_org_types: form.eligible_org_types || [],
         fiscal_year: form.fiscal_year === '' ? null : Number(form.fiscal_year),
-        federal_period_start: form.federal_period_start || null,
-        federal_period_end: form.federal_period_end || null,
         local_share_amount: form.local_share_amount === '' ? null : Number(form.local_share_amount),
         state_share_amount: form.state_share_amount === '' ? null : Number(form.state_share_amount),
         mou_amount: form.mou_amount === '' ? null : Number(form.mou_amount),
@@ -423,180 +415,32 @@ export default function NofoManagement() {
 
       {/* Create/Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader>
             <DialogTitle>{editing ? 'Edit NOFO' : 'Create NOFO'}</DialogTitle>
           </DialogHeader>
-          <NofoEditContent nofo={editing}>
-          <div className="space-y-4">
-            <NofoFederalIdentifiers form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><Label>Fiscal Year *</Label><Input type="number" min="1000" max="9999" step="1" value={form.fiscal_year} onChange={e=>setForm(f=>({...f,fiscal_year:e.target.value}))} placeholder="e.g. 2023" /></div></div>
-            <div>
-              <Label>Grant Program</Label>
-              <Select
-                value={form.program_id}
-                onValueChange={v => {
-                  const prog = programs.find(p => p.id === v);
-                  setForm(f => ({
-                    ...applyAwardProgramDefaults(f,prog),
-                    program_id: v,
-                    program_name: prog?.name || f.program_name,
-                    program_code: prog?.code || f.program_code,
-                    // Prefill eligibility from program - use eligibility_criteria field
-                    eligibility_criteria: f.eligibility_criteria || prog?.eligibility_criteria || (Array.isArray(prog?.eligibility_requirements) ? prog.eligibility_requirements.join('\n') : '') || '',
-                    allowable_costs: f.allowable_costs || prog?.allowable_costs || '',
-                  }));
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder="Select program" /></SelectTrigger>
-                <SelectContent>
-                  {programs.filter(p => p.is_active || p.id === form.program_id).map(p => (
-                    <SelectItem key={p.id} value={p.id}>{p.name} ({p.code}){!p.is_active ? ' ⚠ inactive' : ''}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <NofoAwardFieldGroup group="Program" form={form} program={programs.find(program=>program.id===form.program_id)} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
-            <div>
-              <Label>Summary</Label>
-              <Textarea value={form.summary} onChange={e => setForm(f => ({ ...f, summary: e.target.value }))} rows={3} />
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <Label>Total Funding ($)</Label>
-                <Input type="number" value={form.total_funding_available} onChange={e => setForm(f => ({ ...f, total_funding_available: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Min Award ($)</Label>
-                <Input type="number" value={form.min_award} onChange={e => setForm(f => ({ ...f, min_award: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Max Award ($)</Label>
-                <Input type="number" value={form.max_award} onChange={e => setForm(f => ({ ...f, max_award: e.target.value }))} />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Open Date</Label>
-                <Input type="date" value={form.open_date ? form.open_date.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, open_date: e.target.value }))} />
-              </div>
-              <div>
-                <Label>Close Date</Label>
-                <Input type="date" value={form.close_date ? form.close_date.substring(0, 10) : '-'} onChange={e => setForm(f => ({ ...f, close_date: e.target.value }))} />
-              </div>
-            </div>
-
-            <NofoAwardFieldGroup group="Federal Dates" form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
-            <div className="border rounded-lg p-4 space-y-3"><h3 className="font-semibold">Federal Period of Performance</h3><div className="grid grid-cols-2 gap-3"><div><Label>Federal Period of Performance – Start</Label><Input type="date" value={form.federal_period_start || ''} onChange={e=>setForm(f=>({...f,federal_period_start:e.target.value}))}/></div><div><Label>Federal Period of Performance – End</Label><Input type="date" value={form.federal_period_end || ''} min={form.federal_period_start || undefined} onChange={e=>setForm(f=>({...f,federal_period_end:e.target.value}))}/></div></div></div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><div><Label>Local Share (Pass-Through)</Label><Input type="number" min="0" step="0.01" value={form.local_share_amount} onChange={e=>setForm(f=>({...f,local_share_amount:e.target.value}))}/></div><div><Label>State Share (Retained)</Label><Input type="number" min="0" step="0.01" value={form.state_share_amount} onChange={e=>setForm(f=>({...f,state_share_amount:e.target.value}))}/></div><div><Label>MOU Amount</Label><Input type="number" min="0" step="0.01" value={form.mou_amount} onChange={e=>setForm(f=>({...f,mou_amount:e.target.value}))}/></div></div><div className="grid grid-cols-2 gap-3"><div><Label>Local Share %</Label><Input readOnly value={form.total_funding_available && form.local_share_amount !== '' ? ((Number(form.local_share_amount)/Number(form.total_funding_available))*100).toFixed(2) : ''}/></div><div><Label>State Share %</Label><Input readOnly value={form.total_funding_available && form.state_share_amount !== '' ? ((Number(form.state_share_amount)/Number(form.total_funding_available))*100).toFixed(2) : ''}/></div></div>
-            {legacyConfig.enabled && <div className="border rounded-lg p-4"><Label>{legacyLabel}</Label><Input value={form.legacy_grant_id || ''} disabled={!legacyConfig.canEdit} onChange={e=>setForm(f=>({...f,legacy_grant_id:e.target.value}))}/></div>}
-            <div>
-              <Label>Eligibility Criteria</Label>
-              <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Enter eligibility criteria for this NOFO..." />
-            </div>
-            <div>
-              <Label>Allowable Costs</Label>
-              <Textarea value={form.allowable_costs} onChange={e => setForm(f => ({ ...f, allowable_costs: e.target.value }))} rows={3} placeholder="Enter allowable costs for this NOFO..." />
-            </div>
-            <div>
-              <Label>Evaluation Criteria</Label>
-              <Textarea value={form.evaluation_criteria} onChange={e => setForm(f => ({ ...f, evaluation_criteria: e.target.value }))} rows={2} />
-            </div>
-
-            {/* State Scope */}
-            <div>
-              <Label>Available States</Label>
-              <p className="text-xs text-muted-foreground mb-2">Leave empty to make this NOFO available to all states.</p>
-              <Input
-                value={(form.scope_states || []).join(', ')}
-                onChange={e => setForm(f => ({ ...f, scope_states: e.target.value.split(',').map(s => s.trim().toUpperCase()).filter(Boolean) }))}
-                placeholder="e.g. NE, IL, CA"
+          <div className="min-h-0 flex-1 overflow-y-auto pr-1">
+            <NofoEditContent nofo={editing}>
+              <NofoDetailsSections
+                form={form}
+                onChange={next => setForm(next)}
+                programs={programs}
+                editing={editing}
+                legacyConfig={legacyConfig}
+                legacyLabel={legacyLabel}
+                onAddDoc={addDoc}
+                onUpdateDoc={updateDoc}
+                onRemoveDoc={removeDoc}
               />
-            </div>
-
-            {/* Eligibility Restrictions */}
-            <div className="border rounded-lg p-4 space-y-3 bg-muted/30">
-              <div>
-                <Label className="font-semibold">Eligible Organization Types</Label>
-                <p className="text-xs text-muted-foreground mb-2">Leave all unchecked to allow all organization types.</p>
-                <div className="flex flex-wrap gap-3">
-                  {ORG_TYPES.map(type => (
-                    <label key={type} className="flex items-center gap-2 cursor-pointer">
-                      <Checkbox
-                        checked={(form.eligible_org_types || []).includes(type)}
-                        onCheckedChange={checked => {
-                          setForm(f => {
-                            const current = f.eligible_org_types || [];
-                            return {
-                              ...f,
-                              eligible_org_types: checked
-                                ? [...current, type]
-                                : current.filter(t => t !== type),
-                            };
-                          });
-                        }}
-                      />
-                      <span className="text-sm">{type}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Scoring */}
-            <div className="flex items-center justify-between rounded-lg border p-4 bg-muted/30">
-              <div>
-                <Label className="font-semibold">Enable Application Scoring</Label>
-                <p className="text-xs text-muted-foreground mt-0.5">Allow reviewers to score applications submitted under this NOFO using the rubric scorecard.</p>
-              </div>
-              <Switch
-                checked={!!form.scoring_enabled}
-                onCheckedChange={v => setForm(f => ({ ...f, scoring_enabled: v }))}
-              />
-            </div>
-
-            <NofoAwardFieldGroup group="Terms" form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
-            {/* Required Documents */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <Label>Required Documents</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addDoc}>+ Add Document</Button>
-              </div>
-              <div className="space-y-2">
-                {(form.required_documents || []).map((doc, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input value={doc.name} onChange={e => updateDoc(idx, 'name', e.target.value)} placeholder="Document name" className="flex-1" />
-                    <div className="flex items-center gap-1">
-                      <Checkbox checked={doc.mandatory} onCheckedChange={v => updateDoc(idx, 'mandatory', v)} />
-                      <span className="text-xs">Required</span>
-                    </div>
-                    <Button variant="ghost" size="sm" onClick={() => removeDoc(idx)}>✕</Button>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Required Document Templates */}
-            {editing && (
-              <div className="border rounded-lg p-4 bg-muted/20">
-                <RequiredTemplatesPanel
-                  entityType="NOFO"
-                  entityId={editing.id}
-                  requiredTemplateIds={form.required_template_ids || []}
-                  onUpdate={(ids) => setForm(f => ({ ...f, required_template_ids: ids }))}
-                  isAdmin={true}
-                />
-              </div>
-            )}
+            </NofoEditContent>
           </div>
-          <DialogFooter className="flex-col items-end gap-2">
+          <DialogFooter className="flex-shrink-0 flex-col items-end gap-2 border-t pt-3">
             {saveError && <p className="text-sm text-red-500 w-full">{saveError}</p>}
             <div className="flex gap-2">
               <Button variant="outline" onClick={() => { setOpen(false); setSaveError(''); }}>Cancel</Button>
               <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : (editing ? 'Update' : 'Create')} NOFO</Button>
             </div>
           </DialogFooter>
-          </NofoEditContent>
         </DialogContent>
       </Dialog>
 
@@ -617,7 +461,7 @@ export default function NofoManagement() {
                 <div><p className="text-xs text-muted-foreground">Award Range</p><p className="font-medium">{viewNofo.min_award || viewNofo.max_award ? `$${Number(viewNofo.min_award||0).toLocaleString()} - $${Number(viewNofo.max_award||0).toLocaleString()}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date ? new Date(viewNofo.open_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date ? new Date(viewNofo.close_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Federal Period</p><p className="font-medium">{viewNofo.federal_period_start || viewNofo.federal_period_end ? `${formatDateShort(viewNofo.federal_period_start)} - ${formatDateShort(viewNofo.federal_period_end)}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Federal PoP</p><p className="font-medium">{viewNofo.federal_performance_start || viewNofo.federal_performance_end ? `${formatDateShort(viewNofo.federal_performance_start)} - ${formatDateShort(viewNofo.federal_performance_end)}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Local / State Share</p><p className="font-medium">{viewNofo.local_share_pct != null ? `${Number(viewNofo.local_share_pct).toFixed(2)}%` : '-'} / {viewNofo.state_share_pct != null ? `${Number(viewNofo.state_share_pct).toFixed(2)}%` : '-'}</p></div>
                 {legacyConfig.enabled && <div><p className="text-xs text-muted-foreground">{legacyLabel}</p><p className="font-medium">{viewNofo.legacy_grant_id || '-'}</p></div>}
                 <div><p className="text-xs text-muted-foreground">Available States</p><p className="font-medium">{viewNofo.scope_states?.length ? viewNofo.scope_states.join(', ') : 'All States'}</p></div>

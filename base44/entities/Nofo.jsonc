@@ -79,16 +79,6 @@
       "type": "number",
       "description": "Four-digit fiscal year; required when creating a new NOFO."
     },
-    "federal_period_start": {
-      "type": "string",
-      "format": "date",
-      "description": "Federal Period of Performance – Start."
-    },
-    "federal_period_end": {
-      "type": "string",
-      "format": "date",
-      "description": "Federal Period of Performance – End; must be on or after the start date."
-    },
     "local_share_amount": {
       "type": "number",
       "description": "Local Share (Pass-Through)."

@@ -12,7 +12,7 @@ export function normalizeAwardValue(field,value) {
   if(field.type==='money'){const cents=moneyCents(value);if(cents===null)throw accountError(400,field.label+' needs a nonnegative amount with at most two decimals');return (cents/100).toFixed(2);}
   if(field.type==='boolean'){if(typeof value!=='boolean')throw accountError(400,field.label+' must be yes or no');return value;}
   if(field.type==='percent'){if(!/^\d+(\.\d{1,4})?$/.test(String(value))||Number(value)>100)throw accountError(400,field.label+' must be between 0 and 100');return Number(value);}
-  if(field.type==='year'){if(!/^\d{4}$/.test(String(value))||Number(value)<1900||Number(value)>2200)throw accountError(400,'Enter a four-digit grant year');return Number(value);}
+  if(field.type==='year'){if(!/^\d{4}$/.test(String(value))||Number(value)<1900||Number(value)>2200)throw accountError(400,(field.label||'Fiscal Year')+' must be a four-digit year');return Number(value);}
   if(typeof value!=='string'||value.trim().length>(field.type==='textarea'?10000:500))throw accountError(400,field.label+' is too long or invalid');
   return value.trim()||null;
 }
@@ -22,8 +22,8 @@ export function validateIdentifier(key,value) {
   if(key.startsWith('cfda_number')&&!/^\d{2}\.\d{3}$/.test(value))throw accountError(400,'CFDA / Assistance Listing must use the format 97.042');
 }
 export function validateDates(fields) {
-  for(const [start,end,label] of [['award_start','award_close','Award'],['federal_performance_start','federal_performance_end','Federal period of performance'],['federal_award_date','federal_close_date','Federal award'],['state_start','state_close','State']])
-    if(fields[start]&&fields[end]&&inputDate(fields[end])<=inputDate(fields[start]))throw accountError(400,label+' end must be after its start');
+  for(const [start,end,label,allowEqual] of [['award_start','award_close','Award',false],['federal_performance_start','federal_performance_end','Federal period of performance',true],['federal_award_date','federal_close_date','Federal award',false],['state_start','state_close','State',false]])
+    if(fields[start]&&fields[end]&&((allowEqual&&inputDate(fields[end])<inputDate(fields[start]))||(!allowEqual&&inputDate(fields[end])<=inputDate(fields[start]))))throw accountError(400,label+' end must be '+(allowEqual?'on or after':'after')+' its start');
 }
 export function validateAwardChanges(previous,input) {
   if(!input||typeof input!=='object'||Array.isArray(input))throw accountError(400,'Provide award fields');

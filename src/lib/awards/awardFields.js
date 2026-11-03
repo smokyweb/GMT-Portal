@@ -26,7 +26,7 @@ export const NOFO_AWARD_FIELDS=[
   {key:'funding_stream',label:'Funding Stream',group:'Program'},
   {key:'cfda_number',label:'CFDA / Assistance Listing',group:'Program'},
   {key:'cfda_title',label:'Assistance Listing Title',group:'Program'},
-  {key:'grant_year',label:'Grant Year',type:'year',group:'Program'},
+  {key:'fiscal_year',label:'Fiscal Year',type:'year',group:'Program'},
   {key:'ma_percent',label:'M&A Retained (%)',type:'percent',group:'Program'},
   {key:'organization_award_cap',label:'Per-Organization Award Cap ($)',type:'money',group:'Program'},
   {key:'total_federal_award',label:'Total Federal Award to State ($)',type:'money',group:'Program'},

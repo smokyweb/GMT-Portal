@@ -95,10 +95,10 @@ try {
   await pool.query('CREATE TRIGGER users_clear_invalid_primary_contact AFTER UPDATE OF organization_id,active_status OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION clear_invalid_primary_contact()');
   await clearInvalidPrimaryContacts(pool);
   await migrateAccountAccess(pool);
+  await migrateAwards(pool);
   await migrateNofoFields(pool);
   await migrateNofoForms(pool);
   await migrateEhp(pool);
-  await migrateAwards(pool);
   await migrateGanRuntime(pool);
   app.listen(PORT, () => {
     console.log(`GMT Portal API running on http://localhost:${PORT}`);

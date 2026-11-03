@@ -1,6 +1,6 @@
 const definitions={};
 const add=(record,screen,fields)=>{for(const [token,field] of Object.entries(fields))definitions[token]={record,screen,field};};
-add('Nofo','NOFOs › Edit NOFO',{grant_year:'grant_year',full_grant_name:'program_name',federal_grant_title:'program_name',state_grant_number:'state_grant_number',
+add('Nofo','NOFOs › Edit NOFO',{grant_year:'fiscal_year',full_grant_name:'program_name',federal_grant_title:'program_name',state_grant_number:'state_grant_number',
   cfda_title:'cfda_title',total_federal_award:'total_federal_award',statutory_authority:'statutory_authority',federal_award_description:'federal_award_description',
   indirect_cost_rate:'indirect_cost_rate',is_r_and_d:'is_r_and_d',indirect_rd_statement:'indirect_rd_statement',payment_method:'payment_method',cost_share_requirement:'match_requirement'});
 add('GrantProgram','Grant Programs',{federal_granting_agency:'federal_agency',program_code:'code',program_name:'name'});

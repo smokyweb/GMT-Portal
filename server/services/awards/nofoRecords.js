@@ -36,7 +36,6 @@ export async function mutateAwardNofo(pool,actorId,id,input={},method='PUT') {
     if(previous&&previous.program_id!==programId&&(previous.current_form_version_id||(await db.query('SELECT id FROM applications WHERE nofo_id=$1 LIMIT 1',[id])).rows.length))throw accountError(409,'A NOFO with applications keeps its original grant program');
     if(!previous&&program) {
       if(!Object.hasOwn(data,'cfda_number'))data.cfda_number=program.cfda_number||null;
-      if(!Object.hasOwn(data,'grant_year'))data.grant_year=program.program_year||null;
     }
     if(Object.hasOwn(data,'grant_number'))data.grant_number=normalizeAwardValue({key:'grant_number',label:'Federal Grant Number (FAIN)'},data.grant_number);
     data=normalizeNofoAwards(data,previous||{},program||{});
