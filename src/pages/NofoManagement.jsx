@@ -17,6 +17,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import StatusBadge from '../components/StatusBadge';
 import RequiredTemplatesPanel from '@/components/RequiredTemplatesPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
+import { toast } from '@/components/ui/toast-simple';
 
 const ORG_TYPES = ['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'];
 
@@ -24,6 +25,7 @@ const emptyNofo = {
   title: '', grant_number: '', summary: '', program_id: '', program_name: '', program_code: '',
   eligibility_criteria: '', allowable_costs: '', evaluation_criteria: '',
   total_funding_available: 0, min_award: 0, max_award: 0,
+  fiscal_year: '', federal_period_start: '', federal_period_end: '', local_share_amount: '', state_share_amount: '', mou_amount: '', local_share_pct: null, state_share_pct: null, legacy_grant_id: '',
   open_date: '', close_date: '', status: 'Draft', required_documents: [],
   eligible_org_types: [], scoring_enabled: false, scope_states: [],
 };
@@ -42,46 +44,53 @@ export default function NofoManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterProgram, setFilterProgram] = useState('all');
+  const [filterFiscalYear, setFilterFiscalYear] = useState('');
+  const [fiscalYearSort, setFiscalYearSort] = useState('desc');
+  const [grantees, setGrantees] = useState([]);
+  const [selectedGranteeId, setSelectedGranteeId] = useState('');
+  const [legacyConfig, setLegacyConfig] = useState({ enabled: false, systemName: '', canEdit: false });
+  const legacyLabel = legacyConfig.systemName ? `${legacyConfig.systemName} Grant ID` : 'Legacy ID';
   const [nofoStats, setNofoStats] = useState({}); // map nofo_id -> { awarded, remaining }
   const [nofoHistory, setNofoHistory] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  useEffect(() => {
-    loadData();
-  }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadData = async () => {
-    const [n, p, u] = await Promise.all([
-      base44.entities.Nofo.list('-created_date', 50),
+  const loadData = async (u = user, viewingId = selectedGranteeId) => {
+    const [n, p, currentUser, gs] = await Promise.all([
+      base44.entities.Nofo.list('-created_date', 500, { grantee_id: viewingId || undefined }),
       base44.entities.GrantProgram.list('-name', 100),
-      base44.auth.me(),
+      u ? Promise.resolve(u) : base44.auth.me(),
+      base44.entities.Grantee.list('-created_date', 200),
     ]);
-    setUser(u);
-    setPrograms(p);
-
-    // Filter NOFOs by user role
-    let filtered = n;
-    if (u && !['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
-      if (u.role === 'admin' && u.scope_state) {
-        // State admin: see NOFOs where scope_states includes their state OR scope_states is empty (universal)
-        filtered = n.filter(nofo => 
-          !nofo.scope_states || nofo.scope_states.length === 0 || nofo.scope_states.includes(u.scope_state)
-        );
-      }
+    const activeUser = currentUser || u;
+    const allGrantees = gs || [];
+    const id = viewingId || (activeUser?.role === 'isc_admin'
+      ? (allGrantees[0]?.id || '')
+      : (allGrantees.find(g => g.id === activeUser?.grantee_id || g.state_code === activeUser?.scope_state)?.id || ''));
+    const grantee = allGrantees.find(g => g.id === id);
+    setUser(activeUser);
+    setPrograms(p || []);
+    setGrantees(allGrantees);
+    setSelectedGranteeId(id);
+    setLegacyConfig({ enabled: Boolean(grantee?.legacy_fields_enabled), systemName: grantee?.legacy_system_name?.trim() || '', canEdit: Boolean(grantee?.legacy_fields_enabled && ['admin', 'isc_admin'].includes(activeUser?.role)) });
+    let filtered = n || [];
+    if (activeUser && !['isc_admin', 'federal_admin', 'federal_officer'].includes(activeUser.role) && activeUser.role === 'admin' && activeUser.scope_state) {
+      filtered = filtered.filter(nofo => !nofo.scope_states || nofo.scope_states.length === 0 || nofo.scope_states.includes(activeUser.scope_state));
     }
     setNofos(filtered);
-        // Load awarded amounts per NOFO
     base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500).then(apps => {
       const statsMap = {};
-      (apps || []).forEach(app => {
-        if (app.nofo_id) {
-          if (!statsMap[app.nofo_id]) statsMap[app.nofo_id] = { awarded: 0 };
-          statsMap[app.nofo_id].awarded += Number(app.awarded_amount) || 0;
-        }
-      });
+      (apps || []).forEach(app => { if (app.nofo_id) { if (!statsMap[app.nofo_id]) statsMap[app.nofo_id] = { awarded: 0 }; statsMap[app.nofo_id].awarded += Number(app.awarded_amount) || 0; } });
       setNofoStats(statsMap);
     }).catch(() => {});
-setLoading(false);
+    setLoading(false);
+  };
+
+  const changeViewingGrantee = async (id) => {
+    setSelectedGranteeId(id);
+    setLoading(true);
+    await loadData(user, id);
   };
 
   const openCreate = () => {
@@ -107,6 +116,15 @@ setLoading(false);
       close_date: toDateInput(nofo.close_date),
       eligible_org_types: nofo.eligible_org_types || [],
       scope_states: nofo.scope_states || (user?.scope_state ? [user.scope_state] : []),
+      fiscal_year: nofo.fiscal_year ?? '',
+      federal_period_start: toDateInput(nofo.federal_period_start),
+      federal_period_end: toDateInput(nofo.federal_period_end),
+      local_share_amount: nofo.local_share_amount ?? '',
+      state_share_amount: nofo.state_share_amount ?? '',
+      mou_amount: nofo.mou_amount ?? '',
+      local_share_pct: nofo.local_share_pct ?? null,
+      state_share_pct: nofo.state_share_pct ?? null,
+      legacy_grant_id: nofo.legacy_grant_id || '',
       // Prefill eligibility from program if not already set
       eligibility_criteria: nofo.eligibility_criteria || prog?.eligibility_criteria || (Array.isArray(prog?.eligibility_requirements) ? prog.eligibility_requirements.join('\n') : '') || '',
       allowable_costs: nofo.allowable_costs || prog?.allowable_costs || '',
@@ -119,10 +137,9 @@ setLoading(false);
   const [saveError, setSaveError] = useState('');
 
   const handleSave = async () => {
-    if (!form.title?.trim()) {
-      setSaveError('Title is required.');
-      return;
-    }
+    if (!form.title?.trim()) { setSaveError('Title is required.'); return; }
+    if (!editing && (!form.fiscal_year || !/^\d{4}$/.test(String(form.fiscal_year)))) { setSaveError('Fiscal Year is required and must be 4 digits for new NOFOs.'); return; }
+    if (form.federal_period_start && form.federal_period_end && form.federal_period_end < form.federal_period_start) { setSaveError('Federal period end must be on or after the start date.'); return; }
     setSaving(true);
     setSaveError('');
     try {
@@ -135,7 +152,16 @@ setLoading(false);
         min_award: Number(form.min_award) || 0,
         max_award: Number(form.max_award) || 0,
         eligible_org_types: form.eligible_org_types || [],
+        fiscal_year: form.fiscal_year === '' ? null : Number(form.fiscal_year),
+        federal_period_start: form.federal_period_start || null,
+        federal_period_end: form.federal_period_end || null,
+        local_share_amount: form.local_share_amount === '' ? null : Number(form.local_share_amount),
+        state_share_amount: form.state_share_amount === '' ? null : Number(form.state_share_amount),
+        mou_amount: form.mou_amount === '' ? null : Number(form.mou_amount),
       };
+      delete data.local_share_pct;
+      delete data.state_share_pct;
+      if (!legacyConfig.canEdit) delete data.legacy_grant_id;
 
       // Auto-set scope_states for state admins creating NOFOs
       if (!editing && user && user.role === 'admin' && user.scope_state && (!form.scope_states || form.scope_states.length === 0)) {
@@ -268,9 +294,11 @@ setLoading(false);
   const filteredNofos = nofos.filter(n => {
     if (filterStatus !== 'all' && n.status !== filterStatus) return false;
     if (filterProgram !== 'all' && n.program_code !== filterProgram) return false;
+    if (filterFiscalYear && String(n.fiscal_year || '') !== String(filterFiscalYear)) return false;
     if (searchTerm && !n.title?.toLowerCase().includes(searchTerm.toLowerCase()) && !n.program_code?.toLowerCase().includes(searchTerm.toLowerCase()) && !n.grant_number?.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
+  const orderedNofos = [...filteredNofos].sort((a,b) => { const ay = Number(a.fiscal_year || 0), by = Number(b.fiscal_year || 0); return fiscalYearSort === 'asc' ? ay - by : by - ay; });
 
   return (
     <div className="space-y-6">
@@ -299,6 +327,8 @@ setLoading(false);
             <SelectItem value="Archived">Archived</SelectItem>
           </SelectContent>
         </Select>
+        <Input className="w-[125px]" type="number" min="1000" max="9999" placeholder="Fiscal Year" value={filterFiscalYear} onChange={e => setFilterFiscalYear(e.target.value)} />
+        {user?.role === 'isc_admin' && <Select value={selectedGranteeId || '__none__'} onValueChange={v => changeViewingGrantee(v === '__none__' ? '' : v)}><SelectTrigger className="w-[180px]"><SelectValue placeholder="View grantee" /></SelectTrigger><SelectContent><SelectItem value="__none__">No grantee selected</SelectItem>{grantees.map(g => <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>)}</SelectContent></Select>}
         <Select value={filterProgram} onValueChange={setFilterProgram}>
           <SelectTrigger className="w-[140px]"><SelectValue placeholder="All Programs" /></SelectTrigger>
           <SelectContent>
@@ -319,17 +349,19 @@ setLoading(false);
                 <th className="text-left p-3 font-medium text-muted-foreground">Title</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Grant #</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
+                <th className="text-right p-3 font-medium text-muted-foreground"><Button variant="ghost" size="sm" className="h-7 px-1" onClick={() => setFiscalYearSort(v => v === 'asc' ? 'desc' : 'asc')}>Fiscal Year {fiscalYearSort === 'asc' ? '↑' : '↓'}</Button></th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Available</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Awarded</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Remaining</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Window</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">States</th>
+                {legacyConfig.enabled && <th className="text-left p-3 font-medium text-muted-foreground">{legacyLabel}</th>}
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                 <th className="p-3"></th>
               </tr>
             </thead>
             <tbody>
-              {filteredNofos.map(nofo => (
+              {orderedNofos.map(nofo => (
                 <tr key={nofo.id} className="border-b last:border-0 hover:bg-muted/30 transition">
                   <td className="p-3">
                     <div className="flex items-center gap-2">
@@ -343,6 +375,7 @@ setLoading(false);
                       {nofo.program_code || ' - '}
                     </span>
                   </td>
+                  <td className="p-3 text-right font-mono text-xs">{nofo.fiscal_year || ' - '}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(nofo.total_funding_available)}</td>
                   <td className="p-3 text-right font-medium text-green-700">{nofoStats[nofo.id]?.awarded ? formatCurrency(nofoStats[nofo.id].awarded) : <span className="text-muted-foreground text-xs">-</span>}</td>
                   <td className="p-3 text-right text-blue-700 font-medium">{nofoStats[nofo.id]?.awarded && nofo.total_funding_available ? formatCurrency(Math.max(0, Number(nofo.total_funding_available) - nofoStats[nofo.id].awarded)) : <span className="text-muted-foreground text-xs">-</span>}</td>
@@ -360,6 +393,7 @@ setLoading(false);
                       </div>
                     )}
                   </td>
+                  {legacyConfig.enabled && <td className="p-3 font-mono text-xs">{nofo.legacy_grant_id || ' - '}</td>}
                   <td className="p-3"><StatusBadge status={nofo.status} /></td>
                   <td className="p-3">
                     <DropdownMenu>
@@ -380,7 +414,7 @@ setLoading(false);
                 </tr>
               ))}
               {nofos.length === 0 && (
-                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No NOFOs created yet</td></tr>
+                <tr><td colSpan={legacyConfig.enabled ? 12 : 11} className="p-8 text-center text-muted-foreground">No NOFOs created yet</td></tr>
               )}
             </tbody>
           </table>
@@ -396,6 +430,7 @@ setLoading(false);
           <NofoEditContent nofo={editing}>
           <div className="space-y-4">
             <NofoFederalIdentifiers form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><div><Label>Fiscal Year *</Label><Input type="number" min="1000" max="9999" step="1" value={form.fiscal_year} onChange={e=>setForm(f=>({...f,fiscal_year:e.target.value}))} placeholder="e.g. 2023" /></div></div>
             <div>
               <Label>Grant Program</Label>
               <Select
@@ -452,6 +487,9 @@ setLoading(false);
             </div>
 
             <NofoAwardFieldGroup group="Federal Dates" form={form} onChange={(key,value)=>setForm(current=>({...current,[key]:value}))}/>
+            <div className="border rounded-lg p-4 space-y-3"><h3 className="font-semibold">Federal Period of Performance</h3><div className="grid grid-cols-2 gap-3"><div><Label>Federal Period of Performance – Start</Label><Input type="date" value={form.federal_period_start || ''} onChange={e=>setForm(f=>({...f,federal_period_start:e.target.value}))}/></div><div><Label>Federal Period of Performance – End</Label><Input type="date" value={form.federal_period_end || ''} min={form.federal_period_start || undefined} onChange={e=>setForm(f=>({...f,federal_period_end:e.target.value}))}/></div></div></div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3"><div><Label>Local Share (Pass-Through)</Label><Input type="number" min="0" step="0.01" value={form.local_share_amount} onChange={e=>setForm(f=>({...f,local_share_amount:e.target.value}))}/></div><div><Label>State Share (Retained)</Label><Input type="number" min="0" step="0.01" value={form.state_share_amount} onChange={e=>setForm(f=>({...f,state_share_amount:e.target.value}))}/></div><div><Label>MOU Amount</Label><Input type="number" min="0" step="0.01" value={form.mou_amount} onChange={e=>setForm(f=>({...f,mou_amount:e.target.value}))}/></div></div><div className="grid grid-cols-2 gap-3"><div><Label>Local Share %</Label><Input readOnly value={form.total_funding_available && form.local_share_amount !== '' ? ((Number(form.local_share_amount)/Number(form.total_funding_available))*100).toFixed(2) : ''}/></div><div><Label>State Share %</Label><Input readOnly value={form.total_funding_available && form.state_share_amount !== '' ? ((Number(form.state_share_amount)/Number(form.total_funding_available))*100).toFixed(2) : ''}/></div></div>
+            {legacyConfig.enabled && <div className="border rounded-lg p-4"><Label>{legacyLabel}</Label><Input value={form.legacy_grant_id || ''} disabled={!legacyConfig.canEdit} onChange={e=>setForm(f=>({...f,legacy_grant_id:e.target.value}))}/></div>}
             <div>
               <Label>Eligibility Criteria</Label>
               <Textarea value={form.eligibility_criteria} onChange={e => setForm(f => ({ ...f, eligibility_criteria: e.target.value }))} rows={3} placeholder="Enter eligibility criteria for this NOFO..." />
@@ -574,10 +612,14 @@ setLoading(false);
             {/* Summary */}
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available ? `$${Number(viewNofo.total_funding_available).toLocaleString()}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Fiscal Year</p><p className="font-medium">{viewNofo.fiscal_year || '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available ? `${Number(viewNofo.total_funding_available).toLocaleString()}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Award Range</p><p className="font-medium">{viewNofo.min_award || viewNofo.max_award ? `$${Number(viewNofo.min_award||0).toLocaleString()} - $${Number(viewNofo.max_award||0).toLocaleString()}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date ? new Date(viewNofo.open_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date ? new Date(viewNofo.close_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Federal Period</p><p className="font-medium">{viewNofo.federal_period_start || viewNofo.federal_period_end ? `${formatDateShort(viewNofo.federal_period_start)} - ${formatDateShort(viewNofo.federal_period_end)}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Local / State Share</p><p className="font-medium">{viewNofo.local_share_pct != null ? `${Number(viewNofo.local_share_pct).toFixed(2)}%` : '-'} / {viewNofo.state_share_pct != null ? `${Number(viewNofo.state_share_pct).toFixed(2)}%` : '-'}</p></div>
+                {legacyConfig.enabled && <div><p className="text-xs text-muted-foreground">{legacyLabel}</p><p className="font-medium">{viewNofo.legacy_grant_id || '-'}</p></div>}
                 <div><p className="text-xs text-muted-foreground">Available States</p><p className="font-medium">{viewNofo.scope_states?.length ? viewNofo.scope_states.join(', ') : 'All States'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Scoring Enabled</p><p className="font-medium">{viewNofo.scoring_enabled ? 'Yes' : 'No'}</p></div>
               </div>

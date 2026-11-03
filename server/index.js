@@ -21,6 +21,7 @@ import entitiesRouter from './routes/entities.js';
 import accountRouter from './routes/accountAccess.js';
 import { migrateAccountAccess } from './services/accountMigration.js';
 import { clearInvalidPrimaryContacts } from './services/organizationPolicy.js';
+import {migrateNofoFields} from './services/nofoMigration.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -94,6 +95,7 @@ try {
   await pool.query('CREATE TRIGGER users_clear_invalid_primary_contact AFTER UPDATE OF organization_id,active_status OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION clear_invalid_primary_contact()');
   await clearInvalidPrimaryContacts(pool);
   await migrateAccountAccess(pool);
+  await migrateNofoFields(pool);
   await migrateNofoForms(pool);
   await migrateEhp(pool);
   await migrateAwards(pool);

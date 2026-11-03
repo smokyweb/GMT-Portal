@@ -6,8 +6,9 @@ import pool from '../db/connection.js';
 import { authRequired } from '../middleware/auth.js';
 import { guardUserMutation } from '../middleware/userEntityAccess.js';
 import { updateManagedAccount } from '../services/accountUpdates.js';
-import { legacyContext,stripLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation } from '../services/legacyFields.js';
+import { legacyContext,stripLegacyFields,stripNofoLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation,assertLegacyNofoMutation } from '../services/legacyFields.js';
 import { normalizeOrganizationInput } from '../services/organizationPolicy.js';
+import { normalizeNofoInput } from '../services/nofoPolicy.js';
 
 const router = Router();
 router.use('/:entity', authRequired);
@@ -54,6 +55,7 @@ function resolveTable(entity) {
 }
 async function organizationContext(req){return legacyContext(pool,req.user,req.query.grantee_id||null)}
 function sanitizeOrganizationRows(rows,context){return rows.map(row=>stripLegacyFields(row,context.enabled))}
+function sanitizeNofoRows(rows,context){return rows.map(row=>stripNofoLegacyFields(row,context.enabled))}
 
 // Parse Base44-style sort string: "-created_date" → "created_date DESC"
 function parseSort(sortStr) {
@@ -81,6 +83,7 @@ router.get('/:entity', authRequired, async (req, res) => {
     );
     if(table==='users')rows.forEach(r=>delete r.password_hash);
     if(table==='organizations')return res.json(sanitizeOrganizationRows(rows,await organizationContext(req)));
+    if(table==='nofos')return res.json(sanitizeNofoRows(rows,await organizationContext(req)));
     res.json(rows);
   } catch (err) {
     console.error(`List ${table}:`, err);
@@ -127,6 +130,7 @@ router.post('/:entity/filter', authRequired, async (req, res) => {
     );
     if(table==='users')rows.forEach(r=>delete r.password_hash);
     if(table==='organizations')return res.json(sanitizeOrganizationRows(rows,await organizationContext(req)));
+    if(table==='nofos')return res.json(sanitizeNofoRows(rows,await organizationContext(req)));
     res.json(rows);
   } catch (err) {
     console.error(`Filter ${table}:`, err);
@@ -148,6 +152,7 @@ router.get('/:entity/:id', authRequired, async (req, res) => {
     const row=rows[0];
     if(table==='users')delete row.password_hash;
     if(table==='organizations')return res.json(stripLegacyFields(row,(await organizationContext(req)).enabled));
+    if(table==='nofos')return res.json(stripNofoLegacyFields(row,(await organizationContext(req)).enabled));
     res.json(row);
   } catch (err) {
     console.error(`Get ${table}:`, err);
@@ -168,6 +173,7 @@ router.post('/:entity', authRequired, async (req, res) => {
 
   if(table==='grantees'){try{assertLegacyGranteeMutation(req.user,data)}catch(error){return res.status(error.status||403).json({error:error.message})}}
   if(table==='organizations'){try{const context=await organizationContext(req);assertLegacyOrganizationMutation(req.user,data,context);data=await normalizeOrganizationInput(pool,data,{isCreate:true,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
+  if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:true});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
   const keys=Object.keys(data);
   if(!keys.length)return res.status(400).json({error:'No data provided'});
 
@@ -188,6 +194,7 @@ router.post('/:entity', authRequired, async (req, res) => {
     const row = rows[0];
     if (table === 'users') delete row.password_hash;
     if (table === 'organizations') return res.status(201).json(stripLegacyFields(row, (await organizationContext(req)).enabled));
+    if (table === 'nofos') return res.status(201).json(stripNofoLegacyFields(row, (await organizationContext(req)).enabled));
     res.status(201).json(row);
   } catch (err) {
     console.error(`Create ${table}:`, err);
@@ -211,6 +218,7 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
   delete data.updated_date;
 
   if(table==='organizations'){try{const context=await organizationContext(req);data=await normalizeOrganizationInput(pool,data,{orgId:req.params.id,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
+  if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:false});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
 
   const keys = Object.keys(data);
   if (!keys.length) return res.status(400).json({ error: 'No data provided' });
@@ -236,6 +244,7 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
     const row = rows[0];
     if (table === 'users') delete row.password_hash;
     if (table === 'organizations') return res.json(stripLegacyFields(row, (await organizationContext(req)).enabled));
+    if (table === 'nofos') return res.json(stripNofoLegacyFields(row, (await organizationContext(req)).enabled));
     res.json(row);
   } catch (err) {
     console.error(`Update ${table}:`, err);
