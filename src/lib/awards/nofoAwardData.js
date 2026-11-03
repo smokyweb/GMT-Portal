@@ -1,4 +1,4 @@
-import {NOFO_AWARD_FIELDS,inputDate} from './awardFields';
+import {NOFO_AWARD_FIELDS,inputDate} from './awardFields.js';
 export function prepareNofoAwardForm(nofo,program={}) {
   const fields=Object.fromEntries(NOFO_AWARD_FIELDS.map(field=>[field.key,field.type==='date'?inputDate(nofo[field.key]):nofo[field.key]??(field.key==='cfda_number'?program.cfda_number:null)??'']));
   if(nofo.is_r_and_d==null)fields.is_r_and_d=null;

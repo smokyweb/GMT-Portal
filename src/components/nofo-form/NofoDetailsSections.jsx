@@ -1,3 +1,4 @@
+import {prepareNofoProgramSelection} from '@/lib/awards/nofoProgramSelection';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -21,7 +22,7 @@ export default function NofoDetailsSections({form,onChange,programs,editing,lega
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TextField form={form} onChange={onChange} label="Title *" field="title" placeholder="NOFO title"/>
         <TextField form={form} onChange={onChange} label="Fiscal Year *" field="fiscal_year" type="number" placeholder="e.g. 2023"/>
-        <div><Label>Grant Program</Label><Select value={form.program_id||'__none__'} onValueChange={value=>{const selected=programs.find(item=>item.id===value);onChange({...form,program_id:value==='__none__'?'':value,program_name:selected?.name||'',program_code:selected?.code||'',eligibility_criteria:form.eligibility_criteria||selected?.eligibility_criteria||'',allowable_costs:form.allowable_costs||selected?.allowable_costs||''})}}><SelectTrigger><SelectValue placeholder="Select program"/></SelectTrigger><SelectContent><SelectItem value="__none__">Select program</SelectItem>{programs.filter(item=>item.is_active||item.id===form.program_id).map(item=><SelectItem key={item.id} value={item.id}>{item.name} ({item.code}){!item.is_active?' ⚠ inactive':''}</SelectItem>)}</SelectContent></Select></div>
+        <div><Label>Grant Program</Label><Select value={form.program_id||'__none__'} onValueChange={value=>onChange(prepareNofoProgramSelection(form,programs,value))}><SelectTrigger><SelectValue placeholder="Select program"/></SelectTrigger><SelectContent><SelectItem value="__none__">Select program</SelectItem>{programs.filter(item=>item.is_active||item.id===form.program_id).map(item=><SelectItem key={item.id} value={item.id}>{item.name} ({item.code}){!item.is_active?' ⚠ inactive':''}</SelectItem>)}</SelectContent></Select></div>
         <TextField form={form} onChange={onChange} label="Funding Stream" field="funding_stream"/>
         <TextField form={form} onChange={onChange} label="Federal Grant Number (FAIN)" field="grant_number"/>
         <TextField form={form} onChange={onChange} label="State Grant #" field="state_grant_number"/>

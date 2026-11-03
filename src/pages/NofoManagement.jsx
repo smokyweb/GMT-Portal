@@ -1,3 +1,4 @@
+import NofoDetailsFooter from '@/components/nofo-form/NofoDetailsFooter';
 import NofoDetailsSections from '@/components/nofo-form/NofoDetailsSections';
 import {prepareNofoAwardForm,nofoAwardSaveData} from '@/lib/awards/nofoAwardData';
 import NofoEditContent from '@/components/nofo-form/NofoEditContent';
@@ -30,6 +31,7 @@ export default function NofoManagement() {
   const [nofos, setNofos] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [open, setOpen] = useState(false);
+  const [nofoTab, setNofoTab] = useState('details');
   const [form, setForm] = useState(emptyNofo);
   const [editing, setEditing] = useState(null);
   const [user, setUser] = useState(null);
@@ -94,6 +96,7 @@ export default function NofoManagement() {
     const defaultState = user?.scope_state && ['admin','reviewer'].includes(user?.role) ? [user.scope_state] : [];
     setForm({ ...emptyNofo, scope_states: defaultState });
     setEditing(null);
+    setNofoTab('details');
     setOpen(true);
   };
 
@@ -124,6 +127,7 @@ export default function NofoManagement() {
       allowable_costs: nofo.allowable_costs || prog?.allowable_costs || '',
     });
     setEditing(nofo);
+    setNofoTab('details');
     setOpen(true);
   };
 
@@ -420,7 +424,7 @@ export default function NofoManagement() {
             <DialogTitle>{editing ? 'Edit NOFO' : 'Create NOFO'}</DialogTitle>
           </DialogHeader>
           <div className="min-h-0 flex-1 overflow-y-auto pr-1">
-            <NofoEditContent nofo={editing}>
+            <NofoEditContent nofo={editing} onTabChange={setNofoTab}>
               <NofoDetailsSections
                 form={form}
                 onChange={next => setForm(next)}
@@ -434,13 +438,13 @@ export default function NofoManagement() {
               />
             </NofoEditContent>
           </div>
-          <DialogFooter className="flex-shrink-0 flex-col items-end gap-2 border-t pt-3">
-            {saveError && <p className="text-sm text-red-500 w-full">{saveError}</p>}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => { setOpen(false); setSaveError(''); }}>Cancel</Button>
-              <Button onClick={handleSave} disabled={saving}>{saving ? 'Saving…' : (editing ? 'Update' : 'Create')} NOFO</Button>
-            </div>
-          </DialogFooter>
+          {nofoTab==='details'&&<NofoDetailsFooter
+            editing={Boolean(editing)}
+            saving={saving}
+            error={saveError}
+            onCancel={()=>{setOpen(false);setSaveError('');}}
+            onSave={handleSave}
+          />}
         </DialogContent>
       </Dialog>
 
@@ -457,7 +461,7 @@ export default function NofoManagement() {
             <div className="space-y-4 text-sm">
               <div className="grid grid-cols-2 gap-4">
                 <div><p className="text-xs text-muted-foreground">Fiscal Year</p><p className="font-medium">{viewNofo.fiscal_year || '-'}</p></div>
-                <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available ? `${Number(viewNofo.total_funding_available).toLocaleString()}` : '-'}</p></div>
+                <div><p className="text-xs text-muted-foreground">Total Funding</p><p className="font-medium">{viewNofo.total_funding_available!=null?formatCurrency(viewNofo.total_funding_available):'-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Award Range</p><p className="font-medium">{viewNofo.min_award || viewNofo.max_award ? `$${Number(viewNofo.min_award||0).toLocaleString()} - $${Number(viewNofo.max_award||0).toLocaleString()}` : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Open Date</p><p className="font-medium">{viewNofo.open_date ? new Date(viewNofo.open_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
                 <div><p className="text-xs text-muted-foreground">Close Date</p><p className="font-medium">{viewNofo.close_date ? new Date(viewNofo.close_date).toLocaleDateString('en-US', {timeZone:'UTC', month:'short', day:'numeric', year:'numeric'}) : '-'}</p></div>
