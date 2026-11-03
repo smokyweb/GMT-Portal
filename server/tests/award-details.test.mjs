@@ -117,7 +117,7 @@ test('Award Details and federal NOFO metadata preserve source records and scope'
       await assert.rejects(mutateAwardNofo(db,ids.admin,ids.nofo,{program_id:ids.otherProgram,expectedAwardMetadataRevision:(await metadata()).award_metadata_revision}),{status:409});
       await assert.rejects(mutateAwardNofo(db,ids.admin,ids.nofo,{current_form_version_id:randomUUID()}),{status:400});
       await assert.rejects(mutateAwardNofo(db,ids.admin,ids.nofo,{},'DELETE'),{status:409});
-      const created=await mutateAwardNofo(db,ids.admin,null,{title:'QA state-created NOFO',program_id:ids.program,scope_states:['IL'],grant_number:'EMK-2026-EP-05010'},'POST');
+      const created=await mutateAwardNofo(db,ids.admin,null,{title:'QA state-created NOFO',program_id:ids.program,scope_states:['IL'],grant_number:'EMK-2026-EP-05010',fiscal_year:2026},'POST');
       assert.deepEqual(created.scope_states,['NE']);assert.equal(created.cfda_number,'97.042');
     });
     await t.test('HTTP APIs authenticate and preserve readonly subrecipient award access',async()=>{
