@@ -162,7 +162,7 @@ export default function Organizations() {
                 {field('ein', 'EIN', 'XX-XXXXXXX')}
                 {field('sam_uei', 'SAM UEI', '12-character UEI')}
                 {field('legacy_spars_id', 'Legacy SPARS ID')}
-                {field('vendor_number', 'State Vendor / Address Book #')}
+                {field('vendor_number', 'Address Book #')}
                 {field('duns', 'DUNS (legacy)')}
                 {field('region', 'Region')}
                 {editOrg.type === 'Nonprofit' && <div><Label className="text-xs">Nonprofit Category</Label><Select value={editOrg.nonprofit_category || '__none__'} onValueChange={v => setEditOrg(o => ({ ...o, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Not specified</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
