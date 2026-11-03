@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
+import { uploadFileToServer } from '@/api/uploads';
 import { FileText, Plus, Send, Trash2, Eye, ChevronDown, ChevronUp, Upload, Paperclip, ExternalLink, History } from 'lucide-react';
 import TemplateVersionDialog from '../components/TemplateVersionDialog';
 import { formatDateShort } from '../lib/helpers';
@@ -58,6 +59,7 @@ function populateTemplate(body, app) {
 
 export default function DocumentTemplates() {
   const [showGanWorkspace,setShowGanWorkspace]=useState(false);
+  const [selectedGanTemplateId,setSelectedGanTemplateId]=useState('');
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
   const [apps, setApps] = useState([]);
@@ -106,10 +108,18 @@ export default function DocumentTemplates() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const file_url = await uploadFileToServer(file);
-    setForm(f => ({ ...f, file_url, file_name: file.name }));
-    setUploading(false);
+    try {
+      const file_url = await uploadFileToServer(file);
+      setForm(f => ({ ...f, file_url, file_name: file.name }));
+      toast('Template file uploaded.', 'success');
+    } catch (error) {
+      setForm(f => ({ ...f, file_url: '', file_name: '' }));
+      toast(error.message || 'Template upload failed.', 'error');
+    } finally {
+      setUploading(false);
+    }
   };
+  const closeForm = () => { setShowForm(false); setUploading(false); setShowPhHelp(false); };
 
   const openEdit = (t) => {
     setEditingTemplate(t);
@@ -141,6 +151,7 @@ export default function DocumentTemplates() {
         file_name: editingTemplate.file_name || '',
         saved_by: user?.full_name || user?.email,
       });
+      data.version = nextVersion;
       await base44.entities.DocumentTemplate.update(editingTemplate.id, data);
       setTemplates(prev => prev.map(t => t.id === editingTemplate.id ? { ...t, ...data } : t));
     } else {
@@ -163,7 +174,7 @@ export default function DocumentTemplates() {
   };
 
   const openSendDialog = (t) => {
-    if(t.doc_type==='Grant Award Notice'){setShowGanWorkspace(true);return;}
+    if(t.doc_type==='Grant Award Notice'){setSelectedGanTemplateId(t.id);setShowGanWorkspace(true);return;}
     setSendTemplate(t);
     setSendAppId('');
     setPreview('');
@@ -217,10 +228,10 @@ export default function DocumentTemplates() {
           <p className="text-muted-foreground text-sm mt-1">Create reusable templates with auto-populated fields to send to subrecipients for review and signature.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {['admin','isc_admin'].includes(user?.role)&&<GanBatchLaunchButton onClick={()=>setShowGanWorkspace(true)}/>}
+          {['admin','isc_admin'].includes(user?.role)&&<GanBatchLaunchButton onClick={()=>{setSelectedGanTemplateId('');setShowGanWorkspace(true)}}/>}
           <Button onClick={openNew}><Plus className="h-4 w-4 mr-1.5" /> New Template</Button></div>
       </div>
-      {showGanWorkspace&&<GanBatchWorkspace onClose={()=>setShowGanWorkspace(false)}/>}
+      {showGanWorkspace&&<GanBatchWorkspace initialTemplateId={selectedGanTemplateId} onClose={()=>{setShowGanWorkspace(false);setSelectedGanTemplateId('')}}/>}
 
       {/* Template cards */}
       {templates.length === 0 ? (
@@ -270,7 +281,7 @@ export default function DocumentTemplates() {
       )}
 
       {/* Create/Edit Template Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      <Dialog open={showForm} onOpenChange={open => { if (!open) closeForm(); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingTemplate ? 'Edit Template' : 'New Document Template'}</DialogTitle>
@@ -351,7 +362,7 @@ export default function DocumentTemplates() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowForm(false)}>Cancel</Button>
+            <Button variant="outline" onClick={closeForm}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving || !form.name || uploading}>
               {saving ? 'Saving…' : editingTemplate ? 'Save Changes' : 'Create Template'}
             </Button>

@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import SignaturePad from './SignaturePad';
 import { ShieldCheck, CheckCircle2, AlertCircle, FileText } from 'lucide-react';
+import { uploadFileToServer } from '@/api/uploads';
 import { formatDateShort } from '../lib/helpers';
 
 /**

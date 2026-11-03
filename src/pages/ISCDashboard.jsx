@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { uploadFileToServer } from '@/api/uploads';
 import {
   Building2, Plus, Pencil, Trash2, Users, Globe, Palette,
   CheckCircle, Search, Shield, LayoutDashboard, Upload

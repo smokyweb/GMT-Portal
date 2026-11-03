@@ -2,7 +2,7 @@ import {defaultGanOrganizationChoices} from '@/lib/documents/ganSettingsPresenta
 import {useEffect,useRef,useState} from 'react';
 import {base44} from '@/api/base44Client';
 import {ganBatchRows,newGanBatchSelection,ganBatchPayload,presentGanCatalog,sharedGanIssues} from '@/lib/documents/ganBatchPresentation';
-export function useGanBatchWorkspace() {
+export function useGanBatchWorkspace(initialTemplateId='') {
   const [packageTarget,setPackageTarget]=useState(null);
   const [catalog,setCatalog]=useState({nofos:[],templates:[],grantees:[],applications:[],organizations:[],officials:[],batches:[]});
   const [selection,setSelection]=useState(newGanBatchSelection),[selectedIds,setSelectedIds]=useState([]),[checks,setChecks]=useState({});
@@ -19,6 +19,7 @@ export function useGanBatchWorkspace() {
     (async()=>{try{
       const user=await base44.auth.me();actor.current=user.id;
       const data=await base44.gan.options();if(!active)return;setCatalog(presentGanCatalog(data));
+      if(initialTemplateId&&data.templates.some(item=>item.id===initialTemplateId))setSelection(current=>({...current,templateId:initialTemplateId}));
       let stored;try{stored=JSON.parse(sessionStorage.getItem('gmt-gan-batch-'+user.id)||'null');}catch{stored=null;}
       if(stored?.id)await restore(stored.id,stored.pass);
     }catch(err){if(active)setError(err.message);}finally{if(active)setBusy('');}})();

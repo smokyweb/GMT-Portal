@@ -13,6 +13,7 @@ import {
   Calendar, TrendingUp, Shield, ChevronRight, Download, Plus, Eye,
   Paperclip, Building2, X, Loader2
 } from 'lucide-react';
+import { uploadFileToServer } from '@/api/uploads';
 import StatusBadge from '../components/StatusBadge';
 import ExpenditureBar from '../components/ExpenditureBar';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';

@@ -7,8 +7,8 @@ import GanBatchOfficials from './GanBatchOfficials';
 import GanBatchRows from './GanBatchRows';
 import GanBatchProgress from './GanBatchProgress';
 import GanBatchActions from './GanBatchActions';
-export default function GanBatchWorkspace({onClose,standalone=false}) {
-  const state=useGanBatchWorkspace(),Heading=standalone?'h1':'h2';
+export default function GanBatchWorkspace({onClose,standalone=false,initialTemplateId=''}) {
+  const state=useGanBatchWorkspace(initialTemplateId),Heading=standalone?'h1':'h2';
   return <section aria-label="Generate Award Documents" className="space-y-4 rounded-xl border bg-muted/10 p-4 sm:p-5">
     <div className="flex flex-wrap items-start justify-between gap-3"><div>
       <Heading className={standalone?'text-2xl font-bold':'text-lg font-bold'}>Generate Award Documents</Heading><p className="mt-1 text-sm text-muted-foreground">Check the selected awards, then save ready GAN drafts. Blocked rows retain their correction details.</p>
