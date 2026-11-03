@@ -7,6 +7,7 @@ import { authRequired } from '../middleware/auth.js';
 import { guardUserMutation } from '../middleware/userEntityAccess.js';
 import { updateManagedAccount } from '../services/accountUpdates.js';
 import { legacyContext,stripLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation } from '../services/legacyFields.js';
+import { normalizeOrganizationInput } from '../services/organizationPolicy.js';
 
 const router = Router();
 router.use('/:entity', authRequired);
@@ -166,7 +167,7 @@ router.post('/:entity', authRequired, async (req, res) => {
   delete data.updated_date;
 
   if(table==='grantees'){try{assertLegacyGranteeMutation(req.user,data)}catch(error){return res.status(error.status||403).json({error:error.message})}}
-  if(table==='organizations'){try{assertLegacyOrganizationMutation(req.user,data,await organizationContext(req))}catch(error){return res.status(error.status||403).json({error:error.message})}}
+  if(table==='organizations'){try{const context=await organizationContext(req);assertLegacyOrganizationMutation(req.user,data,context);data=await normalizeOrganizationInput(pool,data,{isCreate:true,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   const keys=Object.keys(data);
   if(!keys.length)return res.status(400).json({error:'No data provided'});
 
@@ -204,10 +205,12 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
   }
 
 
-  const data = { ...req.body };
+  let data = { ...req.body };
   delete data.id;
   delete data.created_date;
   delete data.updated_date;
+
+  if(table==='organizations'){try{const context=await organizationContext(req);data=await normalizeOrganizationInput(pool,data,{orgId:req.params.id,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
 
   const keys = Object.keys(data);
   if (!keys.length) return res.status(400).json({ error: 'No data provided' });

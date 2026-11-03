@@ -24,6 +24,7 @@ export default function OrganizationProfile() {
   const [flags, setFlags] = useState([]);
   const [milestones, setMilestones] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [primaryContact, setPrimaryContact] = useState(null);
 
   useEffect(() => {
     Promise.all([
@@ -32,8 +33,11 @@ export default function OrganizationProfile() {
       base44.entities.ReportSchedule.list('-due_date', 200),
       base44.entities.ComplianceFlag.list('-created_date', 200),
       base44.entities.Milestone.filter({ organization_id: id }, '-due_date', 100),
-    ]).then(([orgs, apps, allReports, allFlags, miles]) => {
+      base44.entities.User.list('-created_date', 500),
+    ]).then(([orgs, apps, allReports, allFlags, miles, allUsers]) => {
       setOrg(orgs[0] || null);
+      const foundContact = (allUsers || []).find(u => String(u.id) === String(orgs[0]?.primary_contact_user_id) && String(u.organization_id) === String(id) && !['inactive', 'deactivated', 'invited'].includes(u.active_status || 'active'));
+      setPrimaryContact(foundContact || null);
       setApplications(apps);
       const appIds = new Set(apps.map(a => a.id));
       setReports(allReports.filter(r => appIds.has(r.application_id)));
@@ -104,6 +108,20 @@ export default function OrganizationProfile() {
       </div>
 
       <OrganizationAwardContacts organizationId={org.id}/>
+      <div className="bg-card border rounded-xl p-5 space-y-4">
+        <h2 className="font-semibold">Organization Details</h2>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div><p className="text-xs text-muted-foreground">EIN</p><p className="font-mono font-medium mt-0.5">{org.ein || ' - '}</p></div>
+          <div><p className="text-xs text-muted-foreground">SAM UEI</p><p className="font-mono font-medium mt-0.5">{org.sam_uei || ' - '}</p></div>
+          <div><p className="text-xs text-muted-foreground">Type</p><p className="font-medium mt-0.5">{org.type || ' - '}</p></div>
+          <div><p className="text-xs text-muted-foreground">County</p><p className="font-medium mt-0.5">{org.county || ' - '}</p></div>
+        </div>
+        <div><p className="text-xs text-muted-foreground">Address</p><p className="font-medium mt-0.5">{[org.address, org.address_line_2, org.city, org.state, org.zip].filter(Boolean).join(', ') || ' - '}</p></div>
+        <div className="border-t pt-4">
+          <p className="text-xs text-muted-foreground">Primary Point of Contact</p>
+          {primaryContact ? <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm mt-1"><div><p className="font-medium">{primaryContact.full_name || ' - '}</p><p className="text-xs text-muted-foreground">Name</p></div><div><p className="font-medium">{primaryContact.title || ' - '}</p><p className="text-xs text-muted-foreground">Title</p></div><div><p className="font-medium">{primaryContact.email || ' - '}</p><p className="text-xs text-muted-foreground">Email</p></div><div><p className="font-medium">{primaryContact.phone || ' - '}</p><p className="text-xs text-muted-foreground">Phone</p></div></div> : <p className="inline-flex items-center gap-1 text-sm text-amber-600 mt-1"><AlertTriangle className="h-3.5 w-3.5" /> No primary contact</p>}
+        </div>
+      </div>
       {/* Tabs */}
       <Tabs defaultValue="grants">
         <TabsList>

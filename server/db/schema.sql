@@ -63,9 +63,11 @@ CREATE TABLE IF NOT EXISTS grantees (
 CREATE TABLE IF NOT EXISTS organizations (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name        TEXT NOT NULL,
-  type        TEXT NOT NULL CHECK (type IN ('County','Municipality','Nonprofit','Tribe')),
+  type        TEXT NOT NULL CHECK (type IN ('County','Municipality','Nonprofit','Tribe','Local Jurisdiction','Local Jurisdiction State Agency','State Agency','Federal Agency','University','Other')),
   ein         TEXT,
   sam_uei     TEXT,
+  address_line_2 TEXT,
+  primary_contact_user_id TEXT,
   legacy_spars_id TEXT,
   vendor_number TEXT,
   duns        TEXT,

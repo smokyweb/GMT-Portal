@@ -15,7 +15,7 @@ export default function MyOrganization() {
   const [org, setOrg] = useState(null);
   const [apps, setApps] = useState([]);
   const [form, setForm] = useState({
-    name: '', type: 'Municipality', ein: '', sam_uei: '', legacy_spars_id: '', vendor_number: '', duns: '', region: '', nonprofit_category: '', address: '', city: '', state: '', zip: '', county: '',
+    name: '', type: 'Municipality', ein: '', sam_uei: '', legacy_spars_id: '', vendor_number: '', duns: '', region: '', nonprofit_category: '', address: '', address_line_2: '', city: '', state: '', zip: '', county: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -23,7 +23,7 @@ export default function MyOrganization() {
   const [error, setError] = useState('');
   const [legacyConfig, setLegacyConfig] = useState({ enabled: false, systemName: '', canEdit: false });
 
-  const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'legacy_spars_id', 'vendor_number', 'duns', 'region', 'nonprofit_category', 'address', 'city', 'state', 'zip', 'county'];
+  const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'legacy_spars_id', 'vendor_number', 'duns', 'region', 'nonprofit_category', 'address', 'address_line_2', 'city', 'state', 'zip', 'county'];
   const extractForm = (o) => FORM_FIELDS.reduce((acc, k) => ({ ...acc, [k]: o[k] || '' }), { type: o.type || 'Municipality' });
 
   useEffect(() => {
@@ -42,7 +42,8 @@ export default function MyOrganization() {
           const found = allOrgs.find(o => o.id === u.organization_id);
           if (found) {
             setOrg(found);
-            setForm(extractForm(found));
+            const extracted = extractForm(found);
+            setForm({ ...extracted, state: extracted.state || grantee?.state_code || '' });
           }
           setApps(Array.isArray(myApps) ? myApps : []);
         }
@@ -57,6 +58,7 @@ export default function MyOrganization() {
     setSaving(true);
     setError('');
     try {
+      if (form.type === 'Nonprofit' && !form.nonprofit_category) { setError('Nonprofit Category is required.'); setSaving(false); return; }
       const data = { ...form, is_active: true };
       if (!legacyConfig.canEdit) ['legacy_spars_id', 'vendor_number', 'duns', 'region'].forEach(key => delete data[key]);
       if (org) {
@@ -119,16 +121,17 @@ export default function MyOrganization() {
                 <Select value={form.type} onValueChange={v => setForm(f => ({ ...f, type: v }))}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    {['County', 'Municipality', 'Nonprofit', 'Tribe', 'State Agency', 'Federal Agency', 'University', 'Other'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    {['County', 'Municipality', 'Nonprofit', 'Tribe', 'Local Jurisdiction', 'Local Jurisdiction State Agency', 'State Agency', 'Federal Agency', 'University', 'Other'].map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div><Label>EIN</Label><Input value={form.ein} onChange={e => setForm(f => ({ ...f, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
               <div><Label>SAM UEI</Label><Input value={form.sam_uei} onChange={e => setForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
               {legacyConfig.enabled && <div className="col-span-2 rounded-lg border p-4 space-y-3"><div><Label>Legacy / Payment Info</Label><p className="text-xs text-muted-foreground">Optional legacy and payment identifiers.</p></div><div className="grid grid-cols-2 gap-4"><div><Label>{legacyConfig.systemName ? legacyConfig.systemName + ' ID' : 'Legacy ID'}</Label><Input disabled={!legacyConfig.canEdit} value={form.legacy_spars_id} onChange={e => setForm(f => ({ ...f, legacy_spars_id: e.target.value }))} /></div><div><Label>Address Book #</Label><Input disabled={!legacyConfig.canEdit} value={form.vendor_number} onChange={e => setForm(f => ({ ...f, vendor_number: e.target.value }))} /></div><div><Label>DUNS (legacy)</Label><Input disabled={!legacyConfig.canEdit} value={form.duns} onChange={e => setForm(f => ({ ...f, duns: e.target.value }))} /></div><div><Label>Region</Label><Input disabled={!legacyConfig.canEdit} value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} /></div></div></div>}
-              {form.type === 'Nonprofit' && <div><Label>Nonprofit Category</Label><Select value={form.nonprofit_category || '__none__'} onValueChange={v => setForm(f => ({ ...f, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Not specified</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
+              {form.type === 'Nonprofit' && <div><Label>Nonprofit Category *</Label><Select value={form.nonprofit_category || '__none__'} onValueChange={v => setForm(f => ({ ...f, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Select category</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
               <div><Label>County</Label><Input value={form.county} onChange={e => setForm(f => ({ ...f, county: e.target.value }))} /></div>
               <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
+              <div className="col-span-2"><Label>Address Line 2</Label><Input value={form.address_line_2} onChange={e => setForm(f => ({ ...f, address_line_2: e.target.value }))} /></div>
               <div><Label>City</Label><Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
               <div><Label>State</Label><Input value={form.state} onChange={e => setForm(f => ({ ...f, state: e.target.value }))} placeholder="IL" /></div>
               <div><Label>ZIP Code</Label><Input value={form.zip} onChange={e => setForm(f => ({ ...f, zip: e.target.value }))} /></div>

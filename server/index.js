@@ -20,6 +20,7 @@ import authRouter from './routes/auth.js';
 import entitiesRouter from './routes/entities.js';
 import accountRouter from './routes/accountAccess.js';
 import { migrateAccountAccess } from './services/accountMigration.js';
+import { clearInvalidPrimaryContacts } from './services/organizationPolicy.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -81,10 +82,17 @@ app.use('/api/functions',createAuditPackageRouter());
 try {
   await pool.query('ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login TIMESTAMPTZ');
   await pool.query('ALTER TABLE grantees ADD COLUMN IF NOT EXISTS legacy_fields_enabled BOOLEAN NOT NULL DEFAULT false, ADD COLUMN IF NOT EXISTS legacy_system_name TEXT');
-  await pool.query('ALTER TABLE organizations ADD COLUMN IF NOT EXISTS legacy_spars_id TEXT, ADD COLUMN IF NOT EXISTS vendor_number TEXT, ADD COLUMN IF NOT EXISTS duns TEXT, ADD COLUMN IF NOT EXISTS region TEXT, ADD COLUMN IF NOT EXISTS nonprofit_category TEXT');
+  await pool.query('ALTER TABLE organizations ADD COLUMN IF NOT EXISTS legacy_spars_id TEXT, ADD COLUMN IF NOT EXISTS vendor_number TEXT, ADD COLUMN IF NOT EXISTS duns TEXT, ADD COLUMN IF NOT EXISTS region TEXT, ADD COLUMN IF NOT EXISTS nonprofit_category TEXT, ADD COLUMN IF NOT EXISTS address_line_2 TEXT, ADD COLUMN IF NOT EXISTS primary_contact_user_id TEXT');
+  await pool.query("ALTER TABLE organizations DROP CONSTRAINT IF EXISTS organizations_type_check, ADD CONSTRAINT organizations_type_check CHECK (type IN ('County','Municipality','Nonprofit','Tribe','Local Jurisdiction','Local Jurisdiction State Agency','State Agency','Federal Agency','University','Other'))");
+  await pool.query("ALTER TABLE organizations DROP CONSTRAINT IF EXISTS organizations_zip_format_check, ADD CONSTRAINT organizations_zip_format_check CHECK (zip IS NULL OR zip='' OR zip ~ '^[0-9]{5}(-[0-9]{4})?$')");
+  await pool.query("ALTER TABLE organizations DROP CONSTRAINT IF EXISTS organizations_state_format_check, ADD CONSTRAINT organizations_state_format_check CHECK (state IS NULL OR state='' OR state ~ '^[A-Z]{2}$')");
   await pool.query('ALTER TABLE organizations ALTER COLUMN ein TYPE TEXT USING ein::text');
   await pool.query('ALTER TABLE organizations ALTER COLUMN sam_uei TYPE TEXT USING sam_uei::text');
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS organizations_legacy_spars_id_unique ON organizations (legacy_spars_id) WHERE legacy_spars_id IS NOT NULL AND btrim(legacy_spars_id) <> \'\'');
+  await pool.query("CREATE OR REPLACE FUNCTION clear_invalid_primary_contact() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN UPDATE organizations o SET primary_contact_user_id=NULL,updated_date=NOW() WHERE o.primary_contact_user_id=OLD.id::text AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id=OLD.id AND u.organization_id=o.id::text AND COALESCE(u.active_status,'active') NOT IN ('inactive','deactivated','invited')); IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF; END; $fn$");
+  await pool.query('DROP TRIGGER IF EXISTS users_clear_invalid_primary_contact ON users');
+  await pool.query('CREATE TRIGGER users_clear_invalid_primary_contact AFTER UPDATE OF organization_id,active_status OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION clear_invalid_primary_contact()');
+  await clearInvalidPrimaryContacts(pool);
   await migrateAccountAccess(pool);
   await migrateNofoForms(pool);
   await migrateEhp(pool);
