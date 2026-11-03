@@ -154,7 +154,7 @@ export const FIELD_GROUPS = {
     { key: 'performance_end', label: 'Performance End', type: 'date' },
     { key: 'submitted_at', label: 'Submitted Date', type: 'date' },
     { key: 'created_date', label: 'Created Date', type: 'date' },
-    { key: 'grant_number', label: 'Grant #', type: 'text' },
+    { key: 'grant_number', label: 'Subaward #', type: 'text' },
     { key: 'version', label: 'Version', type: 'number' },
     { key: 'project_description', label: 'Project Description', type: 'text' },
     { key: 'scope_of_work', label: 'Scope of Work', type: 'text' },

@@ -8,6 +8,7 @@ import { guardUserMutation } from '../middleware/userEntityAccess.js';
 import { updateManagedAccount } from '../services/accountUpdates.js';
 import { legacyContext,stripLegacyFields,stripNofoLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation,assertLegacyNofoMutation } from '../services/legacyFields.js';
 import { normalizeOrganizationInput } from '../services/organizationPolicy.js';
+import { normalizeApplicationInput } from '../services/forms/applicationFormSave.js';
 import { normalizeNofoInput } from '../services/nofoPolicy.js';
 
 const router = Router();
@@ -165,7 +166,7 @@ router.post('/:entity', authRequired, async (req, res) => {
   const table = resolveTable(req.params.entity);
   if (!table) return res.status(404).json({ error: 'Unknown entity' });
 
-  const data = { ...req.body };
+  let data = { ...req.body };
   // Don't allow client to set id or timestamps
   delete data.id;
   delete data.created_date;
@@ -175,6 +176,7 @@ router.post('/:entity', authRequired, async (req, res) => {
   if(table==='organizations'){try{const context=await organizationContext(req);assertLegacyOrganizationMutation(req.user,data,context);data=await normalizeOrganizationInput(pool,data,{isCreate:true,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:true});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
   const keys=Object.keys(data);
+  if(table==='applications'){try{data=await normalizeApplicationInput(pool,data,{})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if(!keys.length)return res.status(400).json({error:'No data provided'});
 
   const cols = keys.join(', ');
@@ -221,6 +223,7 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
   if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:false});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
 
   const keys = Object.keys(data);
+  if(table==='applications'){try{data=await normalizeApplicationInput(pool,data,{id:req.params.id})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if (!keys.length) return res.status(400).json({ error: 'No data provided' });
 
   if(table==='grantees'){try{assertLegacyGranteeMutation(req.user,data)}catch(error){return res.status(error.status||403).json({error:error.message})}}

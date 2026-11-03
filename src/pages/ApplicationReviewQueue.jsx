@@ -352,7 +352,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input className="pl-9" placeholder="Search by org, app #, or grant #..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
+          <Input className="pl-9" placeholder="Search by org, app #, or Subaward #..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[160px]"><SelectValue /></SelectTrigger>
@@ -418,7 +418,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
             <thead>
               <tr className="border-b bg-muted/50">
                 <th className="text-left p-3 font-medium text-muted-foreground">App #</th>
-                <th className="text-left p-3 font-medium text-muted-foreground">Grant #</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Subaward #</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Project</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
@@ -501,7 +501,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               <div className="grid grid-cols-2 gap-4">
                 <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{viewApp.organization_name}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewApp.program_code} - {viewApp.program_name}</p></div>
-                {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Grant Number</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
+                {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Subaward #</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
                 <div><Label className="text-muted-foreground text-xs">Requested Amount</Label><p className="font-bold text-lg">{formatCurrency(viewApp.requested_amount)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Match Commitment</Label><p className="font-medium">{formatCurrency(viewApp.match_amount)}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Performance Period</Label><p className="font-medium">{formatDateShort(viewApp.performance_start)} - {formatDateShort(viewApp.performance_end)}</p></div>

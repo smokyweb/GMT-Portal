@@ -169,7 +169,7 @@ export async function exportApplicationPdf(app,budgets,selected) {
       ['Submission Date', formatDateShort(app.submitted_at)],
       ['Version', (() => { const v = String(app.version || '1'); return /^1+$/.test(v) ? String(v.length) : v; })()],
       ['NOFO', app.nofo_title],
-      ['Grant Number', app.grant_number],
+      ['Subaward #', app.grant_number],
     ]);
 
     sectionTitle('Project & Financial Details');

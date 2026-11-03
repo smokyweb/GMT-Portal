@@ -9,6 +9,33 @@ import {transaction} from '../accountRepository.js';
 import {formActor,formNofo,assertNofoAccess,assertApplicationAccess,auditForm} from './formAccess.js';
 import {ensurePinnedForm} from './formVersions.js';
 import {deriveEhp,checkSubmission} from './formSubmission.js';
+function normalizedSubawardNumber(value) {
+  if (value === null || value === undefined) return null;
+  const text = String(value).trim();
+  return text || null;
+}
+export async function normalizeApplicationInput(db, input, {id = null, previous = null} = {}) {
+  const data = {...input};
+  const prior = previous || (id ? (await db.query('SELECT * FROM applications WHERE id::text=$1',[id])).rows[0] : null);
+  const organizationId = data.organization_id ?? prior?.organization_id;
+  const nofoId = data.nofo_id ?? prior?.nofo_id;
+  const subawardNumber = data.grant_number === undefined ? normalizedSubawardNumber(prior?.grant_number) : normalizedSubawardNumber(data.grant_number);
+  if (data.grant_number !== undefined) data.grant_number = subawardNumber;
+  if (subawardNumber && (!organizationId || !nofoId)) throw accountError(400,'A Subaward # requires both an organization and a NOFO');
+  if (nofoId) {
+    const nofo = (await db.query('SELECT id,program_code,program_name,title FROM nofos WHERE id::text=$1',[nofoId])).rows[0];
+    if (!nofo) throw accountError(400,'Select an existing NOFO');
+    data.nofo_id = nofo.id; data.nofo_title = nofo.title;
+    data.program_code = nofo.program_code; data.program_name = nofo.program_name;
+  }
+  const priorNumber = normalizedSubawardNumber(prior?.grant_number);
+  const numberChanged = subawardNumber && (!prior || priorNumber?.toLowerCase() !== subawardNumber.toLowerCase());
+  if (numberChanged) {
+    const duplicate = (await db.query("SELECT a.id FROM applications a JOIN organizations o ON o.id::text=a.organization_id LEFT JOIN grantees g ON upper(g.state_code)=upper(o.state) WHERE a.id::text <> COALESCE($1,'') AND COALESCE(g.id::text,upper(o.state),'UNKNOWN')=(SELECT COALESCE(g2.id::text,upper(o2.state),'UNKNOWN') FROM organizations o2 LEFT JOIN grantees g2 ON upper(g2.state_code)=upper(o2.state) WHERE o2.id::text=$2) AND lower(btrim(a.grant_number))=lower(btrim($3)) LIMIT 1",[id,organizationId,subawardNumber])).rows[0];
+    if (duplicate) throw accountError(409,'That Subaward # is already in use for this Grantee');
+  }
+  return data;
+}
 const userFields=new Set(['nofo_id','nofo_title','organization_id','organization_name','submitted_by','program_code','program_name','grant_number','status','requested_amount','match_amount','version','performance_start','performance_end','ehp_required','ehp_screening_answers','ehp_status','ehp_notes','form_values','form_version_id',
   ...['SHSP','EMPG','SLCGP','NSGP','EOC'].flatMap(program_code=>formFields(defaultForm({program_code})).filter(field=>field.source==='application').map(field=>field.key))]);
 async function organizationFor(db,id) {
@@ -57,7 +84,8 @@ export async function saveFormApplication(pool,actorId,id,input,verifyFile) {
     } else if(nofo)version=await ensurePinnedForm(db,nofo,actor);
     if(!version&&data.form_values&&Object.keys(data.form_values).length)throw accountError(400,'Select a NOFO before entering custom form values');
     Object.assign(data,{organization_id:organization.id,organization_name:organization.name});
-    if(nofo)Object.assign(data,{nofo_id:nofo.id,nofo_title:nofo.title,program_code:nofo.program_code,program_name:nofo.program_name,grant_number:nofo.grant_number||''});
+    if(nofo)Object.assign(data,{nofo_id:nofo.id,nofo_title:nofo.title,program_code:nofo.program_code,program_name:nofo.program_name});
+    Object.assign(data,await normalizeApplicationInput(db,data,{id,previous}));
     if(!id)Object.assign(data,{submitted_by:actor.email,created_by:actor.email,status:data.status||'Draft'});
     else if(actor.role==='user')data.submitted_by=previous.submitted_by;
     {

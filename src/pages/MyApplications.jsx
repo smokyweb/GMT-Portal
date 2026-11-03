@@ -410,7 +410,7 @@ export default function MyApplications() {
                   <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{selected.project_title || ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{selected.program_code || ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{selected.nofo_title || ' - '}</p></div>
-                  {selected.grant_number && <div><p className="text-xs text-muted-foreground">Grant Number</p><p className="font-medium font-mono">{selected.grant_number}</p></div>}
+                  {selected.grant_number && <div><p className="text-xs text-muted-foreground">Subaward #</p><p className="font-medium font-mono">{selected.grant_number}</p></div>}
                   <div><p className="text-xs text-muted-foreground">Requested Amount</p><p className="font-semibold">{formatCurrency(selected.requested_amount)}</p></div>
                   <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-semibold">{selected.awarded_amount ? formatCurrency(selected.awarded_amount) : ' - '}</p></div>
                   <div><p className="text-xs text-muted-foreground">Match / Cost-Share</p><p className="font-medium">{formatCurrency(selected.match_amount)}</p></div>
