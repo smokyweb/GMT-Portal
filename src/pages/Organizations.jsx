@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const EMPTY_ORG = { name: '', type: 'County', ein: '', sam_uei: '', address: '', city: '', state: '', zip: '', county: '', is_active: true };
+const EMPTY_ORG = { name: '', type: 'County', ein: '', sam_uei: '', legacy_spars_id: '', vendor_number: '', duns: '', region: '', nonprofit_category: '', address: '', city: '', state: '', zip: '', county: '', is_active: true };
 
 export default function Organizations() {
   const [orgs, setOrgs] = useState([]);
@@ -161,6 +161,11 @@ export default function Organizations() {
                 </div>
                 {field('ein', 'EIN', 'XX-XXXXXXX')}
                 {field('sam_uei', 'SAM UEI', '12-character UEI')}
+                {field('legacy_spars_id', 'Legacy SPARS ID')}
+                {field('vendor_number', 'State Vendor / Address Book #')}
+                {field('duns', 'DUNS (legacy)')}
+                {field('region', 'Region')}
+                {editOrg.type === 'Nonprofit' && <div><Label className="text-xs">Nonprofit Category</Label><Select value={editOrg.nonprofit_category || '__none__'} onValueChange={v => setEditOrg(o => ({ ...o, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger className="mt-1"><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Not specified</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {field('address', 'Street Address')}

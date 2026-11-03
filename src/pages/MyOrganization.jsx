@@ -15,14 +15,14 @@ export default function MyOrganization() {
   const [org, setOrg] = useState(null);
   const [apps, setApps] = useState([]);
   const [form, setForm] = useState({
-    name: '', type: 'Municipality', ein: '', sam_uei: '', address: '', city: '', state: '', zip: '', county: '',
+    name: '', type: 'Municipality', ein: '', sam_uei: '', legacy_spars_id: '', vendor_number: '', duns: '', region: '', nonprofit_category: '', address: '', city: '', state: '', zip: '', county: '',
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
 
-  const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'address', 'city', 'state', 'zip', 'county'];
+  const FORM_FIELDS = ['name', 'type', 'ein', 'sam_uei', 'legacy_spars_id', 'vendor_number', 'duns', 'region', 'nonprofit_category', 'address', 'city', 'state', 'zip', 'county'];
   const extractForm = (o) => FORM_FIELDS.reduce((acc, k) => ({ ...acc, [k]: o[k] || '' }), { type: o.type || 'Municipality' });
 
   useEffect(() => {
@@ -121,6 +121,11 @@ export default function MyOrganization() {
               </div>
               <div><Label>EIN</Label><Input value={form.ein} onChange={e => setForm(f => ({ ...f, ein: e.target.value }))} placeholder="XX-XXXXXXX" /></div>
               <div><Label>SAM UEI</Label><Input value={form.sam_uei} onChange={e => setForm(f => ({ ...f, sam_uei: e.target.value }))} /></div>
+              <div><Label>Legacy SPARS ID</Label><Input value={form.legacy_spars_id} onChange={e => setForm(f => ({ ...f, legacy_spars_id: e.target.value }))} /> </div>
+              <div><Label>State Vendor / Address Book #</Label><Input value={form.vendor_number} onChange={e => setForm(f => ({ ...f, vendor_number: e.target.value }))} /> </div>
+              <div><Label>DUNS (legacy)</Label><Input value={form.duns} onChange={e => setForm(f => ({ ...f, duns: e.target.value }))} /> </div>
+              <div><Label>Region</Label><Input value={form.region} onChange={e => setForm(f => ({ ...f, region: e.target.value }))} /> </div>
+              {form.type === 'Nonprofit' && <div><Label>Nonprofit Category</Label><Select value={form.nonprofit_category || '__none__'} onValueChange={v => setForm(f => ({ ...f, nonprofit_category: v === '__none__' ? '' : v }))}><SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger><SelectContent><SelectItem value="__none__">Not specified</SelectItem><SelectItem value="Ideology-based/Spiritual/Religious">Ideology-based/Spiritual/Religious</SelectItem><SelectItem value="Educational (secular)">Educational (secular)</SelectItem><SelectItem value="Medical">Medical</SelectItem><SelectItem value="Other">Other</SelectItem></SelectContent></Select></div>}
               <div><Label>County</Label><Input value={form.county} onChange={e => setForm(f => ({ ...f, county: e.target.value }))} /></div>
               <div className="col-span-2"><Label>Street Address</Label><Input value={form.address} onChange={e => setForm(f => ({ ...f, address: e.target.value }))} /></div>
               <div><Label>City</Label><Input value={form.city} onChange={e => setForm(f => ({ ...f, city: e.target.value }))} /></div>
