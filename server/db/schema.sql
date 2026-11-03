@@ -116,6 +116,15 @@ CREATE TABLE IF NOT EXISTS nofos (
   allowable_costs       TEXT,
   evaluation_criteria   TEXT,
   total_funding_available NUMERIC,
+  fiscal_year INTEGER CHECK (fiscal_year IS NULL OR fiscal_year BETWEEN 1000 AND 9999),
+  federal_period_start DATE,
+  federal_period_end DATE,
+  local_share_amount NUMERIC,
+  state_share_amount NUMERIC,
+  mou_amount NUMERIC,
+  local_share_pct NUMERIC GENERATED ALWAYS AS (CASE WHEN total_funding_available IS NOT NULL AND total_funding_available <> 0 AND local_share_amount IS NOT NULL THEN local_share_amount / total_funding_available * 100 ELSE NULL END) STORED,
+  state_share_pct NUMERIC GENERATED ALWAYS AS (CASE WHEN total_funding_available IS NOT NULL AND total_funding_available <> 0 AND state_share_amount IS NOT NULL THEN state_share_amount / total_funding_available * 100 ELSE NULL END) STORED,
+  legacy_grant_id TEXT,
   min_award             NUMERIC,
   max_award             NUMERIC,
   open_date             DATE,
@@ -532,6 +541,8 @@ $$;
 -- ============================================================
 -- Indexes for common filter/sort patterns
 -- ============================================================
+CREATE UNIQUE INDEX IF NOT EXISTS nofos_legacy_grant_id_unique ON nofos(legacy_grant_id) WHERE legacy_grant_id IS NOT NULL AND btrim(legacy_grant_id) <> '';
+
 CREATE INDEX IF NOT EXISTS idx_applications_org     ON applications(organization_id);
 CREATE INDEX IF NOT EXISTS idx_applications_status  ON applications(status);
 CREATE INDEX IF NOT EXISTS idx_applications_nofo    ON applications(nofo_id);
