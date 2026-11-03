@@ -11,7 +11,13 @@
         "County",
         "Municipality",
         "Nonprofit",
-        "Tribe"
+        "Tribe",
+        "Local Jurisdiction",
+        "Local Jurisdiction State Agency",
+        "State Agency",
+        "Federal Agency",
+        "University",
+        "Other"
       ]
     },
     "ein": {
