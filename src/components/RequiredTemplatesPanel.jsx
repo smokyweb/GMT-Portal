@@ -11,7 +11,7 @@ export default function RequiredTemplatesPanel({ entityType, entityId, requiredT
   const [loading, setLoading] = useState(true);
   const [managing, setManaging] = useState(false);
 
-  useEffect(() => { loadTemplates(); }, [requiredTemplateIds, requiredTemplateAssignments, assignmentMode]);
+  useEffect(() => { loadTemplates(); }, [entityType, entityId, assignmentMode, JSON.stringify(requiredTemplateIds), JSON.stringify(requiredTemplateAssignments)]);
 
   const loadTemplates = async () => {
     setLoading(true);
