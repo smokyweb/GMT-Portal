@@ -14,8 +14,11 @@ export function createTemplateDocumentsRouter(pool,authRequired,uploadsDir){
       if(!template||!application)return res.status(404).json({error:'Template or application not found'});
       if(template.template_use!=='Generated Document' && template.doc_type!=='Grant Award Notice')return res.status(400).json({error:'Only Generated Document templates can create drafts'});
       const nofo=(await pool.query('SELECT * FROM nofos WHERE id=$1',[application.nofo_id])).rows[0];
+      const organization=(await pool.query('SELECT * FROM organizations WHERE id=$1',[application.organization_id])).rows[0]||{};
+      const program=(await pool.query('SELECT * FROM grant_programs WHERE id=$1',[nofo?.program_id])).rows[0]||{};
+      const grantee=(await pool.query('SELECT * FROM grantees WHERE id=$1',[organization.grantee_id||req.user.grantee_id])).rows[0]||{};
       const projects=(await pool.query('SELECT budget_category,line_description,amount_requested,amount_match FROM application_budgets WHERE application_id=$1 ORDER BY created_date',[application.id])).rows;
-      const values=templateValueMap({application,nofo,templateMappings:template.token_mappings||{},projects});
+      const values=templateValueMap({application,nofo,organization,program,grantee,templateMappings:template.token_mappings||{},projects});
       const warnings=Object.entries(template.token_mappings||{}).filter(([,field])=>!values[field]).map(([token])=>token);
       let fileUrl='',fileName=template.file_name||'';
       if(template.file_url){

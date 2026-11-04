@@ -17,8 +17,30 @@ export async function generateTemplateFile({sourcePath,outputPath,values}) {
   }
   await fs.writeFile(outputPath,await zip.generateAsync({type:'nodebuffer'}));
 }
-export function templateValueMap({application,nofo,templateMappings,projects,user}) {
-  const raw={organization_name:application.organization_name,application_number:application.application_number,project_title:application.project_title,program_code:application.program_code,program_name:application.program_name,nofo_title:application.nofo_title||nofo?.title,requested_amount:application.requested_amount,awarded_amount:application.awarded_amount,match_amount:application.match_amount,performance_start:application.performance_start,performance_end:application.performance_end,submitted_by:application.submitted_by,today_date:new Date().toISOString().slice(0,10),projects};
+export function templateValueMap({application,nofo,organization={},program={},grantee={},templateMappings,projects,user={}}) {
+  const raw={
+    ...application, ...Object.fromEntries(Object.entries(organization).map(([key,value])=>[`organization_${key}`,value])),
+    ...Object.fromEntries(Object.entries(program).map(([key,value])=>[`program_${key}`,value])),
+    ...Object.fromEntries(Object.entries(grantee).map(([key,value])=>[`grantee_${key}`,value])),
+    organization_name:organization.name||application.organization_name,
+    organization_type:organization.type, organization_ein:organization.ein, organization_sam_uei:organization.sam_uei,
+    organization_address:organization.address, organization_address_line_2:organization.address_line_2,
+    organization_city:organization.city, organization_state:organization.state, organization_zip:organization.zip,
+    organization_county:organization.county, organization_region:organization.region, organization_duns:organization.duns,
+    organization_vendor_number:organization.vendor_number, organization_legacy_spars_id:organization.legacy_spars_id,
+    nofo_title:application.nofo_title||nofo?.title, nofo_summary:nofo?.summary, fiscal_year:nofo?.fiscal_year,
+    grant_number:nofo?.grant_number, state_grant_number:nofo?.state_grant_number, cfda_number:nofo?.cfda_number,
+    cfda_title:nofo?.cfda_title, funding_stream:nofo?.funding_stream, eligibility_criteria:nofo?.eligibility_criteria,
+    allowable_costs:nofo?.allowable_costs, evaluation_criteria:nofo?.evaluation_criteria,
+    total_funding_available:nofo?.total_funding_available, min_award:nofo?.min_award, max_award:nofo?.max_award,
+    local_share_amount:nofo?.local_share_amount, local_share_pct:nofo?.local_share_pct,
+    state_share_amount:nofo?.state_share_amount, state_share_pct:nofo?.state_share_pct, mou_amount:nofo?.mou_amount,
+    open_date:nofo?.open_date, close_date:nofo?.close_date, federal_performance_start:nofo?.federal_performance_start,
+    federal_performance_end:nofo?.federal_performance_end, legacy_grant_id:nofo?.legacy_grant_id,
+    primary_contact_name: user.primary_contact_name, primary_contact_title:user.primary_contact_title,
+    primary_contact_email:user.primary_contact_email, primary_contact_phone:user.primary_contact_phone,
+    today_date:new Date().toISOString().slice(0,10), projects,
+  };
   return Object.fromEntries(Object.entries(templateMappings||{}).map(([token,field])=>[token,raw[field] ?? '']));
 }
 export function templateTokens(text=''){return [...String(text).matchAll(tokenPattern)].map(match=>match[1].trim()).filter(token=>!token.startsWith('#')&&!token.startsWith('/'));}

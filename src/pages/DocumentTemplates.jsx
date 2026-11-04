@@ -16,6 +16,7 @@ import { generateTemplateDraft } from '@/api/templateDocuments';
 import { FileText, Plus, Send, Trash2, Eye, ChevronDown, ChevronUp, Upload, Paperclip, ExternalLink, History } from 'lucide-react';
 import TemplateVersionDialog from '../components/TemplateVersionDialog';
 import { formatDateShort } from '../lib/helpers';
+import { TEMPLATE_FIELDS, TEMPLATE_FIELD_GROUPS } from '@/lib/templateFields';
 
 const DOC_TYPES = [
   'Grant Award Notice', 'Subrecipient Agreement', 'Quarterly Report Form',
@@ -39,7 +40,7 @@ const PLACEHOLDERS = [
 ];
 
 const TEMPLATE_USES=[{value:'Attachment',label:'Attachment',description:'Users download, complete, and upload the file with their submission.'},{value:'Generated Document',label:'Generated Document',description:'GMT fills mapped tokens to create a separate draft.'}];
-const TOKEN_FIELDS=[...PLACEHOLDERS.map(item=>({key:item.key.slice(2,-2),label:item.label})),{key:'projects',label:'Projects (repeating rows)'}];
+const TOKEN_FIELDS=TEMPLATE_FIELDS;
 function detectedTokens(body='',extra=[]) {
   const tokens=[...String(body).matchAll(/\{\{\s*([#/]?[^}]+?)\s*\}\}/g)].map(match=>match[1].trim().replace(/^#each\s+/,'').replace(/^\/each\s*/,'')).filter(Boolean);
   return [...new Set([...tokens,...extra])];
@@ -386,7 +387,7 @@ export default function DocumentTemplates() {
               {detectedTokens(form.template_body,uploadedTokens).length===0?<p className="text-xs text-muted-foreground">No tokens detected yet.</p>:detectedTokens(form.template_body,uploadedTokens).map(token=><div key={token} className="flex items-center gap-2">
                 <code className="text-xs flex-1">{'{{'+token+'}}'}</code>
                 <select className="border rounded px-2 py-1 text-xs bg-background" value={tokenMappings[token]||TOKEN_FIELDS.find(field=>field.key===token)?.key||''} onChange={e=>setTokenMappings(current=>({...current,[token]:e.target.value}))}>
-                  <option value="">Choose data field</option>{TOKEN_FIELDS.map(field=><option key={field.key} value={field.key}>{field.label}</option>)}
+                  <option value="">Choose data field</option>{TEMPLATE_FIELD_GROUPS.map(group=><optgroup key={group.label} label={group.label}>{group.fields.map(([key,label])=><option key={key} value={key}>{label}</option>)}</optgroup>)}
                 </select>
               </div>)}
             </div>}
