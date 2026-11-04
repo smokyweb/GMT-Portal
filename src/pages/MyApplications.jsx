@@ -266,18 +266,19 @@ export default function MyApplications() {
     try {
     const nofo = nofos.find(n => n.id === targetNofoId);
     const newApp = await base44.entities.Application.create({...draftForm(copySource),nofo_id:nofo.id,organization_id:copySource.organization_id,status:'Draft',version:1});
-    // Copy budget items
+    // Copy projects and their budget items without removing legacy Application fields.
+    const sourceProjects = await base44.entities.Project.filter({ application_id: copySource.id }).catch(() => []);
     const budgetItems = await base44.entities.ApplicationBudget.filter({ application_id: copySource.id }).catch(() => []);
-    await Promise.all((budgetItems || []).map(b =>
-      base44.entities.ApplicationBudget.create({
-        application_id: newApp.id,
-        budget_category: b.budget_category,
-        line_description: b.line_description,
-        amount_requested: b.amount_requested,
-        amount_match: b.amount_match,
-        is_allowable: true,
-      })
-    ));
+    const projectMap = new Map();
+    for (const sourceProject of sourceProjects || []) {
+      const copiedProject = await base44.entities.Project.create({ ...sourceProject, id: undefined, application_id: newApp.id, is_legacy_backfill: undefined });
+      projectMap.set(sourceProject.id, copiedProject.id);
+    }
+    await Promise.all((budgetItems || []).map(b => base44.entities.ApplicationBudget.create({
+      application_id: newApp.id, project_id: projectMap.get(b.project_id) || [...projectMap.values()][0] || null,
+      budget_category: b.budget_category, line_description: b.line_description,
+      amount_requested: b.amount_requested, amount_match: b.amount_match, is_allowable: true,
+    })));
     // Copy supporting documents (reference copies - same file_url, new application_id)
     const sourceDocs = await base44.entities.Document.filter({ application_id: copySource.id }).catch(() => []);
     await Promise.all((sourceDocs || []).filter(d => !d.is_template).map(d =>

@@ -88,6 +88,7 @@ export default function MyFundingRequests() {
   const [advanceEnabled, setAdvanceEnabled] = useState(true);
   const [requests, setRequests] = useState([]);
   const [apps, setApps] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [user, setUser] = useState(null);
   const [viewRequest, setViewRequest] = useState(null);
   const [search, setSearch] = useState('');
@@ -99,7 +100,7 @@ export default function MyFundingRequests() {
   const [submitting, setSubmitting] = useState(false);
   const [submissionError,setSubmissionError] = useState('');
   const [form, setForm] = useState({
-    application_id: '', request_type: 'Reimbursement',
+    application_id: '', project_id: '', request_type: 'Reimbursement',
     period_start: '', period_end: '', match_documented: 0,
     modification_type: '', modification_justification: '',
     scope_of_work_current: '', scope_of_work_proposed: '',
@@ -142,7 +143,7 @@ export default function MyFundingRequests() {
     setLineItems([]);
     setAttachments([]);setSubmissionError('');
     setForm({
-      application_id: '', request_type: 'Reimbursement',
+      application_id: '', project_id: '', request_type: 'Reimbursement',
       period_start: '', period_end: '', match_documented: 0,
       modification_type: '', modification_justification: '',
       scope_of_work_current: '', scope_of_work_proposed: '',
@@ -152,6 +153,12 @@ export default function MyFundingRequests() {
 
   const updateLineItem = (idx, field, value) =>
     setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
+
+  const handleApplicationChange = async applicationId => {
+    const rows = applicationId ? await base44.entities.Project.filter({ application_id: applicationId }, 'created_date', 100) : [];
+    setProjects(rows || []);
+    setForm(f => ({ ...f, application_id: applicationId, project_id: rows?.length === 1 ? rows[0].id : '' }));
+  };
 
   const handleFileAdd = async (e) => {
     const files = Array.from(e.target.files);
@@ -364,7 +371,7 @@ export default function MyFundingRequests() {
               </div>
               <div>
                 <Label>Select Grant <span className="text-red-500">*</span></Label>
-                <Select value={form.application_id} onValueChange={v => setForm(f => ({ ...f, application_id: v }))}>
+                <Select value={form.application_id} onValueChange={handleApplicationChange}>
                   <SelectTrigger><SelectValue placeholder="Choose active grant" /></SelectTrigger>
                   <SelectContent>
                     {apps.filter(a => a.status === 'Approved').map(a => <SelectItem key={a.id} value={a.id}>{a.application_number} - {a.project_title}</SelectItem>)}
@@ -372,6 +379,15 @@ export default function MyFundingRequests() {
                 </Select>
               </div>
             </div>
+
+            {form.application_id && <div>
+              <Label>Project {projects.length > 1 && <span className="text-red-500">*</span>}</Label>
+              <Select value={form.project_id} onValueChange={v => setForm(f => ({ ...f, project_id: v }))}>
+                <SelectTrigger className="mt-1"><SelectValue placeholder={projects.length > 1 ? 'Choose project' : 'Project selected automatically'} /></SelectTrigger>
+                <SelectContent>{projects.map(project => <SelectItem key={project.id} value={project.id}>{project.title || 'Untitled Project'}</SelectItem>)}</SelectContent>
+              </Select>
+              {projects.length > 1 && !form.project_id && <p className="text-xs text-red-600 mt-1">Select the project this funding request supports.</p>}
+            </div>}
 
             {/* â"€â"€ MODIFICATION FORM â"€â"€ */}
             {form.request_type === 'Modification' && (
@@ -681,6 +697,7 @@ export default function MyFundingRequests() {
                 submitting ||
                 attachments.some(a => a.uploading) ||
                 !form.application_id ||
+                (projects.length > 1 && !form.project_id) ||
                 (form.request_type !== 'Modification' && lineItems.length === 0)
               }
             >

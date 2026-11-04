@@ -17,6 +17,13 @@ export async function checkSubmission(db,definition,application,nofo,organizatio
   const context={application,organization,values:parseObject(application.form_values)},errors=validateFormValues(definition,context);
   const budget=(await db.query('SELECT * FROM application_budgets WHERE application_id=$1',[application.id])).rows;
   errors.push(...validateBudget(definition,budget,application));
+  const projectsTable=(await db.query("SELECT to_regclass(current_schema()||'.projects') AS name")).rows[0]?.name;
+  const projects=projectsTable?(await db.query('SELECT * FROM projects WHERE application_id=$1 AND is_active=true ORDER BY created_date,id',[application.id])).rows:[];
+  if(projectsTable&&!projects.length)errors.push({sectionId:'budget',message:'Add at least one active Project before submitting.'});
+  for(const [index,project] of projects.entries()) {
+    if(!String(project.title||'').trim())errors.push({sectionId:'budget',message:`Project ${index+1} needs a title.`});
+    if(!project.is_legacy_backfill&&!/^\d{5}$/.test(String(project.project_zip||'')))errors.push({sectionId:'budget',message:`Project ${index+1} needs a 5-digit ZIP.`});
+  }
   const documents=(await db.query('SELECT * FROM documents WHERE application_id=$1',[application.id])).rows;
   const required=(definition.rules.requiredDocuments||nofo.required_documents||[]).filter(doc=>doc.mandatory).map(doc=>doc.name);
   if(ehpRequired(definition,context))required.push(definition.rules.ehpScreeningDocument);

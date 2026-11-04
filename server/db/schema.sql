@@ -169,11 +169,40 @@ CREATE TABLE IF NOT EXISTS applications (
 );
 
 -- ============================================================
+-- 6a. projects
+-- ============================================================
+CREATE TABLE IF NOT EXISTS projects (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  application_id TEXT NOT NULL,
+  legacy_project_id TEXT,
+  title TEXT,
+  project_narrative TEXT,
+  work_plan TEXT,
+  project_type TEXT,
+  funding_type TEXT CHECK (funding_type IN ('Pass-Through','Retained')),
+  ij_title TEXT,
+  ij_funding_priority TEXT,
+  ij_number TEXT,
+  ij_core_capability TEXT,
+  national_priority_area TEXT,
+  letpa_eligible BOOLEAN,
+  shareable BOOLEAN,
+  deployable BOOLEAN,
+  is_active BOOLEAN NOT NULL DEFAULT true,
+  project_zip TEXT CHECK (project_zip IS NULL OR project_zip ~ '^[0-9]{5}$'),
+  awarded_amount NUMERIC,
+  is_legacy_backfill BOOLEAN NOT NULL DEFAULT false,
+  created_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ============================================================
 -- 7. application_budgets
 -- ============================================================
 CREATE TABLE IF NOT EXISTS application_budgets (
   id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id   TEXT NOT NULL,
+  project_id       TEXT,
   budget_category  TEXT NOT NULL CHECK (budget_category IN ('Personnel','Equipment','Training','Travel','Contractual','Planning','Other')),
   line_description TEXT,
   amount_requested NUMERIC,
@@ -284,6 +313,7 @@ CREATE TABLE IF NOT EXISTS document_templates (
 CREATE TABLE IF NOT EXISTS funding_requests (
   id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id           TEXT NOT NULL,
+  project_id              TEXT,
   application_number       TEXT,
   organization_id          TEXT,
   organization_name        TEXT,
@@ -316,6 +346,7 @@ CREATE TABLE IF NOT EXISTS funding_requests (
 CREATE TABLE IF NOT EXISTS funding_request_line_items (
   id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   funding_request_id TEXT NOT NULL,
+  project_id         TEXT,
   budget_category    TEXT NOT NULL CHECK (budget_category IN ('Personnel','Equipment','Training','Travel','Contractual','Planning','Other')),
   description        TEXT,
   amount             NUMERIC,
@@ -356,6 +387,7 @@ CREATE TABLE IF NOT EXISTS generated_documents (
 CREATE TABLE IF NOT EXISTS messages (
   id                       UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   application_id           TEXT NOT NULL,
+  project_id               TEXT,
   application_number       TEXT,
   organization_name        TEXT,
   thread_id                TEXT,
@@ -418,10 +450,18 @@ CREATE TABLE IF NOT EXISTS progress_reports (
   id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   schedule_id     TEXT NOT NULL,
   application_id  TEXT NOT NULL,
+  project_id      TEXT,
   submitted_by    TEXT,
   narrative       TEXT,
   expenditure_ytd NUMERIC,
   match_ytd       NUMERIC,
+  change_request_number NUMERIC,
+  review_number NUMERIC,
+  complete_number NUMERIC,
+  on_order_number NUMERIC,
+  needs_poe_number NUMERIC,
+  invoiced_number NUMERIC,
+  uncommitted_number NUMERIC,
   objectives_met  TEXT,
   challenges      TEXT,
   status          TEXT NOT NULL CHECK (status IN ('Submitted','UnderReview','Approved','Denied','RevisionRequested')),
@@ -520,7 +560,7 @@ BEGIN
   FOR tbl IN
     SELECT unnest(ARRAY[
       'grant_programs','grantees','organizations','users','nofos',
-      'applications','application_budgets','application_reviews',
+      'applications','projects','application_budgets','application_reviews',
       'audit_logs','compliance_flags','documents','document_templates',
       'funding_requests','funding_request_line_items','generated_documents',
       'messages','milestones','notifications','progress_reports',

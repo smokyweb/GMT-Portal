@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StatusBadge from '../components/StatusBadge';
 import RequiredTemplatesPanel from '@/components/RequiredTemplatesPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
@@ -18,8 +19,9 @@ export default function MyReports() {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [form, setForm] = useState({
-    narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0,
+    project_id: '', narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0, change_request_number: 0, review_number: 0, complete_number: 0, on_order_number: 0, needs_poe_number: 0, invoiced_number: 0, uncommitted_number: 0,
   });
+  const [projects, setProjects] = useState([]);
   const [attachments, setAttachments] = useState([]); // [{ file, uploading, url, name }]
   const [viewReport, setViewReport] = useState(null);
   const [viewProgress, setViewProgress] = useState(null);
@@ -49,7 +51,8 @@ export default function MyReports() {
 
   const openReport = (schedule) => {
     setSelected(schedule);
-    setForm({ narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0 });
+    base44.entities.Project.filter({application_id:schedule.application_id},'created_date',100).then(rows=>{setProjects(rows||[]);setForm(current=>({...current,project_id:(rows||[]).length===1?rows[0].id:''}));}).catch(()=>setProjects([]));
+    setForm({ project_id: '', narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0, change_request_number: 0, review_number: 0, complete_number: 0, on_order_number: 0, needs_poe_number: 0, invoiced_number: 0, uncommitted_number: 0 });
     setAttachments([]);
     setOpen(true);
   };
@@ -93,10 +96,18 @@ export default function MyReports() {
     await base44.entities.ProgressReport.create({
       schedule_id: selected.id,
       application_id: selected.application_id,
+      project_id: form.project_id,
       submitted_by: user.email,
       ...form,
       expenditure_ytd: Number(form.expenditure_ytd),
       match_ytd: Number(form.match_ytd),
+      change_request_number: Number(form.change_request_number)||0,
+      review_number: Number(form.review_number)||0,
+      complete_number: Number(form.complete_number)||0,
+      on_order_number: Number(form.on_order_number)||0,
+      needs_poe_number: Number(form.needs_poe_number)||0,
+      invoiced_number: Number(form.invoiced_number)||0,
+      uncommitted_number: Number(form.uncommitted_number)||0,
       status: 'Submitted',
       submitted_at: new Date().toISOString(),
     });
@@ -199,6 +210,7 @@ export default function MyReports() {
                 <p><strong>Grant:</strong> {selected.application_number}</p>
                 <p><strong>Period:</strong> {formatDateShort(selected.period_start)} - {formatDateShort(selected.period_end)}</p>
               </div>
+              <div><Label>Project <span className="text-red-500">*</span></Label><Select value={form.project_id} onValueChange={v=>setForm(f=>({...f,project_id:v}))}><SelectTrigger className="mt-1"><SelectValue placeholder={projects.length===1?'Project selected automatically':'Choose project'}/></SelectTrigger><SelectContent>{projects.map(project=><SelectItem key={project.id} value={project.id}>{project.title||'Untitled Project'}</SelectItem>)}</SelectContent></Select></div>
               <div><Label>Narrative</Label><Textarea value={form.narrative} onChange={e => setForm(f => ({ ...f, narrative: e.target.value }))} rows={4} /></div>
               <div><Label>Objectives Met</Label><Textarea value={form.objectives_met} onChange={e => setForm(f => ({ ...f, objectives_met: e.target.value }))} rows={3} /></div>
               <div><Label>Challenges</Label><Textarea value={form.challenges} onChange={e => setForm(f => ({ ...f, challenges: e.target.value }))} rows={3} /></div>
@@ -206,6 +218,7 @@ export default function MyReports() {
                 <div><Label>Expenditure This Period ($)</Label><Input type="number" value={form.expenditure_ytd} onChange={e => setForm(f => ({ ...f, expenditure_ytd: e.target.value }))} /></div>
                 <div><Label>Match Documented ($)</Label><Input type="number" value={form.match_ytd} onChange={e => setForm(f => ({ ...f, match_ytd: e.target.value }))} /></div>
               </div>
+              <div><Label>Project Status Counts</Label><div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">{[['change_request_number','Change Request'],['review_number','Review'],['complete_number','Complete'],['on_order_number','On-Order'],['needs_poe_number','Needs POE'],['invoiced_number','Invoiced'],['uncommitted_number','Uncommitted']].map(([key,label])=><div key={key}><span className="text-xs text-muted-foreground">{label}</span><Input type="number" min="0" value={form[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))}/></div>)}</div></div>
 
               {/* Required Templates */}
               {selected.required_template_ids?.length > 0 && (
@@ -250,7 +263,7 @@ export default function MyReports() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
-            <Button onClick={submitReport} disabled={submitting || attachments.some(a => a.uploading)}>
+            <Button onClick={submitReport} disabled={submitting || attachments.some(a => a.uploading) || !form.project_id}>
               {submitting ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Submitting…</> : 'Submit Report'}
             </Button>
           </DialogFooter>

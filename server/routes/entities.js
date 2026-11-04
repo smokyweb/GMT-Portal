@@ -6,7 +6,8 @@ import pool from '../db/connection.js';
 import { authRequired } from '../middleware/auth.js';
 import { guardUserMutation } from '../middleware/userEntityAccess.js';
 import { updateManagedAccount } from '../services/accountUpdates.js';
-import { legacyContext,stripLegacyFields,stripNofoLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation,assertLegacyNofoMutation } from '../services/legacyFields.js';
+import { legacyContext,stripLegacyFields,stripNofoLegacyFields,stripProjectLegacyFields,assertLegacyGranteeMutation,assertLegacyOrganizationMutation,assertLegacyNofoMutation,assertLegacyProjectMutation } from '../services/legacyFields.js';
+import {formActor,assertApplicationAccess} from '../services/forms/formAccess.js';
 import { normalizeOrganizationInput } from '../services/organizationPolicy.js';
 import { normalizeApplicationInput } from '../services/forms/applicationFormSave.js';
 import { normalizeNofoInput } from '../services/nofoPolicy.js';
@@ -19,6 +20,7 @@ router.use('/:entity/:id?',createApplicationBudgetAccess(),createNofoFormEntityA
 // ── Entity name → Postgres table mapping ──────────────────────
 const TABLE_MAP = {
   Application:             'applications',
+  Project:                 'projects',
   ApplicationBudget:       'application_budgets',
   ApplicationReview:       'application_reviews',
   AppSettings:             'app_settings',
@@ -57,6 +59,7 @@ function resolveTable(entity) {
 async function organizationContext(req){return legacyContext(pool,req.user,req.query.grantee_id||null)}
 function sanitizeOrganizationRows(rows,context){return rows.map(row=>stripLegacyFields(row,context.enabled))}
 function sanitizeNofoRows(rows,context){return rows.map(row=>stripNofoLegacyFields(row,context.enabled))}
+function sanitizeProjectRows(rows,context){return rows.map(row=>stripProjectLegacyFields(row,context.enabled))}
 
 // Parse Base44-style sort string: "-created_date" → "created_date DESC"
 function parseSort(sortStr) {
@@ -85,6 +88,7 @@ router.get('/:entity', authRequired, async (req, res) => {
     if(table==='users')rows.forEach(r=>delete r.password_hash);
     if(table==='organizations')return res.json(sanitizeOrganizationRows(rows,await organizationContext(req)));
     if(table==='nofos')return res.json(sanitizeNofoRows(rows,await organizationContext(req)));
+    if(table==='projects')return res.json(sanitizeProjectRows(rows,await organizationContext(req)));
     res.json(rows);
   } catch (err) {
     console.error(`List ${table}:`, err);
@@ -132,6 +136,7 @@ router.post('/:entity/filter', authRequired, async (req, res) => {
     if(table==='users')rows.forEach(r=>delete r.password_hash);
     if(table==='organizations')return res.json(sanitizeOrganizationRows(rows,await organizationContext(req)));
     if(table==='nofos')return res.json(sanitizeNofoRows(rows,await organizationContext(req)));
+    if(table==='projects')return res.json(sanitizeProjectRows(rows,await organizationContext(req)));
     res.json(rows);
   } catch (err) {
     console.error(`Filter ${table}:`, err);
@@ -154,6 +159,7 @@ router.get('/:entity/:id', authRequired, async (req, res) => {
     if(table==='users')delete row.password_hash;
     if(table==='organizations')return res.json(stripLegacyFields(row,(await organizationContext(req)).enabled));
     if(table==='nofos')return res.json(stripNofoLegacyFields(row,(await organizationContext(req)).enabled));
+    if(table==='projects')return res.json(stripProjectLegacyFields(row,(await organizationContext(req)).enabled));
     res.json(row);
   } catch (err) {
     console.error(`Get ${table}:`, err);
@@ -175,6 +181,18 @@ router.post('/:entity', authRequired, async (req, res) => {
   if(table==='grantees'){try{assertLegacyGranteeMutation(req.user,data)}catch(error){return res.status(error.status||403).json({error:error.message})}}
   if(table==='organizations'){try{const context=await organizationContext(req);assertLegacyOrganizationMutation(req.user,data,context);data=await normalizeOrganizationInput(pool,data,{isCreate:true,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:true});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
+  if(table==='projects'){
+    try {
+      const actor=await formActor(pool,req.user.id),application=(await pool.query('SELECT * FROM applications WHERE id::text=$1',[data.application_id])).rows[0];
+      if(!application)return res.status(400).json({error:'Select an existing application'});
+      const organization=(await pool.query('SELECT * FROM organizations WHERE id::text=$1',[application.organization_id])).rows[0];
+      assertApplicationAccess(actor,application,organization,true);assertLegacyProjectMutation(actor,data,await organizationContext(req));delete data.is_legacy_backfill;
+    } catch(error){return res.status(error.status||400).json({error:error.message})}
+  }
+  if(table==='progress_reports'&&data.project_id){
+    const project=(await pool.query('SELECT id FROM projects WHERE id::text=$1 AND application_id=$2',[data.project_id,data.application_id])).rows[0];
+    if(!project)return res.status(400).json({error:'Choose a project from this application'});
+  }
   const keys=Object.keys(data);
   if(table==='applications'){try{data=await normalizeApplicationInput(pool,data,{})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if(!keys.length)return res.status(400).json({error:'No data provided'});
@@ -197,6 +215,7 @@ router.post('/:entity', authRequired, async (req, res) => {
     if (table === 'users') delete row.password_hash;
     if (table === 'organizations') return res.status(201).json(stripLegacyFields(row, (await organizationContext(req)).enabled));
     if (table === 'nofos') return res.status(201).json(stripNofoLegacyFields(row, (await organizationContext(req)).enabled));
+    if (table === 'projects') return res.status(201).json(stripProjectLegacyFields(row, (await organizationContext(req)).enabled));
     res.status(201).json(row);
   } catch (err) {
     console.error(`Create ${table}:`, err);
@@ -221,9 +240,36 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
 
   if(table==='organizations'){try{const context=await organizationContext(req);data=await normalizeOrganizationInput(pool,data,{orgId:req.params.id,grantee:context.grantee})}catch(error){return res.status(error.status||400).json({error:error.message})}}
   if(table==='nofos'){try{const context=await organizationContext(req);assertLegacyNofoMutation(req.user,data,context);data=await normalizeNofoInput(data,{isCreate:false});if(!context.canEdit)delete data.legacy_grant_id}catch(error){return res.status(error.status||400).json({error:error.message})}}
+  if(table==='projects'){
+    try {
+      const actor=await formActor(pool,req.user.id),previous=(await pool.query('SELECT * FROM projects WHERE id::text=$1',[req.params.id])).rows[0];
+      if(!previous)return res.status(404).json({error:'Project not found'});
+      const application=(await pool.query('SELECT * FROM applications WHERE id::text=$1',[previous.application_id])).rows[0],organization=(await pool.query('SELECT * FROM organizations WHERE id::text=$1',[application?.organization_id])).rows[0];
+      if(data.application_id&&data.application_id!==previous.application_id)throw Object.assign(new Error('A project cannot move to another application'),{status:400});
+      assertApplicationAccess(actor,application,organization,true);assertLegacyProjectMutation(actor,data,await organizationContext(req));delete data.application_id;delete data.is_legacy_backfill;
+    } catch(error){return res.status(error.status||400).json({error:error.message})}
+  }
+  if(table==='progress_reports'&&data.project_id){
+    const existingReport=(await pool.query('SELECT application_id FROM progress_reports WHERE id::text=$1',[req.params.id])).rows[0];
+    const project=(await pool.query('SELECT id FROM projects WHERE id::text=$1 AND application_id=$2',[data.project_id,existingReport?.application_id||data.application_id])).rows[0];
+    if(!project)return res.status(400).json({error:'Choose a project from this application'});
+  }
 
   const keys = Object.keys(data);
-  if(table==='applications'){try{data=await normalizeApplicationInput(pool,data,{id:req.params.id})}catch(error){return res.status(error.status||400).json({error:error.message})}}
+  if(table==='applications'){
+    try{
+      if(data.status==='Submitted'){
+        const projectsTable=(await pool.query("SELECT to_regclass(current_schema()||'.projects') AS name")).rows[0]?.name;
+        const projects=projectsTable?(await pool.query('SELECT title,project_zip,is_legacy_backfill,is_active FROM projects WHERE application_id=$1 AND is_active=true',[req.params.id])).rows:[];
+        if(projectsTable&&!projects.length)throw Object.assign(new Error('Add at least one active Project before submitting'),{status:422});
+        for(const [index,project] of projects.entries()){
+          if(!String(project.title||'').trim())throw Object.assign(new Error(`Project ${index+1} needs a title`),{status:422});
+          if(!project.is_legacy_backfill&&!/^\d{5}$/.test(String(project.project_zip||'')))throw Object.assign(new Error(`Project ${index+1} needs a 5-digit ZIP`),{status:422});
+        }
+      }
+      data=await normalizeApplicationInput(pool,data,{id:req.params.id})
+    }catch(error){return res.status(error.status||400).json({error:error.message})}
+  }
   if (!keys.length) return res.status(400).json({ error: 'No data provided' });
 
   if(table==='grantees'){try{assertLegacyGranteeMutation(req.user,data)}catch(error){return res.status(error.status||403).json({error:error.message})}}
@@ -248,6 +294,7 @@ router.put('/:entity/:id', authRequired, async (req, res) => {
     if (table === 'users') delete row.password_hash;
     if (table === 'organizations') return res.json(stripLegacyFields(row, (await organizationContext(req)).enabled));
     if (table === 'nofos') return res.json(stripNofoLegacyFields(row, (await organizationContext(req)).enabled));
+    if (table === 'projects') return res.json(stripProjectLegacyFields(row, (await organizationContext(req)).enabled));
     res.json(row);
   } catch (err) {
     console.error(`Update ${table}:`, err);

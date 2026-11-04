@@ -23,9 +23,11 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     if(!lineEntity&&data.application_id&&data.application_id!==application.id)throw accountError(400,'A funding request cannot move to another grant');
     if(lineEntity&&['funding_request_id','fund_request_id'].some(key=>data[key]&&data[key]!==request.id))throw accountError(400,'An expenditure cannot move to another request');
     if(lineEntity&&data.application_budget_id&&(await db.query('SELECT id FROM application_budgets WHERE id::text=$1 AND application_id=$2',[data.application_budget_id,application.id])).rows.length===0)throw accountError(400,'Choose a budget line from this application');
+    const requestedProjectId=data.project_id||request?.project_id||input.project_id;
+    if(requestedProjectId&&(await db.query('SELECT id FROM projects WHERE id::text=$1 AND application_id=$2',[requestedProjectId,application.id])).rows.length===0)throw accountError(400,'Choose a project from this application');
     if(actor.role==='user') {
       if(request&&!['Draft','AdditionalInfoRequested'].includes(request.status))throw accountError(409,'This request is not open for editing');
-      const allowed=lineEntity?['funding_request_id','fund_request_id','budget_category','description','amount','amount_requested','application_budget_id','ehp_affected','invoice_number','invoice_date','vendor']:userKeys;
+      const allowed=lineEntity?['funding_request_id','fund_request_id','project_id','budget_category','description','amount','amount_requested','application_budget_id','ehp_affected','invoice_number','invoice_date','vendor']:userKeys.concat('project_id');
       if(Object.keys(data).some(key=>!allowed.includes(key)))throw accountError(403,'Only a reviewer can change funding review or payment fields');
       if(!lineEntity&&data.status&&!['Draft','Submitted'].includes(data.status))throw accountError(403,'Use the review workflow for funding decisions');
     }
@@ -37,7 +39,7 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     }
     if(lineEntity) {
       if(data.ehp_affected!==undefined&&data.ehp_affected!==null&&typeof data.ehp_affected!=='boolean')throw accountError(400,'EHP classification must be yes or no');
-      const saved=await writeFundingRow(db,table,id,{...data,funding_request_id:request.id});
+      const saved=await writeFundingRow(db,table,id,{...data,project_id:data.project_id||request.project_id||null,funding_request_id:request.id});
       if(release(request)&&['Approved','Paid'].includes(request.status))await checkFundingRelease(db,application,request);
       return saved;
     }
@@ -46,7 +48,7 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
       if(application.status!=='Approved')throw accountError(409,'Select an approved grant');
       Object.assign(data,{status:'Draft',request_number:await fundingNumber(db),submitted_by:actor.email});
     }
-    Object.assign(data,{application_id:application.id,application_number:application.application_number,organization_id:organization.id,organization_name:organization.name,program_code:application.program_code});
+    Object.assign(data,{application_id:application.id,application_number:application.application_number,organization_id:organization.id,organization_name:organization.name,program_code:application.program_code,project_id:data.project_id||request?.project_id||null});
     const proposed={...previous,...data};fundingDates(proposed);
     if(proposed.request_type==='Modification') {
       if(proposed.payment_status&&!['PendingDisbursement','PaymentFailed'].includes(proposed.payment_status))throw accountError(400,'A modification request is not payable');

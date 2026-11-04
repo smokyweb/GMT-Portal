@@ -39,6 +39,7 @@ export default function ApplicationReviewQueue() {
   const [searchParams] = useSearchParams();
   const [apps, setApps] = useState([]);
   const [budgets, setBudgets] = useState([]);
+  const [projects, setProjects] = useState([]);
   const [selected, setSelected] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -122,11 +123,13 @@ export default function ApplicationReviewQueue() {
   };
 
   const openReview = async (app) => {
-    const [b, t] = await Promise.all([
+    const [b, t, p] = await Promise.all([
       base44.entities.ApplicationBudget.filter({ application_id: app.id }),
       base44.entities.Task.filter({ application_id: app.id }, '-created_date', 50),
+      base44.entities.Project.filter({ application_id: app.id }, 'created_date', 100),
     ]);
     setBudgets(b);
+    setProjects(p || []);
     setAppTasks(t);
     setSelected(app);
     setReviewScore(app.score || '');
@@ -545,6 +548,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
             <Tabs defaultValue="summary">
               <TabsList className="mb-4 flex-wrap">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="projects">Projects</TabsTrigger>
                 {scoringEnabled && <TabsTrigger value="scoring">Scoring</TabsTrigger>}
                 <TabsTrigger value="budget">Budget</TabsTrigger>
                 <AwardDetailsTabTrigger/>
@@ -648,6 +652,20 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   </div>
                 )}
               <ApplicationFormValues applicationId={selected.id}/>
+              </TabsContent>
+
+              <TabsContent value="projects" className="space-y-4">
+                {projects.length === 0 ? <p className="rounded border p-6 text-center text-muted-foreground">No project records found.</p> : projects.map((project,index)=>{
+                  const lines=budgets.filter(line=>line.project_id===project.id),requested=lines.reduce((sum,line)=>sum+(Number(line.amount_requested)||0),0),match=lines.reduce((sum,line)=>sum+(Number(line.amount_match)||0),0);
+                  return <div key={project.id} className="rounded-xl border p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{index+1}. {project.title||'Untitled Project'}</p><p className="text-xs text-muted-foreground">{project.project_type||'Other'} · {project.funding_type||'Pass-Through'}{project.project_zip?` · ZIP ${project.project_zip}`:''}</p></div><p className="font-bold">{formatCurrency(project.awarded_amount)}</p></div>
+                    <div className="grid grid-cols-2 gap-3 text-sm"><div><span className="text-muted-foreground">Budget requested</span><p className="font-semibold">{formatCurrency(requested)}</p></div><div><span className="text-muted-foreground">Budget match</span><p className="font-semibold">{formatCurrency(match)}</p></div></div>
+                    {project.project_narrative&&<div><Label className="text-muted-foreground text-xs">Narrative</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg text-sm">{project.project_narrative}</p></div>}
+                    {project.work_plan&&<div><Label className="text-muted-foreground text-xs">Work Plan</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg text-sm">{project.work_plan}</p></div>}
+                    <div className="border rounded-lg overflow-hidden"><table className="w-full text-xs"><thead className="bg-muted/50"><tr><th className="text-left p-2">Category</th><th className="text-left p-2">Description</th><th className="text-right p-2">Requested</th></tr></thead><tbody>{lines.map(line=><tr key={line.id} className="border-t"><td className="p-2">{line.budget_category}</td><td className="p-2">{line.line_description}</td><td className="p-2 text-right">{formatCurrency(line.amount_requested)}</td></tr>)}</tbody></table></div>
+                  </div>;
+                })}
+                {selected&&Math.abs(projects.reduce((sum,project)=>sum+(Number(project.awarded_amount)||0),0)-Number(selected.awarded_amount||0))>0.005&&<p className="rounded border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">Project awarded amounts do not add up to the application awarded amount.</p>}
               </TabsContent>
 
               {scoringEnabled && (

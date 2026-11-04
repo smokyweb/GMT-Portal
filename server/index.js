@@ -27,6 +27,7 @@ import {createAwardNoticeRouter} from './routes/awardNotices.js';
 import {migrateAwardNotices} from './services/documents/awardNoticeMigration.js';
 import {createTemplateDocumentsRouter} from './routes/templateDocuments.js';
 import {migrateTemplateDrafts} from './services/templateDraftMigration.js';
+import {migrateProjects} from './services/projectMigration.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -112,6 +113,7 @@ try {
   await migrateGanRuntime(pool);
   await migrateAwardNotices(pool);
   await migrateTemplateDrafts(pool);
+  await migrateProjects(pool);
   app.listen(PORT, () => {
     console.log(`GMT Portal API running on http://localhost:${PORT}`);
   });

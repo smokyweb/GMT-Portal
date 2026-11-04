@@ -21,20 +21,30 @@ export function draftPayload(form,nofo,organization) {
     match_amount:form.match_amount===''?0:Number(form.match_amount),
     performance_start:form.performance_start||null,performance_end:form.performance_end||null};
 }
-export async function persistDraft({application,form,nofo,organization,items,removedIds=[],onApplication=(_saved)=>{},onBudget=(_index,_row)=>{}}) {
+const projectFields=['legacy_project_id','title','project_narrative','work_plan','project_type','funding_type','ij_title','ij_funding_priority','ij_number','ij_core_capability','national_priority_area','letpa_eligible','shareable','deployable','is_active','project_zip','awarded_amount'];
+export async function persistDraft({application,form,nofo,organization,projects=[],removedProjectIds=[],onApplication=(_saved)=>{},onProject=(_index,_row)=>{}}) {
   const data=draftPayload(form,nofo,organization);
   const saved=application?await base44.entities.Application.update(application.id,data):await base44.entities.Application.create(data);
   onApplication(saved);
-  const budgets=[];
-  for(const [index,item] of items.entries()) {
-    const payload={application_id:saved.id,budget_category:item.budget_category,line_description:item.line_description,
-      amount_requested:Number(item.amount_requested||0),amount_match:Number(item.amount_match||0)};
-    const row=item.id&&item.isExisting?await base44.entities.ApplicationBudget.update(item.id,payload):await base44.entities.ApplicationBudget.create(payload);
-    budgets.push({...row,isExisting:true});onBudget(index,{...row,isExisting:true});
+  const savedProjects=[];
+  for(const [index,project] of projects.entries()) {
+    const projectPayload=Object.fromEntries(projectFields.filter(key=>Object.prototype.hasOwnProperty.call(project,key)).map(key=>[key,project[key]]));
+    Object.assign(projectPayload,{application_id:saved.id,awarded_amount:project.awarded_amount===''?null:Number(project.awarded_amount??0)});
+    const row=project.id&&project.isExisting?await base44.entities.Project.update(project.id,projectPayload):await base44.entities.Project.create(projectPayload);
+    const budgets=[];
+    for(const item of project.budgets||[]) {
+      const payload={application_id:saved.id,project_id:row.id,budget_category:item.budget_category,line_description:item.line_description,
+        amount_requested:Number(item.amount_requested||0),amount_match:Number(item.amount_match||0)};
+      const budget=item.id&&item.isExisting?await base44.entities.ApplicationBudget.update(item.id,payload):await base44.entities.ApplicationBudget.create(payload);
+      budgets.push({...budget,isExisting:true});
+    }
+    savedProjects.push({...row,isExisting:true,budgets});onProject(index,{...row,isExisting:true,budgets});
   }
-  for(const id of removedIds)await base44.entities.ApplicationBudget.delete(id);
-  return {application:saved,items:budgets};
+  for(const id of removedProjectIds)await base44.entities.Project.delete(id);
+  return {application:saved,projects:savedProjects};
 }
+export function allProjectBudgets(projects=[]){return projects.flatMap(project=>project.budgets||[])}
+export function projectTotals(project){return budgetTotals(project?.budgets||[])}
 export function applyFieldValue(form,field,value) {
   if(field.source==='ehp')return {...form,ehp_screening_answers:{...form.ehp_screening_answers,[field.key]:value}};
   if(field.source==='application')return {...form,[field.key]:value};

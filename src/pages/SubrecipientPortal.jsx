@@ -88,11 +88,13 @@ function AllocationCard({ grant, onViewDetails }) {
 // ── Progress Report Form ───────────────────────────────────────────────────
 function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
   const [form, setForm] = useState({
-    narrative: '', objectives_met: '', challenges: '', expenditure_ytd: '', match_ytd: '',
+    project_id: '', narrative: '', objectives_met: '', challenges: '', expenditure_ytd: '', match_ytd: '', change_request_number: '', review_number: '', complete_number: '', on_order_number: '', needs_poe_number: '', invoiced_number: '', uncommitted_number: '',
   });
+  const [projects, setProjects] = useState([]);
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
+  useEffect(() => { if(schedule?.application_id) base44.entities.Project.filter({application_id:schedule.application_id},'created_date',100).then(rows => { setProjects(rows||[]); if((rows||[]).length===1)setForm(current=>({...current,project_id:rows[0].id})); }).catch(()=>{}); }, [schedule?.application_id]);
 
   const handleFileAdd = async (e) => {
     const files = Array.from(e.target.files);
@@ -117,12 +119,20 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
     const report = await base44.entities.ProgressReport.create({
       schedule_id: schedule.id,
       application_id: schedule.application_id,
+      project_id: form.project_id,
       submitted_by: user.email,
       narrative: form.narrative,
       objectives_met: form.objectives_met,
       challenges: form.challenges,
       expenditure_ytd: Number(form.expenditure_ytd) || 0,
       match_ytd: Number(form.match_ytd) || 0,
+      change_request_number: Number(form.change_request_number) || 0,
+      review_number: Number(form.review_number) || 0,
+      complete_number: Number(form.complete_number) || 0,
+      on_order_number: Number(form.on_order_number) || 0,
+      needs_poe_number: Number(form.needs_poe_number) || 0,
+      invoiced_number: Number(form.invoiced_number) || 0,
+      uncommitted_number: Number(form.uncommitted_number) || 0,
       status: 'Submitted',
       submitted_at: new Date().toISOString(),
     });
@@ -172,6 +182,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
             <div><span className="font-medium">Period:</span> {formatDateShort(schedule?.period_start)} - {formatDateShort(schedule?.period_end)}</div>
             <div><span className="font-medium">Due:</span> {formatDateShort(schedule?.due_date)}</div>
           </div>
+          <div><Label>Project <span className="text-red-500">*</span></Label><Select value={form.project_id} onValueChange={v=>setForm(f=>({...f,project_id:v}))}><SelectTrigger className="mt-1"><SelectValue placeholder={projects.length===1?'Project selected automatically':'Choose project'}/></SelectTrigger><SelectContent>{projects.map(project=><SelectItem key={project.id} value={project.id}>{project.title||'Untitled Project'}</SelectItem>)}</SelectContent></Select></div>
           <div>
             <Label>Progress Narrative <span className="text-red-500">*</span></Label>
             <Textarea className="mt-1" rows={5} placeholder="Describe activities completed during this reporting period, milestones achieved, and overall project progress..." value={form.narrative} onChange={e => setForm(f => ({ ...f, narrative: e.target.value }))} />
@@ -194,6 +205,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
               <Input className="mt-1" type="number" min="0" value={form.match_ytd} onChange={e => setForm(f => ({ ...f, match_ytd: e.target.value }))} placeholder="0.00" />
             </div>
           </div>
+          <div><Label>Project Status Counts</Label><div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-1">{[['change_request_number','Change Request'],['review_number','Review'],['complete_number','Complete'],['on_order_number','On-Order'],['needs_poe_number','Needs POE'],['invoiced_number','Invoiced'],['uncommitted_number','Uncommitted']].map(([key,label])=><div key={key}><span className="text-xs text-muted-foreground">{label}</span><Input type="number" min="0" value={form[key]} onChange={e=>setForm(f=>({...f,[key]:e.target.value}))}/></div>)}</div></div>
 
           {/* Attachments */}
           <div>

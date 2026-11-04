@@ -10,6 +10,12 @@ export async function submitFundingRequest(pool,actorId,input,verifyFile=existin
   return transaction(pool,async db=>{
     const {actor,application,organization}=await ehpApplication(db,actorId,input.application_id,true);
     if(application.status!=='Approved')throw accountError(409,'Select an approved grant before submitting a request');
+    const projectsTable=(await db.query("SELECT to_regclass(current_schema()||'.projects') AS name")).rows[0]?.name;
+    const projects=projectsTable?(await db.query('SELECT id,title FROM projects WHERE application_id=$1 AND is_active=true ORDER BY created_date,id',[application.id])).rows:[];
+    if(projectsTable&&!projects.length)throw accountError(409,'This application has no active projects');
+    const projectId=input.project_id|| (projects.length===1?projects[0].id:null);
+    if(projects.length>1&&!projectId)throw accountError(400,'Select a project for this funding request');
+    if(projectId&&!projects.some(project=>project.id===projectId))throw accountError(400,'Select a project belonging to this application');
     if(!['Reimbursement','Advance','Modification'].includes(input.request_type))throw accountError(400,'Choose a valid request type');
     if(input.request_type==='Modification'&&!input.modification_type)throw accountError(400,'Choose a modification type');
     fundingDates(input);
@@ -18,7 +24,7 @@ export async function submitFundingRequest(pool,actorId,input,verifyFile=existin
       budget_category:String(line.budget_category||'Other'),description:String(line.description||'').trim(),
       amount:line.amount_requested??line.amount,amount_requested:line.amount_requested??line.amount,
       application_budget_id:line.application_budget_id||null,ehp_affected:line.ehp_affected??null,
-      vendor:line.vendor||null,reviewer_notes:line.reviewer_notes||null,
+      project_id:line.project_id||projectId,vendor:line.vendor||null,reviewer_notes:line.reviewer_notes||null,
     }));
     for(const line of lines)if(line.ehp_affected!==null&&typeof line.ehp_affected!=='boolean')throw accountError(400,'EHP classification must be yes or no');
     await checkFundingLines(db,application,input,lines);
@@ -27,7 +33,7 @@ export async function submitFundingRequest(pool,actorId,input,verifyFile=existin
     const total=lines.reduce((sum,line)=>sum+moneyCents(line.amount),0);
     if(!Number.isSafeInteger(total))throw accountError(400,'Requested amount is too large');
     const data=Object.fromEntries(textKeys.map(key=>[key,input[key]||null]));
-    const saved=await writeFundingRow(db,'funding_requests',null,{...data,application_id:application.id,application_number:application.application_number,organization_id:organization.id,organization_name:organization.name,
+    const saved=await writeFundingRow(db,'funding_requests',null,{...data,project_id:projectId,application_id:application.id,application_number:application.application_number,organization_id:organization.id,organization_name:organization.name,
       submitted_by:actor.email,request_number:await fundingNumber(db),amount_requested:total/100,match_documented:match/100,status:'Submitted',program_code:application.program_code,
       expenditure_rate:application.expenditure_rate,remaining_balance:application.remaining_balance});
     for(const line of lines)await writeFundingRow(db,'funding_request_line_items',null,{...line,funding_request_id:saved.id});
