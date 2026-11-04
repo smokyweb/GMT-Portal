@@ -47,7 +47,7 @@ export async function migrateProjects(db) {
     INSERT INTO projects(application_id,title,project_narrative,work_plan,awarded_amount,is_legacy_backfill)
       SELECT a.id,NULLIF(a.project_title,''),a.project_narrative,a.work_plan,a.awarded_amount,true
       FROM applications a
-      WHERE NOT EXISTS (SELECT 1 FROM projects p WHERE p.application_id=a.id);
+      WHERE NOT EXISTS (SELECT 1 FROM projects p WHERE p.application_id=a.id::text);
     UPDATE application_budgets b SET project_id=p.id::text
       FROM projects p WHERE p.application_id=b.application_id AND b.project_id IS NULL;
     CREATE INDEX IF NOT EXISTS idx_projects_application ON projects(application_id);
