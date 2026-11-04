@@ -4,8 +4,6 @@ export const AWARD_FIELDS=[
   {key:'state_grant_number',label:'State Grant Number',group:'Identifiers',inherited:true},
   {key:'subaward_number',label:'Sub-Award Grant Number',group:'Identifiers'},
   {key:'cfda_number',label:'CFDA / Assistance Listing',group:'Identifiers',inherited:true},
-  {key:'cfda_number_local',label:'CFDA Number (Local)',group:'Identifiers',inherited:true},
-  {key:'cfda_number_state',label:'CFDA Number (State)',group:'Identifiers',inherited:true},
   {key:'isip_bsir_number',label:'ISIP / BSIR Grant Number',group:'Identifiers'},
   {key:'recipient_type',label:'Recipient Type',group:'Award',inherited:true},
   {key:'award_status',label:'Award Status',type:'select',options:AWARD_STATUSES,group:'Award'},
