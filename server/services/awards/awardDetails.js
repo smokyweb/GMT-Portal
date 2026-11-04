@@ -12,7 +12,12 @@ async function access(db,actorId,id,lock=false) {
   return {actor,application,sources};
 }
 export async function readAwardDetails(db,actorId,id) {
-  const {actor,application,sources}=await access(db,actorId,id),award=(await db.query('SELECT * FROM award_details WHERE application_id=$1',[id])).rows[0];
+  const {actor,application,sources}=await access(db,actorId,id);
+  let award=(await db.query('SELECT * FROM award_details WHERE application_id=$1',[id])).rows[0];
+  if(!award&&['isc_admin','admin'].includes(actor.role))award=await transaction(db,async client=>{
+    const locked=await access(client,actorId,id,true);
+    return ensureAwardSnapshot(client,locked.application,locked.actor);
+  });
   return {application,award:award||{id:null,application_id:id,revision:0,fields:sources.fields,origins:sources.origins,field_overrides:{}},
     inherited:sources.fields,can_edit:['isc_admin','admin'].includes(actor.role),nofo_title:sources.nofo.title||null};
 }
