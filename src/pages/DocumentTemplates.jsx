@@ -118,7 +118,7 @@ export default function DocumentTemplates() {
 
   const openNew = () => {
     setEditingTemplate(null);
-    setForm({ name: '', doc_type: 'Grant Award Notice', template_use:'Attachment', description: '', template_body: '', file_url: '', file_name: '', is_active: true });
+    setForm({ name: '', doc_type: 'Grant Award Notice', template_use:'Attachment', description: '', template_body: '', file_url: '', file_name: '', is_active: false });
     setTokenMappings({});setUploadedTokens([]);
     setShowForm(true);
   };
@@ -150,19 +150,25 @@ export default function DocumentTemplates() {
     setShowForm(true);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (publish = false) => {
     setSaving(true);
-    if (!form.name || (!form.template_body && !form.file_url)) {
-      toast('Please provide a template name and either a template body or an uploaded file.', 'warning');
+    if (!form.name) {
+      toast('Please provide a template name.', 'warning');
+      setSaving(false);
+      return;
+    }
+    if (publish && !form.template_body && !form.file_url) {
+      toast('Add a template body or upload a file before publishing.', 'warning');
       setSaving(false);
       return;
     }
     const tokens=detectedTokens(form.template_body,uploadedTokens);
     const mappings=Object.fromEntries(tokens.map(token=>[token,tokenMappings[token]||TOKEN_FIELDS.find(field=>field.key===token)?.key||'']));
-    if(form.template_use==='Attachment'&&tokens.length){toast('Attachment templates cannot contain tokens. Remove the tokens or choose Generated Document.','error');setSaving(false);return;}
-    if(form.template_use==='Generated Document'&&tokens.some(token=>!mappings[token])){toast('Map or remove every detected token before saving.','error');setSaving(false);return;}
+    if(publish&&form.template_use==='Attachment'&&tokens.length){toast('Attachment templates cannot contain tokens. Remove the tokens or choose Generated Document.','error');setSaving(false);return;}
+    if(publish&&form.template_use==='Generated Document'&&tokens.some(token=>!mappings[token])){toast('Map or remove every detected token before publishing.','error');setSaving(false);return;}
     if(form.template_use==='Generated Document'&&form.file_url&&!/\.docx$/i.test(form.file_name||'')){toast('Generated Document templates must use a DOCX file.','error');setSaving(false);return;}
-    const data = { ...form, template_use:form.template_use||'Attachment', token_mappings:mappings, created_by_name: user?.full_name };
+    const status = publish ? 'Active' : 'Draft';
+    const data = { ...form, status, is_active: publish, template_use:form.template_use||'Attachment', token_mappings:mappings, created_by_name: user?.full_name };
     if (editingTemplate) {
       // Snapshot current state as a version before overwriting
       const existingVersions = await base44.entities.TemplateVersion.filter({ template_id: editingTemplate.id }, '-version_number', 1);
@@ -293,7 +299,7 @@ export default function DocumentTemplates() {
                     <p className="font-semibold">{t.name}</p>
                     <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{t.doc_type}</span><span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">{templateUse(t)}</span>
                     {t.file_url && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium flex items-center gap-1"><Paperclip className="h-3 w-3" /> File</span>}
-                    {!t.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Inactive</span>}
+                    {t.status === 'Draft' ? <span className="text-xs px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 font-medium">Draft</span> : !t.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Inactive</span>}
                   </div>
                   {t.description && <p className="text-sm text-muted-foreground mt-0.5">{t.description}</p>}
                   <p className="text-xs text-muted-foreground mt-1">Created by {t.created_by_name || ' - '}  {formatDateShort(t.created_date)}</p>
@@ -310,7 +316,7 @@ export default function DocumentTemplates() {
                   <History className="h-3.5 w-3.5" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => openEdit(t)}><Eye className="h-3.5 w-3.5 mr-1" /> Edit</Button>
-                <Button size="sm" onClick={() => templateUse(t)==='Generated Document' ? (t.doc_type==='Grant Award Notice' ? openSendDialog(t) : openGenerateDialog(t)) : openSendDialog(t)} disabled={!t.is_active}>
+                <Button size="sm" onClick={() => templateUse(t)==='Generated Document' ? (t.doc_type==='Grant Award Notice' ? openSendDialog(t) : openGenerateDialog(t)) : openSendDialog(t)} disabled={!t.is_active || t.status === 'Draft'}>
                   <Send className="h-3.5 w-3.5 mr-1" /> {templateUse(t)==='Generated Document'?'Generate draft':'Send'}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDelete(t)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>
@@ -421,8 +427,11 @@ export default function DocumentTemplates() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={closeForm}>Cancel</Button>
-            <Button onClick={handleSave} disabled={saving || !form.name || uploading}>
-              {saving ? 'Saving' : editingTemplate ? 'Save Changes' : 'Create Template'}
+            <Button variant="outline" onClick={() => handleSave(false)} disabled={saving || !form.name || uploading}>
+              {saving ? 'Saving' : 'Save Draft'}
+            </Button>
+            <Button onClick={() => handleSave(true)} disabled={saving || !form.name || uploading}>
+              {saving ? 'Saving' : editingTemplate?.status === 'Draft' ? 'Publish Template' : editingTemplate ? 'Save Changes' : 'Create Template'}
             </Button>
           </DialogFooter>
         </DialogContent>

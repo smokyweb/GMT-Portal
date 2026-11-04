@@ -272,6 +272,7 @@ CREATE TABLE IF NOT EXISTS document_templates (
   file_url        TEXT,
   file_name       TEXT,
   is_active       BOOLEAN DEFAULT true,
+  status          TEXT NOT NULL DEFAULT 'Active' CHECK (status IN ('Draft','Active','Archived')),
   created_by_name TEXT,
   created_date    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date    TIMESTAMPTZ NOT NULL DEFAULT NOW()

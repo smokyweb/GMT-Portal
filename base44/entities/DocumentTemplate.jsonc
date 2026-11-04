@@ -37,6 +37,11 @@
       "type": "boolean",
       "default": true
     },
+    "status": {
+      "type": "string",
+      "enum": ["Draft", "Active", "Archived"],
+      "default": "Active"
+    },
     "created_by_name": {
       "type": "string"
     }
