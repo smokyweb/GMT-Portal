@@ -31,7 +31,7 @@ export function useApplicationWizard() {
       setUser(actor);setOrganizations(orgs.filter(org=>org.is_active!==false&&(actor.role==='user'?org.id===actor.organization_id:actor.role==='isc_admin'||org.state===(actor.scope_state||actor.grantee_state))));
       setNofos(notices.filter(notice=>notice.id===selectedNofo?.id||['Published','Active'].includes(notice.status)));
       setOrganization(selectedOrg||null);setNofo(selectedNofo);setDefinition(version?.definition||(existing?legacyForm(selectedNofo||{program_code:existing.program_code}):defaultForm(selectedNofo||{})));
-      setProjectConfig(normalizeProjectFieldConfig(selectedProgram,selectedNofo,coreCapabilities));
+      setProjectConfig(normalizeProjectFieldConfig(selectedProgram||{code:selectedNofo?.program_code},selectedNofo,coreCapabilities));
       const initialProjects=(loadedProjects||[]).map(project=>({...project,isExisting:true,budgets:(budgets||[]).filter(item=>item.project_id===project.id||(!item.project_id&&project===loadedProjects[0])).map(item=>({...item,isExisting:true}))}));
       if(!initialProjects.length&&!existing)initialProjects.push({title:'',project_type:'Other',funding_type:'Pass-Through',is_active:true,budgets:[]});
       appRef.current=existing;setApplication(existing);setSubmitted(Boolean(existing&&!['Draft','RevisionRequested','ChangesRequested'].includes(existing.status)));setForm(draftForm(existing||{}));setProjects(initialProjects);
@@ -58,7 +58,7 @@ export function useApplicationWizard() {
   const chooseNofo=async id=>{
     if(application&&!['Draft','RevisionRequested','ChangesRequested'].includes(application.status))return;
     setBusy(true);setError('');
-    try {const selected=nofos.find(notice=>notice.id===id)||null;const program=selected?(await base44.entities.GrantProgram.filter({id:selected.program_id}))[0]:null;setNofo(selected);setProjectConfig(normalizeProjectFieldConfig(program,selected));setForm(current=>({...current,form_values:{}}));setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
+    try {const selected=nofos.find(notice=>notice.id===id)||null;const program=selected?(await base44.entities.GrantProgram.filter({id:selected.program_id}))[0]:null;setNofo(selected);setProjectConfig(normalizeProjectFieldConfig(program||{code:selected?.program_code},selected));setForm(current=>({...current,form_values:{}}));setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
     catch(err){setError(err.message);}finally{setBusy(false);}
   };
   const changeProject=(index,next)=>{

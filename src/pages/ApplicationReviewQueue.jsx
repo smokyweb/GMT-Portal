@@ -136,7 +136,7 @@ export default function ApplicationReviewQueue() {
     setBudgets(b);
     setProjects(p || []);
     const raw=coreSettings?.[0]?.value;let caps;try{caps=typeof raw==='string'?JSON.parse(raw):raw;}catch{};
-    setProjectConfig(normalizeProjectFieldConfig(programs.find(x=>x.id===n?.[0]?.program_id),n?.[0],caps));
+    setProjectConfig(normalizeProjectFieldConfig(programs.find(x=>x.id===n?.[0]?.program_id)||{code:n?.[0]?.program_code},n?.[0],caps));
     setAppTasks(t);
     setSelected(app);
     setReviewScore(app.score || '');
