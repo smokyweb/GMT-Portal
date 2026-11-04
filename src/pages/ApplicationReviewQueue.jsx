@@ -1,5 +1,6 @@
 import AwardDetailsTabContent from '@/components/awards/AwardDetailsTabContent';
 import AwardDetailsTabTrigger from '@/components/awards/AwardDetailsTabTrigger';
+import GanHistoryTab from '@/components/awards/GanHistoryTab';
 import EhpReviewPanel from '@/components/ehp/EhpReviewPanel';
 import ApplicationFormValues from '@/components/application-form/ApplicationFormValues';
 import { useState, useEffect } from 'react';
@@ -547,6 +548,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                 {scoringEnabled && <TabsTrigger value="scoring">Scoring</TabsTrigger>}
                 <TabsTrigger value="budget">Budget</TabsTrigger>
                 <AwardDetailsTabTrigger/>
+                <TabsTrigger value="gan-history">GAN History</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
                 <TabsTrigger value="rfi">
                   RFIs {openRfis.length > 0 && <span className="ml-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">{openRfis.length}</span>}
@@ -699,6 +701,8 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               </TabsContent>
 
               <AwardDetailsTabContent applicationId={selected.id} onUpdate={application=>{setSelected(application);setApps(current=>current.map(item=>item.id===application.id?application:item));setAwardAmount(application.awarded_amount??'');}}/>
+
+              <TabsContent value="gan-history"><GanHistoryTab applicationId={selected.id}/></TabsContent>
 
               <TabsContent value="rfi">
                 <RfiPanel

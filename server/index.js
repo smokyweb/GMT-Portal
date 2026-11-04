@@ -23,6 +23,8 @@ import accountRouter from './routes/accountAccess.js';
 import { migrateAccountAccess } from './services/accountMigration.js';
 import { clearInvalidPrimaryContacts } from './services/organizationPolicy.js';
 import {migrateNofoFields} from './services/nofoMigration.js';
+import {createAwardNoticeRouter} from './routes/awardNotices.js';
+import {migrateAwardNotices} from './services/documents/awardNoticeMigration.js';
 import {createTemplateDocumentsRouter} from './routes/templateDocuments.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -43,6 +45,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use('/api/auth', authRouter);
 app.use('/api/accounts', accountRouter);
 app.use('/api/awards',createAwardDetailsRouter());
+app.use('/api/award-notices',createAwardNoticeRouter(pool,authRequired));
 app.use('/api/entities',createAwardNofoEntityRouter());
 app.use('/api/forms',createNofoFormsRouter());
 app.use('/api/ehp',createEhpRouter());
@@ -106,6 +109,7 @@ try {
   await migrateNofoForms(pool);
   await migrateEhp(pool);
   await migrateGanRuntime(pool);
+  await migrateAwardNotices(pool);
   app.listen(PORT, () => {
     console.log(`GMT Portal API running on http://localhost:${PORT}`);
   });
