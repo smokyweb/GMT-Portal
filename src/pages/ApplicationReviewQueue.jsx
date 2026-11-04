@@ -33,6 +33,7 @@ import ReviewScoreCard from '../components/ReviewScoreCard';
 import RfiPanel from '../components/RfiPanel';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
 import moment from 'moment';
+import {normalizeProjectFieldConfig} from '../lib/projects/projectFieldConfig';
 
 export default function ApplicationReviewQueue() {
   const navigate = useNavigate();
@@ -40,6 +41,7 @@ export default function ApplicationReviewQueue() {
   const [apps, setApps] = useState([]);
   const [budgets, setBudgets] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [projectConfig, setProjectConfig] = useState(null);
   const [selected, setSelected] = useState(null);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -123,13 +125,18 @@ export default function ApplicationReviewQueue() {
   };
 
   const openReview = async (app) => {
-    const [b, t, p] = await Promise.all([
+    const [b, t, p, n, programs, coreSettings] = await Promise.all([
       base44.entities.ApplicationBudget.filter({ application_id: app.id }),
       base44.entities.Task.filter({ application_id: app.id }, '-created_date', 50),
       base44.entities.Project.filter({ application_id: app.id }, 'created_date', 100),
+      base44.entities.Nofo.filter({id:app.nofo_id}),
+      base44.entities.GrantProgram.list('-name',500),
+      base44.entities.AppSettings.filter({key:'project_ij_core_capabilities'}).catch(()=>[]),
     ]);
     setBudgets(b);
     setProjects(p || []);
+    const raw=coreSettings?.[0]?.value;let caps;try{caps=typeof raw==='string'?JSON.parse(raw):raw;}catch{};
+    setProjectConfig(normalizeProjectFieldConfig(programs.find(x=>x.id===n?.[0]?.program_id),n?.[0],caps));
     setAppTasks(t);
     setSelected(app);
     setReviewScore(app.score || '');
@@ -660,6 +667,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   return <div key={project.id} className="rounded-xl border p-4 space-y-3">
                     <div className="flex items-start justify-between gap-3"><div><p className="font-semibold">{index+1}. {project.title||'Untitled Project'}</p><p className="text-xs text-muted-foreground">{project.project_type||'Other'} · {project.funding_type||'Pass-Through'}{project.project_zip?` · ZIP ${project.project_zip}`:''}</p></div><p className="font-bold">{formatCurrency(project.awarded_amount)}</p></div>
                     <div className="grid grid-cols-2 gap-3 text-sm"><div><span className="text-muted-foreground">Budget requested</span><p className="font-semibold">{formatCurrency(requested)}</p></div><div><span className="text-muted-foreground">Budget match</span><p className="font-semibold">{formatCurrency(match)}</p></div></div>
+                    {projectConfig&&<div className="rounded-lg border bg-muted/20 p-3"><Label className="text-muted-foreground text-xs">Investment Justification</Label><div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-2 text-sm">{projectConfig.visible.includes('investment')&&(project.ij_title||project.ij_number)&&<div><span className="text-muted-foreground">Investment</span><p>{project.ij_title||'—'}{project.ij_number?` (${project.ij_number})`:''}</p>{projectConfig.investmentOptions.length&&!projectConfig.investmentOptions.some(x=>(x.name||x)===project.ij_title)&&<p className="text-amber-700 text-xs">Saved value is not in the NOFO list — review required.</p>}</div>}{projectConfig.visible.includes('ij_core_capability')&&project.ij_core_capability&&<div><span className="text-muted-foreground">IJ Core Capability</span><p>{project.ij_core_capability}</p>{projectConfig.coreCapabilities.length&&!projectConfig.coreCapabilities.includes(project.ij_core_capability)&&<p className="text-amber-700 text-xs">Saved value is not in the Admin list — review required.</p>}</div>}{projectConfig.visible.includes('ij_funding_priority')&&project.ij_funding_priority&&<div><span className="text-muted-foreground">IJ Funding Priority</span><p>{project.ij_funding_priority}</p></div>}{projectConfig.visible.includes('national_priority_area')&&project.national_priority_area&&<div><span className="text-muted-foreground">National Priority Area</span><p>{project.national_priority_area}</p>{projectConfig.nationalPriorityAreas.length&&!projectConfig.nationalPriorityAreas.includes(project.national_priority_area)&&<p className="text-amber-700 text-xs">Saved value is not in the NOFO list — review required.</p>}</div>}{projectConfig.visible.includes('letpa_eligible')&&<div>LETPA: {project.letpa_eligible?'Yes':'No'}</div>}{projectConfig.visible.includes('shareable')&&<div>Shareable: {project.shareable?'Yes':'No'}</div>}{projectConfig.visible.includes('deployable')&&<div>Deployable: {project.deployable?'Yes':'No'}</div>}</div></div>}
                     {project.project_narrative&&<div><Label className="text-muted-foreground text-xs">Narrative</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg text-sm">{project.project_narrative}</p></div>}
                     {project.work_plan&&<div><Label className="text-muted-foreground text-xs">Work Plan</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg text-sm">{project.work_plan}</p></div>}
                     <div className="border rounded-lg overflow-hidden"><table className="w-full text-xs"><thead className="bg-muted/50"><tr><th className="text-left p-2">Category</th><th className="text-left p-2">Description</th><th className="text-right p-2">Requested</th></tr></thead><tbody>{lines.map(line=><tr key={line.id} className="border-t"><td className="p-2">{line.budget_category}</td><td className="p-2">{line.line_description}</td><td className="p-2 text-right">{formatCurrency(line.amount_requested)}</td></tr>)}</tbody></table></div>

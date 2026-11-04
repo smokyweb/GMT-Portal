@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS grant_programs (
   federal_agency TEXT,
   cfda_number   TEXT,
   is_active     BOOLEAN DEFAULT true,
+  project_field_config JSONB NOT NULL DEFAULT '{}'::jsonb,
   created_date  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -129,6 +130,9 @@ CREATE TABLE IF NOT EXISTS nofos (
   close_date            DATE,
   status                TEXT NOT NULL CHECK (status IN ('Draft','UnderReview','Published','Closed','Archived')),
   required_documents    JSONB DEFAULT '[]',
+  project_field_config  JSONB NOT NULL DEFAULT '{}'::jsonb,
+  project_investments   JSONB NOT NULL DEFAULT '[]'::jsonb,
+  national_priority_areas JSONB NOT NULL DEFAULT '[]'::jsonb,
   reviewed_by           TEXT,
   published_at          TIMESTAMPTZ,
   created_date          TIMESTAMPTZ NOT NULL DEFAULT NOW(),

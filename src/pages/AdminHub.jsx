@@ -6,6 +6,7 @@ import {
   FileSearch, Settings, Building2, Globe, ShieldCheck, FileText,
   ChevronRight, Loader2,
 } from 'lucide-react';
+import { FEMA_CORE_CAPABILITIES } from '@/lib/projects/projectFieldConfig';
 
 const HUB_LINKS = [
   {
@@ -100,6 +101,8 @@ export default function AdminHub() {
    const [loadingCounts, setLoadingCounts] = useState(true);
    const [settings, setSettings] = useState({});
    const [savingSettings, setSavingSettings] = useState(false);
+   const [coreCapabilities, setCoreCapabilities] = useState(FEMA_CORE_CAPABILITIES.join('\n'));
+   const [coreSettingId, setCoreSettingId] = useState(null);
 
    const loadSettings = async () => {
      try {
@@ -124,6 +127,7 @@ export default function AdminHub() {
 
    useEffect(() => {
      loadSettings();
+     base44.entities.AppSettings.filter({key:'project_ij_core_capabilities'}).then(rows=>{const row=rows?.[0];if(row){setCoreSettingId(row.id);try{const value=typeof row.value==='string'?JSON.parse(row.value):row.value;if(Array.isArray(value))setCoreCapabilities(value.join('\n'));}catch{}}}).catch(()=>{});
      base44.auth.me().then(async (u) => {
        setUser(u);
        try {
@@ -157,6 +161,7 @@ export default function AdminHub() {
        setLoadingCounts(false);
      });
    }, []);
+  const saveCoreCapabilities = async () => { const value=coreCapabilities.split('\n').map(v=>v.trim()).filter(Boolean); if(coreSettingId) await base44.entities.AppSettings.update(coreSettingId,{value:JSON.stringify(value)}); else {const row=await base44.entities.AppSettings.create({key:'project_ij_core_capabilities',value:JSON.stringify(value)});setCoreSettingId(row.id);} };
 
   const countLabels = {
     'User Management': `${counts.users || 0} users`,
@@ -211,6 +216,7 @@ export default function AdminHub() {
       </div>
 
       {user&&['admin','isc_admin'].includes(user.role)&&<GranteeAwardSettings/>}
+      {user&&['admin','isc_admin'].includes(user.role)&&<div className="bg-card border rounded-xl p-6 space-y-3"><h2 className="font-semibold">Project IJ Core Capabilities</h2><p className="text-xs text-muted-foreground">Shared FEMA core capability list used by project dropdowns. One capability per line.</p><textarea className="w-full min-h-40 rounded-md border bg-background p-3 text-sm" value={coreCapabilities} onChange={e=>setCoreCapabilities(e.target.value)}/><button className="rounded bg-primary px-3 py-2 text-sm text-primary-foreground" onClick={()=>saveCoreCapabilities().catch(()=>{})}>Save Core Capabilities</button></div>}
       {/* System Settings */}
       {user && ['admin','isc_admin'].includes(user.role) && (
         <div className="bg-card border rounded-xl p-6 space-y-4">

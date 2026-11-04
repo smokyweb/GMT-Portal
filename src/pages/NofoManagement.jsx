@@ -25,6 +25,7 @@ const emptyNofo = {
   fiscal_year: '', federal_award_date: '', federal_close_date: '', federal_performance_start: '', federal_performance_end: '', local_share_amount: '', state_share_amount: '', mou_amount: '', local_share_pct: null, state_share_pct: null, legacy_grant_id: '',
   open_date: '', close_date: '', status: 'Draft', required_documents: [],
   eligible_org_types: [], scoring_enabled: false, scope_states: [],
+  project_field_config: {override:false,visible:[],completion_role:''}, project_investments: [], national_priority_areas: [],
 };
 
 export default function NofoManagement() {

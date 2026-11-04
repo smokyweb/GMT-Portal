@@ -26,6 +26,7 @@ export async function checkSubmission(db,definition,application,nofo,organizatio
   }
   const documents=(await db.query('SELECT * FROM documents WHERE application_id=$1',[application.id])).rows;
   const required=(definition.rules.requiredDocuments||nofo.required_documents||[]).filter(doc=>doc.mandatory).map(doc=>doc.name);
+  if(String(application.program_code||'').toUpperCase()==='NSGP'&&!required.includes('Investment Justification Attachment'))required.push('Investment Justification Attachment');
   if(ehpRequired(definition,context))required.push(definition.rules.ehpScreeningDocument);
   for(const name of new Set(required)) {
     const uploaded=documents.find(doc=>doc.name===name&&fileReference(doc.file_url));

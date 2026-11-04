@@ -24,6 +24,10 @@ export async function migrateProjects(db) {
       created_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
       updated_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
+    ALTER TABLE grant_programs ADD COLUMN IF NOT EXISTS project_field_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+    ALTER TABLE nofos ADD COLUMN IF NOT EXISTS project_field_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+    ALTER TABLE nofos ADD COLUMN IF NOT EXISTS project_investments JSONB NOT NULL DEFAULT '[]'::jsonb;
+    ALTER TABLE nofos ADD COLUMN IF NOT EXISTS national_priority_areas JSONB NOT NULL DEFAULT '[]'::jsonb;
     ALTER TABLE application_budgets ADD COLUMN IF NOT EXISTS project_id TEXT;
     ALTER TABLE funding_requests ADD COLUMN IF NOT EXISTS project_id TEXT;
     ALTER TABLE funding_request_line_items ADD COLUMN IF NOT EXISTS project_id TEXT;

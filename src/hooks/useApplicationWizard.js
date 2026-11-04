@@ -5,10 +5,11 @@ import {base44} from '@/api/base44Client';
 import {defaultForm} from '@/lib/forms/defaultForm';
 import {validateFormValues,validateBudget} from '@/lib/forms/valueValidation';
 import {draftForm,persistDraft,applyFieldValue,budgetTotals,allProjectBudgets,reviewFields} from '@/lib/forms/applicationDraft';
+import {normalizeProjectFieldConfig,FEMA_CORE_CAPABILITIES} from '@/lib/projects/projectFieldConfig';
 export function useApplicationWizard() {
   const navigate=useNavigate(),savePromise=useRef(null),appRef=useRef(null);
   const [user,setUser]=useState(null),[organization,setOrganization]=useState(null),[organizations,setOrganizations]=useState([]),[nofos,setNofos]=useState([]);
-  const [nofo,setNofo]=useState(null),[application,setApplication]=useState(null),[definition,setDefinition]=useState(defaultForm()),[form,setForm]=useState(draftForm());
+  const [nofo,setNofo]=useState(null),[application,setApplication]=useState(null),[definition,setDefinition]=useState(defaultForm()),[form,setForm]=useState(draftForm()),[projectConfig,setProjectConfig]=useState(normalizeProjectFieldConfig(null,null));
   const [projects,setProjects]=useState([]),[removedProjectIds,setRemovedProjectIds]=useState([]),[stepId,setStepId]=useState('organization');
   const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[errors,setErrors]=useState([]),[confirmed,setConfirmed]=useState(false),[submitted,setSubmitted]=useState(false);
   useEffect(()=>{
@@ -16,11 +17,13 @@ export function useApplicationWizard() {
     (async()=>{try{
       const params=new URLSearchParams(window.location.search),id=params.get('id'),nofoId=params.get('nofo');
       const actor=await base44.auth.me();
-      const [orgs,notices]=await Promise.all([base44.entities.Organization.list('-name',500),base44.entities.Nofo.list('-created_date',500)]);
+      const [orgs,notices,programs,coreSettings]=await Promise.all([base44.entities.Organization.list('-name',500),base44.entities.Nofo.list('-created_date',500),base44.entities.GrantProgram.list('-name',500),base44.entities.AppSettings.filter({key:'project_ij_core_capabilities'}).catch(()=>[])]);
       let existing=null;if(id)existing=(await base44.entities.Application.filter({id})).find(item=>item.id===id);
       if(id&&!existing)throw new Error('Application not found');
       const selectedOrg=orgs.find(org=>org.id===(existing?.organization_id||actor.organization_id));
       const selectedNofo=notices.find(notice=>notice.id===(existing?.nofo_id||nofoId))||null;
+      const selectedProgram=programs.find(program=>program.id===selectedNofo?.program_id);
+      let coreCapabilities=FEMA_CORE_CAPABILITIES;try{const raw=coreSettings?.[0]?.value;const parsed=typeof raw==='string'?JSON.parse(raw):raw;if(Array.isArray(parsed)&&parsed.length)coreCapabilities=parsed;}catch{}
       let version;if(existing)version=(await base44.forms.application(existing.id,'edit')).version;
       else if(selectedNofo)version=await base44.forms.nofo(selectedNofo.id);
       const [budgets,loadedProjects]=existing?await Promise.all([base44.entities.ApplicationBudget.filter({application_id:existing.id}),base44.entities.Project.filter({application_id:existing.id})]):[[],[]];
@@ -28,6 +31,7 @@ export function useApplicationWizard() {
       setUser(actor);setOrganizations(orgs.filter(org=>org.is_active!==false&&(actor.role==='user'?org.id===actor.organization_id:actor.role==='isc_admin'||org.state===(actor.scope_state||actor.grantee_state))));
       setNofos(notices.filter(notice=>notice.id===selectedNofo?.id||['Published','Active'].includes(notice.status)));
       setOrganization(selectedOrg||null);setNofo(selectedNofo);setDefinition(version?.definition||(existing?legacyForm(selectedNofo||{program_code:existing.program_code}):defaultForm(selectedNofo||{})));
+      setProjectConfig(normalizeProjectFieldConfig(selectedProgram,selectedNofo,coreCapabilities));
       const initialProjects=(loadedProjects||[]).map(project=>({...project,isExisting:true,budgets:(budgets||[]).filter(item=>item.project_id===project.id||(!item.project_id&&project===loadedProjects[0])).map(item=>({...item,isExisting:true}))}));
       if(!initialProjects.length&&!existing)initialProjects.push({title:'',project_type:'Other',funding_type:'Pass-Through',is_active:true,budgets:[]});
       appRef.current=existing;setApplication(existing);setSubmitted(Boolean(existing&&!['Draft','RevisionRequested','ChangesRequested'].includes(existing.status)));setForm(draftForm(existing||{}));setProjects(initialProjects);
@@ -54,7 +58,7 @@ export function useApplicationWizard() {
   const chooseNofo=async id=>{
     if(application&&!['Draft','RevisionRequested','ChangesRequested'].includes(application.status))return;
     setBusy(true);setError('');
-    try {const selected=nofos.find(notice=>notice.id===id)||null;setNofo(selected);setForm(current=>({...current,form_values:{}}));setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
+    try {const selected=nofos.find(notice=>notice.id===id)||null;const program=selected?(await base44.entities.GrantProgram.filter({id:selected.program_id}))[0]:null;setNofo(selected);setProjectConfig(normalizeProjectFieldConfig(program,selected));setForm(current=>({...current,form_values:{}}));setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
     catch(err){setError(err.message);}finally{setBusy(false);}
   };
   const changeProject=(index,next)=>{
@@ -92,7 +96,7 @@ export function useApplicationWizard() {
     catch(err){setError(err.message);}finally{setBusy(false);}
   };
   const items=allProjectBudgets(projects);
-  return {user,organization,organizations,setOrganization,nofos,nofo,chooseNofo,application,form,definition,projects,changeProject,addProject,removeProject,items,sections,section,
+  return {user,organization,organizations,setOrganization,nofos,nofo,chooseNofo,application,form,definition,projects,projectConfig,changeProject,addProject,removeProject,items,sections,section,
     stepId,setStepId,loading,busy,error,errors,confirmed,setConfirmed,submitted,saveDraft,save,next,submit,upload,
     setField:(field,value)=>setForm(current=>applyFieldValue(current,field,value)),context,fields:reviewFields(definition,context),navigate};
 }

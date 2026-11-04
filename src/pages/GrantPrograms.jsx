@@ -14,17 +14,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {PROJECT_FIELD_KEYS,PROJECT_FIELD_LABELS,DEFAULT_PROJECT_FIELDS_BY_PROGRAM} from '@/lib/projects/projectFieldConfig';
 
 const PRESET_CODES = ['SHSP', 'UASI', 'EMPG', 'HSGP', 'NSGP', 'SLCGP', 'BRIC'];
 const FUNDING_CYCLES = ['Annual', 'Biennial', 'Multi-year'];
 const REPORTING_FREQUENCIES = ['Quarterly', 'Biannual', 'Annual'];
+const projectConfigFor=(code,config)=>({visible:Array.isArray(config?.visible)?config.visible:(DEFAULT_PROJECT_FIELDS_BY_PROGRAM[code]||[]),completion_role:config?.completion_role||'Subrecipient'});
 
 export default function GrantPrograms() {
   const [programs, setPrograms] = useState([]);
   const [activeTab, setActiveTab] = useState('programs');
   const [open, setOpen] = useState(false);
   const [editingProgram, setEditingProgram] = useState(null);
-  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', ma_limit_percent: '', is_active: true, reporting_frequency: '', compliance_requirements_text: '', allowable_costs_text: '', eligibility_criteria_text: '', reporting_requirements_text: '' });
+  const [form, setForm] = useState({ name: '', code: 'SHSP', description: '', federal_agency: '', cfda_number: '', ma_limit_percent: '', is_active: true, reporting_frequency: '', compliance_requirements_text: '', allowable_costs_text: '', eligibility_criteria_text: '', reporting_requirements_text: '', project_field_config: projectConfigFor('SHSP') });
   const [formExtra, setFormExtra] = useState({ type: '', fundingCycle: '' });
   const [customCode, setCustomCode] = useState('');
   const [useCustomCode, setUseCustomCode] = useState(false); // custom codes disabled but setter needed
@@ -66,6 +68,7 @@ export default function GrantPrograms() {
         allowable_costs_text: form.allowable_costs_text || null,
         eligibility_criteria_text: form.eligibility_criteria_text || null,
         reporting_requirements_text: form.reporting_requirements_text || null,
+        project_field_config: projectConfigFor(finalCode,form.project_field_config),
       };
       try {
         await base44.entities.GrantProgram.update(editingProgram.id, cleanedFormU);
@@ -83,6 +86,7 @@ export default function GrantPrograms() {
       if (form.award_ceiling !== '' && form.award_ceiling != null) cleanedForm.award_ceiling = Number(form.award_ceiling);
       if (form.award_floor !== '' && form.award_floor != null) cleanedForm.award_floor = Number(form.award_floor);
       if (form.reporting_frequency) cleanedForm.reporting_requirements = [form.reporting_frequency];
+      cleanedForm.project_field_config = projectConfigFor(finalCode,form.project_field_config);
       try { await base44.entities.GrantProgram.create(cleanedForm); }
       catch (err) { toast('Failed: ' + (err?.message || err?.detail || 'Try again.'), 'error'); return; }
     }
@@ -148,6 +152,7 @@ export default function GrantPrograms() {
       allowable_costs_text: program.allowable_costs_text || '',
       eligibility_criteria_text: program.eligibility_criteria_text || '',
       reporting_requirements_text: program.reporting_requirements_text || '',
+      project_field_config: projectConfigFor(program.code,program.project_field_config),
     });
     setFormExtra({ type: program.code || '', fundingCycle: 'Annual' });
     setOpen(true);
@@ -330,6 +335,7 @@ export default function GrantPrograms() {
             <ProgramMaLimitField value={form.ma_limit_percent} onChange={value=>setForm(current=>({...current,ma_limit_percent:value}))}/>
             <div><Label>Federal Agency</Label><Input value={form.federal_agency} onChange={(e) => setForm((f) => ({ ...f, federal_agency: e.target.value }))} /></div>
             <div><Label>CFDA Number</Label><Input value={form.cfda_number} onChange={(e) => setForm((f) => ({ ...f, cfda_number: e.target.value }))} /></div>
+            <div className="col-span-2 border-t pt-4"><p className="text-sm font-semibold">Project Fields</p><p className="text-xs text-muted-foreground mb-3">Choose which IJ/project fields applicants see for this program.</p><div className="flex flex-wrap gap-3">{PROJECT_FIELD_KEYS.map(key=><label key={key} className="flex items-center gap-2 text-sm"><Checkbox checked={(form.project_field_config?.visible||[]).includes(key)} onCheckedChange={checked=>setForm(f=>({...f,project_field_config:{...projectConfigFor(f.code,f.project_field_config),visible:checked?[...(f.project_field_config?.visible||[]),key]:(f.project_field_config?.visible||[]).filter(v=>v!==key)}}))}/>{PROJECT_FIELD_LABELS[key]}</label>)}</div><div className="mt-3"><Label>Who completes IJ fields?</Label><Select value={form.project_field_config?.completion_role||'Subrecipient'} onValueChange={v=>setForm(f=>({...f,project_field_config:{...projectConfigFor(f.code,f.project_field_config),completion_role:v}}))}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Subrecipient">Subrecipient</SelectItem><SelectItem value="State Staff">State Staff</SelectItem></SelectContent></Select></div></div>
             <div className="col-span-2 border-t pt-4 mt-2"><p className="text-sm font-semibold text-muted-foreground mb-3">Program Requirements (editable by State Admin)</p></div>
             <div className="col-span-2"><Label>Compliance Requirements</Label><Textarea rows={4} value={form.compliance_requirements_text || ''} onChange={(e) => setForm((f) => ({ ...f, compliance_requirements_text: e.target.value }))} placeholder="Enter one requirement per line..." className="mt-1" /></div>
             <div className="col-span-2"><Label>Allowable Costs</Label><Textarea rows={4} value={form.allowable_costs_text || ''} onChange={(e) => setForm((f) => ({ ...f, allowable_costs_text: e.target.value }))} placeholder="Enter one cost item per line..." className="mt-1" /></div>
