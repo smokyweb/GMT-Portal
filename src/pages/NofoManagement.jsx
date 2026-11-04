@@ -173,6 +173,12 @@ export default function NofoManagement() {
           name: d.name || '',
           mandatory: !!d.mandatory,
           description: d.description || undefined,
+          ...(d.template_id ? {
+            template_id: d.template_id,
+            template_use: d.template_use || 'Attachment',
+            template_file_url: d.template_file_url || '',
+            template_file_name: d.template_file_name || '',
+          } : {}),
         })).filter(d => d.name.trim());
       }
 

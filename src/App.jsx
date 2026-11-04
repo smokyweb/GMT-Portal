@@ -141,7 +141,7 @@ const AuthenticatedApp = () => {
 
         <Route path="/notification-rules" element={<NotificationRules />} />
         <Route path="/org-deep-dive" element={<OrgDeepDive />} />
-        <Route path="/template-manager" element={<TemplateManager />} />
+        <Route path="/template-manager" element={<RequireAdmin><DocumentTemplates /></RequireAdmin>} />
         <Route path="/portfolio-summary" element={<PortfolioSummary />} />
         {/* Closeout Checklist removed - not fully built */}
         <Route path="*" element={<PageNotFound />} />

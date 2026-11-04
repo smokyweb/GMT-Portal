@@ -11,7 +11,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
-import { uploadFileToServer } from '@/api/uploads';
+import { uploadTemplateFile } from '@/api/uploads';
+import { generateTemplateDraft } from '@/api/templateDocuments';
 import { FileText, Plus, Send, Trash2, Eye, ChevronDown, ChevronUp, Upload, Paperclip, ExternalLink, History } from 'lucide-react';
 import TemplateVersionDialog from '../components/TemplateVersionDialog';
 import { formatDateShort } from '../lib/helpers';
@@ -37,6 +38,16 @@ const PLACEHOLDERS = [
   { key: '{{today_date}}', label: "Today's Date" },
 ];
 
+const TEMPLATE_USES=[{value:'Attachment',label:'Attachment',description:'Users download, complete, and upload the file with their submission.'},{value:'Generated Document',label:'Generated Document',description:'GMT fills mapped tokens to create a separate draft.'}];
+const TOKEN_FIELDS=[...PLACEHOLDERS.map(item=>({key:item.key.slice(2,-2),label:item.label})),{key:'projects',label:'Projects (repeating rows)'}];
+function detectedTokens(body='',extra=[]) {
+  const tokens=[...String(body).matchAll(/\{\{\s*([#/]?[^}]+?)\s*\}\}/g)].map(match=>match[1].trim().replace(/^#each\s+/,'').replace(/^\/each\s*/,'')).filter(Boolean);
+  return [...new Set([...tokens,...extra])];
+}
+function templateUse(template) {
+  return template?.template_use || (template?.doc_type==='Grant Award Notice'?'Generated Document':'Attachment');
+}
+
 function populateTemplate(body, app) {
   const fmt = (n) => n ? `$${Number(n).toLocaleString()}` : ' - ';
   const map = {
@@ -59,6 +70,8 @@ function populateTemplate(body, app) {
 
 export default function DocumentTemplates() {
   const [showGanWorkspace,setShowGanWorkspace]=useState(false);
+  const [uploadedTokens,setUploadedTokens]=useState([]);
+  const [tokenMappings,setTokenMappings]=useState({});
   const [selectedGanTemplateId,setSelectedGanTemplateId]=useState('');
   const [user, setUser] = useState(null);
   const [templates, setTemplates] = useState([]);
@@ -71,6 +84,10 @@ export default function DocumentTemplates() {
   const [form, setForm] = useState({ name: '', doc_type: 'Grant Award Notice', description: '', template_body: '', file_url: '', file_name: '', is_active: true });
   const [saving, setSaving] = useState(false);
   const [historyTemplate, setHistoryTemplate] = useState(null);
+  const [generateTemplate, setGenerateTemplate] = useState(null);
+  const [generateAppId, setGenerateAppId] = useState('');
+  const [generatedDraft, setGeneratedDraft] = useState(null);
+  const [generating, setGenerating] = useState(false);
 
   // Send dialog
   const [sendTemplate, setSendTemplate] = useState(null);
@@ -100,7 +117,8 @@ export default function DocumentTemplates() {
 
   const openNew = () => {
     setEditingTemplate(null);
-    setForm({ name: '', doc_type: 'Grant Award Notice', description: '', template_body: '', file_url: '', file_name: '', is_active: true });
+    setForm({ name: '', doc_type: 'Grant Award Notice', template_use:'Attachment', description: '', template_body: '', file_url: '', file_name: '', is_active: true });
+    setTokenMappings({});setUploadedTokens([]);
     setShowForm(true);
   };
 
@@ -109,8 +127,11 @@ export default function DocumentTemplates() {
     if (!file) return;
     setUploading(true);
     try {
-      const file_url = await uploadFileToServer(file);
-      setForm(f => ({ ...f, file_url, file_name: file.name }));
+      if(form.template_use==='Generated Document'&&!/\.docx$/i.test(file.name))throw new Error('Generated Document templates require a DOCX file.');
+      const uploaded=await uploadTemplateFile(file);
+      const file_url=uploaded.file_url;
+      setUploadedTokens(uploaded.tokens||[]);
+      setForm(f => ({ ...f, file_url, file_name: uploaded.file_name||file.name }));
       toast('Template file uploaded.', 'success');
     } catch (error) {
       setForm(f => ({ ...f, file_url: '', file_name: '' }));
@@ -119,11 +140,12 @@ export default function DocumentTemplates() {
       setUploading(false);
     }
   };
-  const closeForm = () => { setShowForm(false); setUploading(false); setShowPhHelp(false); };
+  const closeForm = () => { setShowForm(false); setUploading(false); setShowPhHelp(false); setUploadedTokens([]); setTokenMappings({}); };
 
   const openEdit = (t) => {
     setEditingTemplate(t);
-    setForm({ name: t.name, doc_type: t.doc_type, description: t.description || '', template_body: t.template_body || '', file_url: t.file_url || '', file_name: t.file_name || '', is_active: t.is_active !== false });
+    setForm({ name: t.name, doc_type: t.doc_type, template_use:templateUse(t), description: t.description || '', template_body: t.template_body || '', file_url: t.file_url || '', file_name: t.file_name || '', is_active: t.is_active !== false });
+    setTokenMappings(t.token_mappings||{});setUploadedTokens([]);
     setShowForm(true);
   };
 
@@ -134,7 +156,12 @@ export default function DocumentTemplates() {
       setSaving(false);
       return;
     }
-    const data = { ...form, created_by_name: user?.full_name };
+    const tokens=detectedTokens(form.template_body,uploadedTokens);
+    const mappings=Object.fromEntries(tokens.map(token=>[token,tokenMappings[token]||TOKEN_FIELDS.find(field=>field.key===token)?.key||'']));
+    if(form.template_use==='Attachment'&&tokens.length){toast('Attachment templates cannot contain tokens. Remove the tokens or choose Generated Document.','error');setSaving(false);return;}
+    if(form.template_use==='Generated Document'&&tokens.some(token=>!mappings[token])){toast('Map or remove every detected token before saving.','error');setSaving(false);return;}
+    if(form.template_use==='Generated Document'&&form.file_url&&!/\.docx$/i.test(form.file_name||'')){toast('Generated Document templates must use a DOCX file.','error');setSaving(false);return;}
+    const data = { ...form, template_use:form.template_use||'Attachment', token_mappings:mappings, created_by_name: user?.full_name };
     if (editingTemplate) {
       // Snapshot current state as a version before overwriting
       const existingVersions = await base44.entities.TemplateVersion.filter({ template_id: editingTemplate.id }, '-version_number', 1);
@@ -178,6 +205,18 @@ export default function DocumentTemplates() {
     setSendTemplate(t);
     setSendAppId('');
     setPreview('');
+  };
+
+  const openGenerateDialog = t => { setGenerateTemplate(t); setGenerateAppId(''); setGeneratedDraft(null); };
+  const handleGenerate = async () => {
+    if (!generateTemplate || !generateAppId) return;
+    setGenerating(true);
+    try {
+      const result = await generateTemplateDraft({templateId:generateTemplate.id, applicationId:generateAppId});
+      setGeneratedDraft(result);
+      toast('Draft generated successfully.', 'success');
+    } catch (error) { toast(error.message || 'Unable to generate draft.', 'error'); }
+    finally { setGenerating(false); }
   };
 
   const handleAppSelect = (appId) => {
@@ -251,12 +290,12 @@ export default function DocumentTemplates() {
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <p className="font-semibold">{t.name}</p>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{t.doc_type}</span>
+                    <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 font-medium">{t.doc_type}</span><span className="text-xs px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium">{templateUse(t)}</span>
                     {t.file_url && <span className="text-xs px-2 py-0.5 rounded-full bg-purple-50 text-purple-700 font-medium flex items-center gap-1"><Paperclip className="h-3 w-3" /> File</span>}
                     {!t.is_active && <span className="text-xs px-2 py-0.5 rounded-full bg-muted text-muted-foreground">Inactive</span>}
                   </div>
                   {t.description && <p className="text-sm text-muted-foreground mt-0.5">{t.description}</p>}
-                  <p className="text-xs text-muted-foreground mt-1">Created by {t.created_by_name || ' - '} · {formatDateShort(t.created_date)}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Created by {t.created_by_name || ' - '}  {formatDateShort(t.created_date)}</p>
                   {t.file_url && (
                     <a href={t.file_url} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline flex items-center gap-1 mt-0.5">
                       <ExternalLink className="h-3 w-3" /> {t.file_name || 'View uploaded file'}
@@ -270,8 +309,8 @@ export default function DocumentTemplates() {
                   <History className="h-3.5 w-3.5" />
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => openEdit(t)}><Eye className="h-3.5 w-3.5 mr-1" /> Edit</Button>
-                <Button size="sm" onClick={() => openSendDialog(t)} disabled={!t.is_active}>
-                  <Send className="h-3.5 w-3.5 mr-1" /> {t.doc_type==='Grant Award Notice'?'Generate draft':'Send'}
+                <Button size="sm" onClick={() => templateUse(t)==='Generated Document' ? (t.doc_type==='Grant Award Notice' ? openSendDialog(t) : openGenerateDialog(t)) : openSendDialog(t)} disabled={!t.is_active}>
+                  <Send className="h-3.5 w-3.5 mr-1" /> {templateUse(t)==='Generated Document'?'Generate draft':'Send'}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={() => handleDelete(t)}><Trash2 className="h-3.5 w-3.5 text-red-400" /></Button>
               </div>
@@ -301,6 +340,14 @@ export default function DocumentTemplates() {
               </div>
             </div>
             <div>
+              <Label>Template Use <span className="text-red-500">*</span></Label>
+              <Select value={form.template_use||'Attachment'} onValueChange={v=>{setForm(f=>({...f,template_use:v}));if(v==='Attachment')setTokenMappings({});}}>
+                <SelectTrigger className="mt-1"><SelectValue/></SelectTrigger>
+                <SelectContent>{TEMPLATE_USES.map(item=><SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>)}</SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground mt-1">{TEMPLATE_USES.find(item=>item.value===(form.template_use||'Attachment'))?.description}</p>
+            </div>
+            <div>
               <Label>Description</Label>
               <Input className="mt-1" value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Brief description of when to use this template" />
             </div>
@@ -310,9 +357,9 @@ export default function DocumentTemplates() {
               <Label>Upload Template File <span className="text-muted-foreground font-normal">(PDF, Word, Excel)</span></Label>
               <div className="flex items-center gap-3 mt-1">
                 <label className="cursor-pointer">
-                  <input type="file" className="hidden" accept=".pdf,.doc,.docx,.xls,.xlsx" onChange={handleFileUpload} />
+                  <input type="file" className="hidden" accept={form.template_use==='Generated Document'?'.docx':'.docx,.pdf,.xlsx'} onChange={handleFileUpload} />
                   <span className={`inline-flex items-center gap-2 px-3 py-2 rounded-md border text-sm font-medium transition ${uploading ? 'opacity-50 cursor-wait' : 'hover:bg-muted/60 cursor-pointer'}`}>
-                    <Upload className="h-4 w-4" />{uploading ? 'Uploading…' : 'Choose File'}
+                    <Upload className="h-4 w-4" />{uploading ? 'Uploading' : 'Choose File'}
                   </span>
                 </label>
                 {form.file_url && (
@@ -330,9 +377,19 @@ export default function DocumentTemplates() {
                 className="w-full flex items-center justify-between px-3 py-2.5 bg-muted/50 text-sm font-medium hover:bg-muted/80 transition"
                 onClick={() => setShowPhHelp(v => !v)}
               >
-                <span>📋 Available Placeholders - click to insert</span>
+                <span> Available Placeholders - click to insert</span>
                 {showPhHelp ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
               </button>
+            {form.template_use==='Generated Document'&&<div className="border rounded-lg p-3 space-y-2">
+              <Label>Review Tokens</Label>
+              <p className="text-xs text-muted-foreground">Map every token found in the body or uploaded DOCX before saving. Use <code>{'{{#each projects}}'}</code> for repeating project rows.</p>
+              {detectedTokens(form.template_body,uploadedTokens).length===0?<p className="text-xs text-muted-foreground">No tokens detected yet.</p>:detectedTokens(form.template_body,uploadedTokens).map(token=><div key={token} className="flex items-center gap-2">
+                <code className="text-xs flex-1">{'{{'+token+'}}'}</code>
+                <select className="border rounded px-2 py-1 text-xs bg-background" value={tokenMappings[token]||TOKEN_FIELDS.find(field=>field.key===token)?.key||''} onChange={e=>setTokenMappings(current=>({...current,[token]:e.target.value}))}>
+                  <option value="">Choose data field</option>{TOKEN_FIELDS.map(field=><option key={field.key} value={field.key}>{field.label}</option>)}
+                </select>
+              </div>)}
+            </div>}
               {showPhHelp && (
                 <div className="p-3 flex flex-wrap gap-2 border-t">
                   {PLACEHOLDERS.map(p => (
@@ -364,7 +421,7 @@ export default function DocumentTemplates() {
           <DialogFooter>
             <Button variant="outline" onClick={closeForm}>Cancel</Button>
             <Button onClick={handleSave} disabled={saving || !form.name || uploading}>
-              {saving ? 'Saving…' : editingTemplate ? 'Save Changes' : 'Create Template'}
+              {saving ? 'Saving' : editingTemplate ? 'Save Changes' : 'Create Template'}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -387,7 +444,7 @@ export default function DocumentTemplates() {
             <div>
               <Label>Select Application (Approved) <span className="text-red-500">*</span></Label>
               <Select value={sendAppId} onValueChange={handleAppSelect}>
-                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose an approved application…" /></SelectTrigger>
+                <SelectTrigger className="mt-1"><SelectValue placeholder="Choose an approved application" /></SelectTrigger>
                 <SelectContent>
                   {apps.map(a => (
                     <SelectItem key={a.id} value={a.id}>
@@ -413,9 +470,22 @@ export default function DocumentTemplates() {
             <Button variant="outline" onClick={() => setSendTemplate(null)}>Cancel</Button>
             <Button onClick={handleSend} disabled={sending || !sendAppId}>
               <Send className="h-3.5 w-3.5 mr-1.5" />
-              {sending ? 'Sending…' : 'Send for Review & Signature'}
+              {sending ? 'Sending' : 'Send for Review & Signature'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!generateTemplate} onOpenChange={open => { if (!open) setGenerateTemplate(null); }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader><DialogTitle>Generate Draft: {generateTemplate?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div><Label>Select Application or Award <span className="text-red-500">*</span></Label><Select value={generateAppId} onValueChange={setGenerateAppId}><SelectTrigger className="mt-1"><SelectValue placeholder="Choose an approved application..." /></SelectTrigger><SelectContent>{apps.map(a=><SelectItem key={a.id} value={a.id}>{a.application_number || 'Draft'} - {a.organization_name}</SelectItem>)}</SelectContent></Select></div>
+            {generatedDraft?.warnings?.length>0&&<div className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm"><p className="font-medium text-amber-900">Blank values</p><ul className="list-disc pl-5 text-amber-800">{generatedDraft.warnings.map(item=><li key={item}>{item}</li>)}</ul></div>}
+            {generatedDraft?.populated_body&&<div><Label>Preview</Label><div className="mt-1 max-h-64 overflow-y-auto whitespace-pre-wrap rounded border bg-white p-3 text-sm">{generatedDraft.populated_body}</div></div>}
+            {generatedDraft?.file_url&&<a className="text-sm text-primary underline" href={generatedDraft.file_url} target="_blank" rel="noreferrer">Download generated draft</a>}
+          </div>
+          <DialogFooter><Button variant="outline" onClick={()=>setGenerateTemplate(null)}>Close</Button><Button onClick={handleGenerate} disabled={generating||!generateAppId}>{generating?'Generating...':'Generate Draft'}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

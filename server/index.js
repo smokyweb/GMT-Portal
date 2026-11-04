@@ -17,11 +17,13 @@ import { fileURLToPath } from 'url';
 import fs from 'fs';
 import pool from './db/connection.js';
 import authRouter from './routes/auth.js';
+import {inspectTemplateFile} from './services/templateInspection.js';
 import entitiesRouter from './routes/entities.js';
 import accountRouter from './routes/accountAccess.js';
 import { migrateAccountAccess } from './services/accountMigration.js';
 import { clearInvalidPrimaryContacts } from './services/organizationPolicy.js';
 import {migrateNofoFields} from './services/nofoMigration.js';
+import {createTemplateDocumentsRouter} from './routes/templateDocuments.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -48,6 +50,7 @@ app.use('/api/funding-requests',createFundingRequestRouter());
 app.use('/api/entities',createFundingEntityRouter());
 app.use('/api/entities',createFormApplicationRouter());
 configureGanRuntime(app,pool,authRequired);
+app.use('/api/template-documents',createTemplateDocumentsRouter(pool,authRequired,path.join(__dirname,'uploads')));
 app.use('/api/entities', entitiesRouter);
 
 // File upload endpoint
@@ -60,12 +63,15 @@ const fileStorage = multer.diskStorage({
 });
 const upload = multer({ storage: fileStorage, limits: { fileSize: 25 * 1024 * 1024 } });
 
-app.post('/api/upload', upload.single('file'), (req, res) => {
+app.post('/api/upload', upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'No file' });
   const url = `/api/files/${req.file.filename}`;
-  res.json({ url, filename: req.file.filename, originalName: req.file.originalname });
+  const metadata=await inspectTemplateFile(req.file.path,req.file.originalname).catch(()=>({tokens:[]}));
+  res.json({ url, filename: req.file.filename, originalName: req.file.originalname, ...metadata });
 });
 
+  await pool.query("ALTER TABLE document_templates ADD COLUMN IF NOT EXISTS template_use TEXT, ADD COLUMN IF NOT EXISTS token_mappings JSONB NOT NULL DEFAULT '{}'::jsonb");
+  await pool.query("ALTER TABLE generated_documents DROP CONSTRAINT IF EXISTS generated_documents_status_check, ADD CONSTRAINT generated_documents_status_check CHECK (status IN ('Draft','Sent','Reviewed','Signed','Rejected'))");
 app.get('/api/files/:filename', (req, res) => {
   const filePath = path.join(uploadsDir, req.params.filename.replace(/[^a-zA-Z0-9._-]/g, ''));
   if (!fs.existsSync(filePath)) return res.status(404).json({ error: 'File not found' });
