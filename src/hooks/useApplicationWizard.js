@@ -52,9 +52,9 @@ export function useApplicationWizard() {
     try{return await operation;}finally{setBusy(false);savePromise.current=null;}
   };
   const chooseNofo=async id=>{
-    if(application?.form_version_id)return;
+    if(application&&!['Draft','RevisionRequested','ChangesRequested'].includes(application.status))return;
     setBusy(true);setError('');
-    try {const selected=nofos.find(notice=>notice.id===id)||null;setNofo(selected);setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
+    try {const selected=nofos.find(notice=>notice.id===id)||null;setNofo(selected);setForm(current=>({...current,form_values:{}}));setDefinition(selected?(await base44.forms.nofo(id)).definition:defaultForm());setStepId('organization');}
     catch(err){setError(err.message);}finally{setBusy(false);}
   };
   const changeProject=(index,next)=>{

@@ -13,17 +13,18 @@ export function draftForm(application={}) {
 export function budgetTotals(items) {
   return items.reduce((total,item)=>({federal:total.federal+(moneyCents(item.amount_requested)||0),match:total.match+(moneyCents(item.amount_match)||0)}),{federal:0,match:0});
 }
-export function draftPayload(form,nofo,organization) {
+export function draftPayload(form,nofo,organization,application=null) {
   const normalized={...form};
   for(const key of applicationKeys)if(['number','currency'].includes(fieldType(key)))normalized[key]=form[key]===''?0:Number(form[key]??0);
-  return {...normalized,nofo_id:nofo?.id||null,organization_id:organization.id,status:'Draft',
+  const changingDraftNofo=Boolean(application?.status==='Draft'&&application.nofo_id&&nofo?.id&&application.nofo_id!==nofo.id);
+  return {...normalized,nofo_id:nofo?.id||null,organization_id:organization.id,status:'Draft',...(changingDraftNofo?{form_values:{},form_version_id:null}:{}),
     requested_amount:form.requested_amount===''?0:Number(form.requested_amount),
     match_amount:form.match_amount===''?0:Number(form.match_amount),
     performance_start:form.performance_start||null,performance_end:form.performance_end||null};
 }
 const projectFields=['legacy_project_id','title','project_narrative','work_plan','project_type','funding_type','ij_title','ij_funding_priority','ij_number','ij_core_capability','national_priority_area','letpa_eligible','shareable','deployable','is_active','project_zip','awarded_amount'];
 export async function persistDraft({application,form,nofo,organization,projects=[],removedProjectIds=[],onApplication=(_saved)=>{},onProject=(_index,_row)=>{}}) {
-  const data=draftPayload(form,nofo,organization);
+  const data=draftPayload(form,nofo,organization,application);
   const saved=application?await base44.entities.Application.update(application.id,data):await base44.entities.Application.create(data);
   onApplication(saved);
   const savedProjects=[];

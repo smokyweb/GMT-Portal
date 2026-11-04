@@ -64,8 +64,10 @@ export async function saveFormApplication(pool,actorId,id,input,verifyFile) {
     const nofoId=data.nofo_id||previous?.nofo_id,nofo=nofoId?await formNofo(db,nofoId,true):null;
     if(id) {
       previous=(await db.query('SELECT * FROM applications WHERE id::text=$1 FOR UPDATE',[id])).rows[0];
-      if(previous?.form_version_id&&data.nofo_id&&data.nofo_id!==previous.nofo_id)throw accountError(409,'A started application keeps its original NOFO and form version');
-      if(previous?.nofo_id&&nofo?.id!==previous.nofo_id)throw accountError(409,'The application NOFO changed. Reload before saving.');
+      const changingDraftNofo=previous?.status==='Draft'&&data.nofo_id&&data.nofo_id!==previous.nofo_id;
+      if(previous?.form_version_id&&data.nofo_id&&data.nofo_id!==previous.nofo_id&&!changingDraftNofo)throw accountError(409,'A started application keeps its original NOFO and form version');
+      if(previous?.nofo_id&&nofo?.id!==previous.nofo_id&&!changingDraftNofo)throw accountError(409,'The application NOFO changed. Reload before saving.');
+      if(changingDraftNofo){previous={...previous,form_version_id:null};data.form_values={};}
     }
     if(previous)assertApplicationAccess(actor,previous,await organizationFor(db,previous.organization_id),true);
     const organization=await organizationFor(db,data.organization_id||previous?.organization_id||actor.organization_id);
