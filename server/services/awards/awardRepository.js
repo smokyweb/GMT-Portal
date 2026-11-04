@@ -30,10 +30,23 @@ async function nextSubawardNumber(db,application,sources) {
 }
 export async function ensureAwardSnapshot(db,application,actor) {
   let award=(await db.query('SELECT * FROM award_details WHERE application_id=$1 FOR UPDATE',[application.id])).rows[0];
-  if(award)return award;
   const inherited=await awardSources(db,application);
-  inherited.fields.subaward_number=await nextSubawardNumber(db,application,inherited);
-  inherited.origins.subaward_number='Generated from NOFO';
+  if(award) {
+    const fields={...(award.fields||{})},origins={...(award.origins||{})};
+    if(application.status==='Approved'&&!fields.subaward_number) {
+      fields.subaward_number=await nextSubawardNumber(db,application,inherited);
+      origins.subaward_number='Generated from NOFO';
+      award=(await db.query('UPDATE award_details SET fields=$2,origins=$3,updated_at=NOW() WHERE id=$1 RETURNING *',[award.id,JSON.stringify(fields),JSON.stringify(origins)])).rows[0];
+    }
+    return award;
+  }
+  if(application.status==='Approved') {
+    inherited.fields.subaward_number=await nextSubawardNumber(db,application,inherited);
+    inherited.origins.subaward_number='Generated from NOFO';
+  } else {
+    inherited.fields.subaward_number=null;
+    inherited.origins.subaward_number='Awaiting application approval';
+  }
   if(application.grant_number){inherited.fields.federal_award_number=application.grant_number;inherited.origins.federal_award_number=application.grant_number===inherited.nofo.grant_number?'from NOFO':'from Application';}
   award=(await db.query(`INSERT INTO award_details(id,application_id,nofo_id,fields,origins,created_by)
     VALUES($1,$2,$3,$4,$5,$6) RETURNING *`,[randomUUID(),application.id,application.nofo_id||null,JSON.stringify(inherited.fields),JSON.stringify(inherited.origins),actor.email])).rows[0];

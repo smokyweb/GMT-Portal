@@ -14,7 +14,7 @@ async function access(db,actorId,id,lock=false) {
 export async function readAwardDetails(db,actorId,id) {
   const {actor,application,sources}=await access(db,actorId,id);
   let award=(await db.query('SELECT * FROM award_details WHERE application_id=$1',[id])).rows[0];
-  if(!award&&['isc_admin','admin'].includes(actor.role))award=await transaction(db,async client=>{
+  if(['isc_admin','admin'].includes(actor.role))award=await transaction(db,async client=>{
     const locked=await access(client,actorId,id,true);
     return ensureAwardSnapshot(client,locked.application,locked.actor);
   });
@@ -27,7 +27,7 @@ export async function saveAwardDetails(pool,actorId,id,input) {
     if(!['isc_admin','admin'].includes(actor.role))throw accountError(403,'Only an assigned administrator can edit Award Details');
     const previous=(await db.query('SELECT * FROM award_details WHERE application_id=$1 FOR UPDATE',[id])).rows[0];
     if(input.expectedRevision!==(previous?.revision||0))throw accountError(409,'Award Details changed. Reload before saving.');
-    const award=previous||await ensureAwardSnapshot(db,application,actor),fields={...award.fields},origins={...award.origins},overrides={...award.field_overrides};
+    const award=await ensureAwardSnapshot(db,application,actor),fields={...award.fields},origins={...award.origins},overrides={...award.field_overrides};
     const reset=input.resetFields||[];if(!Array.isArray(reset)||reset.some(key=>!AWARD_FIELDS.some(field=>field.key===key&&field.inherited)))throw accountError(400,'Choose inherited fields to restore from the source');
     const changes=validateAwardChanges(fields,input.fields||{});
     for(const key of reset){fields[key]=sources.fields[key];origins[key]=sources.origins[key];delete overrides[key];}
