@@ -3,6 +3,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { canonicalProgramCode } from '@/lib/programCompatibility';
 import { Star } from 'lucide-react';
 
 const CRITERIA_BY_PROGRAM = {
@@ -53,7 +54,7 @@ const scoreColor = (score) => {
 };
 
 export default function ReviewScoreCard({ programCode, scores, notes, onChange }) {
-  const criteria = CRITERIA_BY_PROGRAM[programCode] || CRITERIA_BY_PROGRAM.DEFAULT;
+  const criteria = CRITERIA_BY_PROGRAM[canonicalProgramCode(programCode)] || CRITERIA_BY_PROGRAM.DEFAULT;
 
   const setScore = (id, val) => onChange({ ...scores, [id]: val[0] });
   const setNote = (id, val) => onChange({ ...scores, [`${id}_note`]: val });

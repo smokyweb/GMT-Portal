@@ -8,8 +8,10 @@ import {
   Info, DollarSign, TrendingUp, AlertCircle
 } from 'lucide-react';
 import { formatCurrency } from '../lib/helpers';
+import { AEL_CATEGORY_LABELS, getAELItemsForCategory } from '../lib/aelData';
 
 const BUDGET_CATEGORIES = ['Personnel', 'Equipment', 'Training', 'Travel', 'Contractual', 'Planning', 'Other'];
+const POETE_CATEGORIES = ['Planning', 'Organization', 'Equipment', 'Training', 'Exercise'];
 
 const CATEGORY_HINTS = {
   Personnel: 'Salaries, wages, fringe benefits for staff directly supporting the grant.',
@@ -21,7 +23,7 @@ const CATEGORY_HINTS = {
   Other: 'Direct costs not fitting other categories. Provide a clear justification.',
 };
 
-function CategoryRow({ item, idx, onUpdate, onRemove }) {
+function CategoryRow({ item, idx, onUpdate, onRemove, legacyEnabled }) {
   const [expanded, setExpanded] = useState(!item.line_description);
   const amount = Number(item.amount_requested) || 0;
   const match = Number(item.amount_match) || 0;
@@ -76,6 +78,16 @@ function CategoryRow({ item, idx, onUpdate, onRemove }) {
             </div>
           </div>
 
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1 block">POETE Category</label>
+            <Select value={item.poete_category||''} onValueChange={v => onUpdate(idx, 'poete_category', v)}>
+              <SelectTrigger><SelectValue placeholder="Select POETE category" /></SelectTrigger>
+              <SelectContent>{POETE_CATEGORIES.map(category => <SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent>
+            </Select>
+          </div>
+
+          {legacyEnabled&&<div><label className="text-xs font-medium text-muted-foreground mb-1 block">Legacy Budget Line ID</label><Input className="mt-1 bg-muted" readOnly value={item.legacy_budget_line_id||''} placeholder="Populated by import" /></div>}
+
           {/* Description */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1 block">
@@ -87,6 +99,14 @@ function CategoryRow({ item, idx, onUpdate, onRemove }) {
               placeholder="Describe this line item, how it supports the grant objectives, and what will be purchased or funded..."
               rows={2}
             />
+          </div>
+
+          {item.budget_category === 'Equipment' && <div className="grid grid-cols-1 sm:grid-cols-2 gap-4"><div><label className="text-xs font-medium text-muted-foreground mb-1 block">AEL Category</label><Select value={item.ael_category||''} onValueChange={v=>onUpdate(idx,{ael_category:v,ael_number:''})}><SelectTrigger><SelectValue placeholder="Select AEL category"/></SelectTrigger><SelectContent className="max-h-60">{AEL_CATEGORY_LABELS.map(category=><SelectItem key={category} value={category}>{category}</SelectItem>)}</SelectContent></Select></div><div><label className="text-xs font-medium text-muted-foreground mb-1 block">AEL Number</label><Select value={item.ael_number||''} onValueChange={v=>onUpdate(idx,'ael_number',v)} disabled={!item.ael_category}><SelectTrigger><SelectValue placeholder={item.ael_category?'Select AEL item':'Select category first'}/></SelectTrigger><SelectContent className="max-h-60">{getAELItemsForCategory(item.ael_category).map(ael=><SelectItem key={ael.code} value={ael.code}>{ael.code} — {ael.title}</SelectItem>)}</SelectContent></Select></div></div>}
+
+          {/* Quantity and unit cost */}
+          <div className="grid grid-cols-2 gap-4">
+            <div><label className="text-xs font-medium text-muted-foreground mb-1 block">Quantity</label><Input type="number" min="0" step="0.01" value={item.quantity??''} onChange={e=>onUpdate(idx,'quantity',e.target.value)} placeholder="0" /></div>
+            <div><label className="text-xs font-medium text-muted-foreground mb-1 block">Unit Cost ($)</label><Input type="number" min="0" step="0.01" value={item.unit_cost??''} onChange={e=>onUpdate(idx,'unit_cost',e.target.value)} placeholder="0.00" /></div>
           </div>
 
           {/* Amounts */}
@@ -130,7 +150,7 @@ function CategoryRow({ item, idx, onUpdate, onRemove }) {
   );
 }
 
-export default function BudgetBuilder({ items, onChange, nofo }) {
+export default function BudgetBuilder({ items, onChange, nofo, legacyEnabled=false }) {
   const maxAward = nofo?.max_award || 0;
   const minAward = nofo?.min_award || 0;
   const totalFunding = nofo?.total_funding_available || 0;
@@ -182,11 +202,12 @@ export default function BudgetBuilder({ items, onChange, nofo }) {
   }, [items, totals, maxAward, minAward, totalFunding]);
 
   const addItem = () => {
-    onChange([...items, { budget_category: 'Personnel', line_description: '', amount_requested: 0, amount_match: 0, isExisting: false }]);
+    onChange([...items, { budget_category: 'Personnel', poete_category: '', line_description: '', amount_requested: 0, amount_match: 0, isExisting: false }]);
   };
 
   const updateItem = (idx, field, value) => {
-    onChange(items.map((item, i) => i === idx ? { ...item, [field]: value } : item));
+    const changes = typeof field === 'object' ? field : { [field]: value };
+    onChange(items.map((item, i) => i === idx ? { ...item, ...changes } : item));
   };
 
   const removeItem = (idx) => {
@@ -308,7 +329,7 @@ export default function BudgetBuilder({ items, onChange, nofo }) {
       {/* Line Items */}
       <div className="space-y-3">
         {items.map((item, idx) => (
-          <CategoryRow key={idx} item={item} idx={idx} onUpdate={updateItem} onRemove={removeItem} />
+          <CategoryRow key={idx} item={item} idx={idx} onUpdate={updateItem} onRemove={removeItem} legacyEnabled={legacyEnabled} />
         ))}
 
         {items.length === 0 && (

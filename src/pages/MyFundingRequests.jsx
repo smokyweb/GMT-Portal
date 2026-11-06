@@ -78,6 +78,7 @@ const EMPTY_LINE_ITEM = {
   budget_category: 'Equipment', description: '', amount: 0,
   quantity: '', unit_cost: '',
   ael_category: '', ael_number: '',
+  amount_requested: 0, amount_match: 0, amount_subgrantee: 0, legacy_expenditure_id: '',
   expenditure_name: '', item_manufacturer: '', item_model: '',
   item_detail_description: '', sole_source_justification: '',
   thira_spr_capability_action: '', thira_spr_primary_capability: '',
@@ -89,11 +90,17 @@ export default function MyFundingRequests() {
   const [requests, setRequests] = useState([]);
   const [apps, setApps] = useState([]);
   const [projects, setProjects] = useState([]);
+  const [budgetLines, setBudgetLines] = useState([]);
+  const [legacyConfig, setLegacyConfig] = useState({enabled:false,systemName:'Legacy'});
   const [user, setUser] = useState(null);
   const [viewRequest, setViewRequest] = useState(null);
+  const [viewLineItems, setViewLineItems] = useState([]);
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [sortCreatedDesc, setSortCreatedDesc] = useState(true);
+  const [sortSubmittedDesc, setSortSubmittedDesc] = useState(true);
+  const [sortField, setSortField] = useState('created');
   const [open, setOpen] = useState(false);
   const [csvOpen, setCsvOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -122,14 +129,13 @@ export default function MyFundingRequests() {
   const loadData = async () => {
     const u = await base44.auth.me();
     setUser(u);
-    if (u.organization_id) {
-      const [r, a] = await Promise.all([
-        base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 50),
-        base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
-      ]);
-      setRequests(r);
-      setApps(a);
-    }
+    const [r, a] = await Promise.all([
+      base44.entities.FundingRequest.list('-created_date', 5000),
+      base44.entities.Application.list('-created_date', 5000),
+    ]);
+    setRequests(r || []);
+    setApps(a || []);
+    const grants=await base44.entities.Grantee.filter({id:u.grantee_id}).catch(()=>[]);const g=grants?.[0];setLegacyConfig({enabled:Boolean(g?.legacy_fields_enabled),systemName:g?.legacy_system_name?.trim()||'Legacy'});
     setLoading(false);
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('new')) setOpen(true);
@@ -138,9 +144,13 @@ export default function MyFundingRequests() {
   const fundingEhp = useFundingEhpContext(form.application_id);
   const selectedApp = apps.find(a => a.id === form.application_id);
   const lineTotal = lineItems.reduce((s, l) => s + (Number(l.amount) || 0), 0);
+  const matchTotal = lineItems.reduce((s, l) => s + Math.max(0, Number(l.amount_match) || 0), 0);
+  const federalTotal = lineItems.reduce((s, l) => s + Math.max(0, Number(l.amount_requested ?? l.amount) || 0), 0);
+  const subgranteeTotal = lineItems.reduce((s, l) => s + Math.max(0, Number(l.amount_subgrantee) || 0), 0);
 
   const resetForm = () => {
     setLineItems([]);
+    setBudgetLines([]);
     setAttachments([]);setSubmissionError('');
     setForm({
       application_id: '', project_id: '', request_type: 'Reimbursement',
@@ -155,8 +165,9 @@ export default function MyFundingRequests() {
     setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
 
   const handleApplicationChange = async applicationId => {
-    const rows = applicationId ? await base44.entities.Project.filter({ application_id: applicationId }, 'created_date', 100) : [];
+    const [rows,budgets] = applicationId ? await Promise.all([base44.entities.Project.filter({ application_id: applicationId }, 'created_date', 100),base44.entities.ApplicationBudget.filter({application_id:applicationId},'created_date',500)]) : [[],[]];
     setProjects(rows || []);
+    setBudgetLines(budgets || []);
     setForm(f => ({ ...f, application_id: applicationId, project_id: rows?.length === 1 ? rows[0].id : '' }));
   };
 
@@ -186,6 +197,7 @@ export default function MyFundingRequests() {
   };
 
   const removeAttachment = (name) => setAttachments(prev => prev.filter(a => a.name !== name));
+  const openViewRequest = async request => {setViewRequest(request);setViewLineItems(await base44.entities.FundingRequestLineItem.filter({funding_request_id:request.id}).catch(()=>[]));};
 
   const handleSubmit = async () => {
     setSubmitting(true);setSubmissionError('');
@@ -199,11 +211,11 @@ export default function MyFundingRequests() {
 
   const filteredRequests = requests.filter(req => {
     const q = search.toLowerCase();
-    const matchSearch = !q || req.request_number?.toLowerCase().includes(q) || req.application_number?.toLowerCase().includes(q);
+    const matchSearch = !q || req.request_number?.toLowerCase().includes(q) || req.application_number?.toLowerCase().includes(q) || req.legacy_reimbursement_id?.toLowerCase().includes(q);
     const matchType = !filterType || req.request_type === filterType;
     const matchStatus = !filterStatus || req.status === filterStatus;
     return matchSearch && matchType && matchStatus;
-  });
+  }).sort((a,b)=>{const av=new Date(sortField==='submitted'?(a.submitted_at||0):(a.original_created_at||a.created_date||0)).getTime(),bv=new Date(sortField==='submitted'?(b.submitted_at||0):(b.original_created_at||b.created_date||0)).getTime();return sortField==='submitted'?(sortSubmittedDesc?bv-av:av-bv):(sortCreatedDesc?bv-av:av-bv);});
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
@@ -249,6 +261,9 @@ export default function MyFundingRequests() {
             <SelectItem value="AdditionalInfoRequested">Info Requested</SelectItem>
             <SelectItem value="Approved">Approved</SelectItem>
             <SelectItem value="Denied">Denied</SelectItem>
+            <SelectItem value="Complete">Legacy: Complete</SelectItem>
+            <SelectItem value="Vouchered">Legacy: Vouchered</SelectItem>
+            <SelectItem value="Build">Legacy: Build</SelectItem>
           </SelectContent>
         </Select>
         {(search || filterType || filterStatus) && (
@@ -267,6 +282,8 @@ export default function MyFundingRequests() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Grant</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Period</th>
+                <th className="text-left p-3 font-medium text-muted-foreground"><button type="button" className="hover:text-primary" onClick={()=>{setSortField('created');setSortCreatedDesc(v=>!v)}}>Created {sortField==='created'?(sortCreatedDesc?'↓':'↑'):''}</button></th>
+                <th className="text-left p-3 font-medium text-muted-foreground"><button type="button" className="hover:text-primary" onClick={()=>{setSortField('submitted');setSortSubmittedDesc(v=>!v)}}>Submitted {sortField==='submitted'?(sortSubmittedDesc?'↓':'↑'):''}</button></th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Payment</th>
@@ -280,13 +297,15 @@ export default function MyFundingRequests() {
                   <td className="p-3"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary text-xs font-medium">{req.request_type}</span></td>
                   <td className="p-3 text-xs">{req.application_number}</td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.period_start)} - {formatDateShort(req.period_end)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.original_created_at||req.created_date)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{req.submitted_at ? formatDateShort(req.submitted_at) : '—'}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><StatusBadge status={req.status} /></td>
                   <td className="p-3">{req.request_type !== 'Modification' ? <PaymentBadge status={req.payment_status} /> : <span className="text-xs text-muted-foreground">N/A</span>}</td>
-                  <td className="p-3 text-right"><Button variant="ghost" size="sm" onClick={() => setViewRequest(req)}><Eye className="h-3.5 w-3.5 mr-1" />View</Button></td>
+                    <td className="p-3 text-right"><Button variant="ghost" size="sm" onClick={() => openViewRequest(req)}><Eye className="h-3.5 w-3.5 mr-1" />View</Button></td>
                 </tr>
               ))}
-              {filteredRequests.length === 0 && <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">{requests.length === 0 ? 'No funding requests' : 'No requests match your filters'}</td></tr>}
+              {filteredRequests.length === 0 && <tr><td colSpan={10} className="p-8 text-center text-muted-foreground">{requests.length === 0 ? 'No funding requests' : 'No requests match your filters'}</td></tr>}
             </tbody>
           </table>
         </div>
@@ -312,19 +331,26 @@ export default function MyFundingRequests() {
                   <div><p className="text-xs text-muted-foreground">Grant</p><p className="font-medium">{viewRequest.application_number}</p></div>
                   <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={viewRequest.status} /></div>
                   <div><p className="text-xs text-muted-foreground">Period</p><p className="font-medium">{formatDateShort(viewRequest.period_start)} - {formatDateShort(viewRequest.period_end)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Created</p><p className="font-medium">{formatDateShort(viewRequest.original_created_at||viewRequest.created_date)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium">{viewRequest.submitted_at ? formatDateShort(viewRequest.submitted_at) : '—'}</p></div>
+                  {legacyConfig.enabled&&<div><p className="text-xs text-muted-foreground">{legacyConfig.systemName} Reimbursement ID</p><p className="font-mono font-medium">{viewRequest.legacy_reimbursement_id||'—'}</p></div>}
                   <div><p className="text-xs text-muted-foreground">Amount Requested</p><p className="font-semibold">{formatCurrency(viewRequest.amount_requested)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Total Match</p><p className="font-semibold">{formatCurrency(viewRequest.match_documented)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Subgrantee Funds</p><p className="font-semibold">{formatCurrency(viewLineItems.reduce((sum,line)=>sum+(Number(line.amount_subgrantee)||0),0))}</p></div>
                   {viewRequest.amount_approved != null && <div><p className="text-xs text-muted-foreground">Amount Approved</p><p className="font-semibold text-green-700">{formatCurrency(viewRequest.amount_approved)}</p></div>}
                   {viewRequest.request_type !== 'Modification' && (
                     <div><p className="text-xs text-muted-foreground">Payment Status</p><div className="mt-1"><PaymentBadge status={viewRequest.payment_status} /></div></div>
                   )}
-                  {viewRequest.payment_reference && <div><p className="text-xs text-muted-foreground">Payment Reference</p><p className="font-mono font-medium">{viewRequest.payment_reference}</p></div>}
-                  {viewRequest.payment_date && <div><p className="text-xs text-muted-foreground">Payment Date</p><p className="font-medium">{viewRequest.payment_date ? viewRequest.payment_date.substring(0, 10) : '-'}</p></div>}
+                  <div><p className="text-xs text-muted-foreground">Payment Method</p><p className="font-medium">{viewRequest.payment_method || '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Amount Paid</p><p className="font-medium">{formatCurrency(viewRequest.amount_paid)}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Payment # (EFT / Check)</p><p className="font-mono font-medium">{viewRequest.payment_reference || '—'}</p></div>
+                  <div><p className="text-xs text-muted-foreground">Payment Date</p><p className="font-medium">{viewRequest.payment_date ? viewRequest.payment_date.substring(0, 10) : '—'}</p></div>
                 </div>
                 <LifecycleProgress status={viewRequest.status} type="funding" />
               </TabsContent>
               <TabsContent value="credits">
                 <CreditApplicationPanel
-                  organizationId={user?.organization_id}
+                  organizationId={viewRequest.organization_id}
                   fundingRequest={viewRequest}
                   user={user}
                   onApplied={loadData}
@@ -335,7 +361,7 @@ export default function MyFundingRequests() {
                   applicationId={viewRequest.application_id}
                   applicationNumber={viewRequest.application_number}
                   organizationName={viewRequest.organization_name}
-                  organizationId={user?.organization_id}
+                  organizationId={viewRequest.organization_id}
                   user={user}
                   fundingRequestId={viewRequest.id}
                   fundingRequestNumber={viewRequest.request_number}
@@ -490,8 +516,8 @@ export default function MyFundingRequests() {
                   <div className="bg-muted/50 rounded-lg p-4 grid grid-cols-3 gap-3 text-sm">
                     <div><p className="text-muted-foreground text-xs">Awarded</p><p className="font-bold">{formatCurrency(selectedApp.awarded_amount)}</p></div>
                     <div><p className="text-muted-foreground text-xs">Expended to Date</p><p className="font-bold">{formatCurrency(selectedApp.total_expended)}</p></div>
-                    <div><p className="text-muted-foreground text-xs">This Request</p><p className="font-bold">{formatCurrency(lineTotal)}</p></div>
-                    <div><p className="text-muted-foreground text-xs">Projected Remaining</p><p className="font-bold">{formatCurrency((selectedApp.remaining_balance || selectedApp.awarded_amount) - lineTotal)}</p></div>
+                    <div><p className="text-muted-foreground text-xs">Federal Request</p><p className="font-bold">{formatCurrency(federalTotal)}</p></div>
+                    <div><p className="text-muted-foreground text-xs">Projected Remaining</p><p className="font-bold">{formatCurrency((selectedApp.remaining_balance || selectedApp.awarded_amount) - federalTotal)}</p></div>
                     <div><p className="text-muted-foreground text-xs">Expenditure Rate</p><ExpenditureBar rate={selectedApp.expenditure_rate || 0} /></div>
                     <div><p className="text-muted-foreground text-xs">Match Documented ($)</p><Input type="number" value={form.match_documented} onChange={e => setForm(f => ({ ...f, match_documented: e.target.value }))} className="mt-1 h-8" /></div>
                   </div>
@@ -589,16 +615,32 @@ export default function MyFundingRequests() {
                             <Label className="text-xs">Sole Source Justification (if applicable)</Label>
                             <Input className="mt-1" placeholder="Leave blank if not a sole-source purchase" value={li.sole_source_justification} onChange={e => updateLineItem(idx, 'sole_source_justification', e.target.value)} />
                           </div>
-                          <div className="col-span-2 flex items-center justify-between border-t pt-3">
-                            <div className="flex-1 mr-4">
+                          <div className="col-span-2 border-t pt-3 space-y-3">
+                            <div>
                               <Label className="text-xs">General Description / Purpose</Label>
-                              <Input className="mt-1" placeholder="Brief description / purpose" value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} />
+                              <Input className="mt-1 w-full" placeholder="Brief description / purpose" value={li.description} onChange={e => updateLineItem(idx, 'description', e.target.value)} />
                             </div>
-                            <div className="flex items-center gap-2 flex-shrink-0">
-                              <Label className="text-xs font-semibold">Total ($) <span className="text-red-500">*</span></Label>
-                              <Input type="number" className="text-right w-28" value={li.amount} onChange={e => updateLineItem(idx, 'amount', e.target.value)} />
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                              <div>
+                                <Label className="text-xs font-semibold">Line Total ($) <span className="text-red-500">*</span></Label>
+                                <Input type="number" className="mt-1 w-full text-right" value={li.amount} onChange={e => updateLineItem(idx, 'amount', e.target.value)} />
+                              </div>
+                              <div>
+                                <Label className="text-xs font-semibold">Federal ($)</Label>
+                                <Input type="number" min="0" className="mt-1 w-full text-right" value={li.amount_requested??li.amount??0} onChange={e => updateLineItem(idx, 'amount_requested', Math.max(0, e.target.value))} />
+                              </div>
+                              <div>
+                                <Label className="text-xs font-semibold">Match ($)</Label>
+                                <Input type="number" min="0" className="mt-1 w-full text-right" value={li.amount_match??0} onChange={e => updateLineItem(idx, 'amount_match', Math.max(0, e.target.value))} />
+                              </div>
+                              <div>
+                                <Label className="text-xs font-semibold">Subgrantee ($)</Label>
+                                <Input type="number" min="0" className="mt-1 w-full text-right" value={li.amount_subgrantee??0} onChange={e => updateLineItem(idx, 'amount_subgrantee', Math.max(0, e.target.value))} />
+                              </div>
                             </div>
                           </div>
+                          {Math.abs((Number(li.amount)||0)-((Number(li.amount_requested??li.amount)||0)+(Number(li.amount_match)||0)+(Number(li.amount_subgrantee)||0)))>0.005&&<p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded p-2">Line total does not equal federal amount plus match plus subgrantee funds. Review the amounts before submitting.</p>}
+                          {legacyConfig.enabled&&<div><Label className="text-xs">{legacyConfig.systemName} Expenditure ID</Label><Input className="mt-1 bg-muted" readOnly value={li.legacy_expenditure_id||''}/></div>}
                         </div>
 
                         {/* THIRA/SPR per line item */}
@@ -646,7 +688,7 @@ export default function MyFundingRequests() {
                   </div>
                   {lineItems.length > 0 && (
                     <div className="flex justify-end mt-2 font-bold text-sm border-t pt-2">
-                      Total: {formatCurrency(lineTotal)}
+                      Line Total: {formatCurrency(lineTotal)} · Federal: {formatCurrency(federalTotal)} · Match: {formatCurrency(matchTotal)} · Subgrantee Funds: {formatCurrency(subgranteeTotal)}
                     </div>
                   )}
                 </div>

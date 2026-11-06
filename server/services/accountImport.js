@@ -4,7 +4,7 @@ import {accountActor} from './accountRepository.js';
 import {createAccountService} from './accountService.js';
 export async function previewAccountInvites(db,actorId,rows) {
   const actor=await accountActor(db,actorId);
-  if(actor.role!=='isc_admin')throw accountError(403,'Bulk upload is available to ISC Administrators only');
+  if(!['admin','isc_admin'].includes(actor.role))throw accountError(403,'Bulk upload is available to administrators only');
   if(!Array.isArray(rows)||!rows.length||rows.length>200)throw accountError(400,'Upload between 1 and 200 user rows');
   const organizations=(await db.query('SELECT * FROM organizations WHERE is_active IS NOT FALSE')).rows;
   const emails=new Map();

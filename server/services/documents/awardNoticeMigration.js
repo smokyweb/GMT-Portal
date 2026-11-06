@@ -1,5 +1,49 @@
 export async function migrateAwardNotices(db) {
   await db.query(`
+    CREATE TABLE IF NOT EXISTS award_notice_imports (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      legacy_gan_id TEXT NOT NULL UNIQUE,
+      application_id TEXT NOT NULL,
+      organization_id TEXT,
+      nofo_id TEXT,
+      gan_number INTEGER NOT NULL,
+      gan_type TEXT,
+      amount_from NUMERIC,
+      amount_to NUMERIC,
+      net_change NUMERIC,
+      pop_start DATE,
+      pop_end DATE,
+      status TEXT NOT NULL DEFAULT 'Completed',
+      requested_by TEXT,
+      requested_at TIMESTAMPTZ,
+      released_by TEXT,
+      released_at TIMESTAMPTZ,
+      verified_by TEXT,
+      verified_at TIMESTAMPTZ,
+      completed_by TEXT,
+      completed_at TIMESTAMPTZ,
+      pdf_url TEXT,
+      version INTEGER,
+      issue_date TIMESTAMPTZ,
+      source_file TEXT,
+      imported_by TEXT,
+      imported_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      source_record JSONB NOT NULL DEFAULT '{}'::jsonb
+    );
+    CREATE TABLE IF NOT EXISTS award_notice_import_projects (
+      id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+      award_notice_import_id UUID NOT NULL REFERENCES award_notice_imports(id) ON DELETE CASCADE,
+      legacy_gan_line_id TEXT NOT NULL UNIQUE,
+      project_id TEXT,
+      project_title TEXT,
+      amount_from NUMERIC,
+      amount_to NUMERIC,
+      net_change NUMERIC,
+      line_basis TEXT,
+      source_record JSONB NOT NULL DEFAULT '{}'::jsonb
+    );
+    CREATE INDEX IF NOT EXISTS award_notice_imports_application_idx ON award_notice_imports(application_id);
+    CREATE INDEX IF NOT EXISTS award_notice_import_projects_notice_idx ON award_notice_import_projects(award_notice_import_id);
     CREATE OR REPLACE VIEW award_notices AS
     WITH ordered AS (
       SELECT i.id,
@@ -38,10 +82,17 @@ export async function migrateAwardNotices(db) {
       final.amount_from,final.amount_to,final.amount_to-final.amount_from AS net_change,final.pop_start,final.pop_end,
       final.current_status AS status,final.requested_by,final.requested_at,final.released_by,final.released_at,final.verified_by,final.verified_at,
       final.completed_by,final.completed_at,
-      '/api/gan/issues/'||final.id||'/pdf' AS pdf_url
+      '/api/gan/issues/'||final.id||'/pdf' AS pdf_url,
+      final.gan_revision AS version,final.issued_at AS issue_date
     FROM final
     LEFT JOIN applications a ON a.id::text=final.application_id
     LEFT JOIN organizations o ON o.id::text=a.organization_id
     LEFT JOIN LATERAL (SELECT grantee.* FROM grantees grantee WHERE upper(grantee.state_code)=upper(o.state) ORDER BY grantee.id LIMIT 1) g ON true
+    UNION ALL
+    SELECT i.id,i.legacy_gan_id,i.application_id,i.organization_id,i.nofo_id,NULL::uuid,
+      i.gan_number::bigint,i.gan_type,i.amount_from,i.amount_to,i.net_change,i.pop_start::text,i.pop_end::text,
+      i.status,i.requested_by,i.requested_at,i.released_by,i.released_at,i.verified_by,i.verified_at,
+      i.completed_by,i.completed_at,i.pdf_url,i.version,i.issue_date
+    FROM award_notice_imports i
   `);
 }

@@ -271,7 +271,9 @@ export default function FinancialReporting() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Program</th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Approved</th>
+                <th className="text-right p-3 font-medium text-muted-foreground">Amount Paid</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Payment Status</th>
+                <th className="text-left p-3 font-medium text-muted-foreground">Method</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Reference</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Payment Date</th>
               </tr>
@@ -285,13 +287,15 @@ export default function FinancialReporting() {
                     <span className="text-xs px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{r.program_code || '""'}</span>
                   </td>
                   <td className="p-3 text-right font-medium">{formatCurrency(r.amount_approved)}</td>
+                  <td className="p-3 text-right font-medium">{formatCurrency(r.amount_paid)}</td>
                   <td className="p-3"><PaymentBadge status={r.payment_status} /></td>
+                  <td className="p-3 text-xs text-muted-foreground">{r.payment_method || '-'}</td>
                   <td className="p-3 font-mono text-xs text-muted-foreground">{r.payment_reference || '-'}</td>
                   <td className="p-3 text-xs text-muted-foreground">{r.payment_date ? r.payment_date.substring(0,10) : '-'}</td>
                 </tr>
               ))}
               {filtered.length === 0 && (
-                <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No requests match your filters.</td></tr>
+                <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">No requests match your filters.</td></tr>
               )}
             </tbody>
           </table>

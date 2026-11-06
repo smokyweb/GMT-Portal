@@ -9,12 +9,12 @@ export default function EditAccountDialog({state}) {
     <DialogHeader><DialogTitle>Edit User</DialogTitle></DialogHeader>
     <div className="space-y-4 py-2"><DialogDescription>{target.full_name||'—'} · {target.email}</DialogDescription>
       {state.error&&<p role="alert" className="text-sm text-red-700">{state.error}</p>}
-      <div><Label>Role</Label><Select value={form.role} disabled={state.user?.role!=='isc_admin'} onValueChange={value=>field('role',value)}>
+      <div><Label>Role</Label><Select value={form.role} disabled={!['admin','isc_admin'].includes(state.user?.role)} onValueChange={value=>field('role',value)}>
         <SelectTrigger className="mt-1" aria-label="Edit account role"><SelectValue/></SelectTrigger>
-        <SelectContent>{['user','reviewer','admin','isc_admin'].map(role=><SelectItem key={role} value={role}>{roleLabel(role)}</SelectItem>)}</SelectContent></Select></div>
+        <SelectContent>{['user','reviewer','admin',...(state.user?.role==='isc_admin'?['isc_admin']:[])].map(role=><SelectItem key={role} value={role}>{roleLabel(role)}</SelectItem>)}</SelectContent></Select></div>
       {['admin','reviewer'].includes(form.role)&&<div><Label>State Scope</Label>
         <Select value={form.scope_state} onValueChange={value=>field('scope_state',value)}><SelectTrigger className="mt-1" aria-label="Edit account state"><SelectValue placeholder="Select state…"/></SelectTrigger>
-          <SelectContent>{state.grantees.filter(grantee=>grantee.is_active).map(grantee=><SelectItem key={grantee.id} value={grantee.state_code}>{grantee.state_code} — {grantee.name}</SelectItem>)}</SelectContent></Select></div>}
+          <SelectContent>{state.grantees.filter(grantee=>grantee.is_active&&(state.user?.role==='isc_admin'||grantee.state_code===(state.user?.scope_state||state.user?.grantee_state))).map(grantee=><SelectItem key={grantee.id} value={grantee.state_code}>{grantee.state_code} — {grantee.name}</SelectItem>)}</SelectContent></Select></div>}
       {form.role==='user'&&<div><Label>Organization</Label><Select value={form.organization_id} onValueChange={value=>field('organization_id',value)}>
         <SelectTrigger className="mt-1" aria-label="Edit account organization"><SelectValue placeholder="None"/></SelectTrigger>
         <SelectContent><SelectItem value="__none__">None</SelectItem>{state.organizations.map(org=><SelectItem key={org.id} value={org.id}>{org.name} {org.state?(`(${org.state})`):''}</SelectItem>)}</SelectContent></Select></div>}

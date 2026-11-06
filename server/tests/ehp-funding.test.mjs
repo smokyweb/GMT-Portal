@@ -99,7 +99,8 @@ test('EHP approval and funding holds use scoped, atomic server operations',async
       await mutateFunding(db,ids.admin,'FundingRequest',saved.id,{status:'Approved',amount_approved:9});
       assert.equal(Number((await getApp()).total_expended),9);assert.equal(Number((await getApp()).remaining_balance),991);
       await mutateFunding(db,ids.admin,'FundingRequest',saved.id,{status:'Approved',amount_approved:9});
-      await mutateFunding(db,ids.admin,'FundingRequest',saved.id,{payment_status:'Paid'});
+      await assert.rejects(mutateFunding(db,ids.admin,'FundingRequest',saved.id,{payment_status:'Paid'}),{status:422});
+      await mutateFunding(db,ids.admin,'FundingRequest',saved.id,{payment_status:'Paid',payment_method:'EFT',amount_paid:9});
       assert.equal(Number((await getApp()).total_expended),9);
       await assert.rejects(mutateFunding(db,ids.admin,'FundingRequest',saved.id,{request_type:'Modification'}),{status:400});
       const before=await getApp();

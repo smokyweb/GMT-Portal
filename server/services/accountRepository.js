@@ -8,7 +8,8 @@ export async function transaction(pool, action) {
   finally { db.release(); }
 }
 export async function findAccount(db, id) {
-  const { rows } = await db.query(`SELECT u.*, o.state AS organization_state, g.state_code AS grantee_state
+  const { rows } = await db.query(`SELECT u.*, o.state AS organization_state, g.state_code AS grantee_state,
+    COALESCE((SELECT array_agg(uo.organization_id::text ORDER BY uo.organization_id::text) FROM user_organizations uo WHERE uo.user_id=u.id::text), CASE WHEN u.organization_id IS NOT NULL THEN ARRAY[u.organization_id::text] ELSE ARRAY[]::text[] END) AS organization_ids
     FROM users u LEFT JOIN organizations o ON o.id::text=u.organization_id
     LEFT JOIN grantees g ON g.id::text=u.grantee_id WHERE u.id=$1`, [id]);
   return rows[0];
@@ -27,10 +28,12 @@ export async function listManagedAccounts(db, actor) {
     const state = normalizedState(actor.scope_state || actor.grantee_state);
     if (!state) throw accountError(403, 'Your administrator account has no state assignment');
     values.push(state);
-    where = "WHERE u.role='user' AND UPPER(COALESCE(NULLIF(u.scope_state,''),o.state,''))=$1";
+    where = "WHERE UPPER(COALESCE(NULLIF(u.scope_state,''),o.state,''))=$1";
     if (actor.grantee_id) { values.push(actor.grantee_id); where += ' AND u.grantee_id=$2'; }
   }
-  const { rows } = await db.query(`SELECT u.*, o.state AS organization_state FROM users u
+  const { rows } = await db.query(`SELECT u.*, o.state AS organization_state,
+    COALESCE((SELECT array_agg(uo.organization_id::text ORDER BY uo.organization_id::text) FROM user_organizations uo WHERE uo.user_id=u.id::text), CASE WHEN u.organization_id IS NOT NULL THEN ARRAY[u.organization_id::text] ELSE ARRAY[]::text[] END) AS organization_ids
+    FROM users u
     LEFT JOIN organizations o ON o.id::text=u.organization_id ${where} ORDER BY u.created_date DESC`, values);
   return rows;
 }

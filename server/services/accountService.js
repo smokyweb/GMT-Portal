@@ -11,15 +11,15 @@ export function createAccountService(pool, sendLink) {
     const exists = await db.query('SELECT id FROM users WHERE LOWER(email)=$1', [data.email]);
     if (exists.rows.length) throw accountError(409, 'This email already has an account. Use Resend invite or Reset password.');
     const passwordHash = await bcrypt.hash(randomBytes(48).toString('base64url'), 12);
+    const activeStatus=data.send_invite?'invited':'active';
     const { rows } = await db.query(`INSERT INTO users
-      (email,full_name,password_hash,role,organization_id,organization_name,grantee_id,scope_state,phone,active_status)
-      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,'invited') RETURNING *`,
-      [data.email,data.full_name,passwordHash,data.role,data.organization_id,data.organization_name,data.grantee_id,data.scope_state,data.phone]);
+      (email,full_name,password_hash,role,organization_id,organization_name,grantee_id,scope_state,title,phone,active_status,password_change_required)
+      VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12) RETURNING *`,
+      [data.email,data.full_name,passwordHash,data.role,data.organization_id,data.organization_name,data.grantee_id,data.scope_state,data.title,data.phone,activeStatus,!data.send_invite]);
     const user = rows[0];
-    const token = await issueAccessToken(db,user.id,'invite');
-    await sendLink(user, token, 'invite');
-    await auditAccount(db,actor,user.id,'UserInvited','Set-password invitation accepted by mail provider',ip);
-    return { user: publicAccount(user), delivery: 'accepted', expires_in_hours: 24 };
+    if(data.send_invite){const token = await issueAccessToken(db,user.id,'invite');await sendLink(user, token, 'invite');}
+    await auditAccount(db,actor,user.id,'UserInvited',data.send_invite?'Set-password invitation accepted by mail provider':'POC contact created without a system invitation',ip);
+    return { user: publicAccount(user), delivery: data.send_invite?'accepted':'not_sent', ...(data.send_invite?{expires_in_hours:24}:{}) };
   });
   const reset = async (actorId, targetId, input, ip, purpose='reset') => transaction(pool, async db => {
     const {actor,target} = await managedTarget(db,actorId,targetId);

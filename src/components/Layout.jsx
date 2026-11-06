@@ -26,7 +26,7 @@ const federalNavGroups = [
       { label: 'All Applications', icon: ClipboardList, path: '/applications' },
       { label: 'Funding Requests', icon: DollarSign, path: '/funding-requests' },
       { label: 'Organizations', icon: Building2, path: '/organizations' },
-      { label: 'Grant Programs', icon: FileText, path: '/programs' },
+      { label: 'Grant Programs', icon: FileText, path: '/grant-programs' },
       { label: 'NOFOs', icon: FileSearch, path: '/nofos' },
     ]
   },
@@ -62,7 +62,7 @@ const stateNavGroups = [
   items: [
   { label: 'Applications', icon: ClipboardList, path: '/applications' },
   { label: 'Funding Requests', icon: DollarSign, path: '/funding-requests' },
-  { label: 'NOFOs', icon: FileText, path: '/nofos', adminOnly: true },
+  { label: 'NOFOs', icon: FileText, path: '/nofos', requiresRole: ['admin', 'isc_admin'] },
   { label: 'Grant Timeline', icon: CalendarDays, path: '/grant-timeline' },
   { label: 'Award Documents', icon: FilePen, path: '/award-documents', requiresRole: ['admin','isc_admin','reviewer'] }]
 },

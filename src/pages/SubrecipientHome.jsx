@@ -20,6 +20,7 @@ import StatusBadge from '../components/StatusBadge';
 import ExpenditureBar from '../components/ExpenditureBar';
 import PortalAnalyticsTab from '../components/PortalAnalyticsTab';
 import { formatCurrency, formatDateShort, logAudit, createNotification } from '../lib/helpers';
+import { buildPaidByApplication, utilization } from '../lib/analyticsMetrics';
 
 // ── Compliance Flag Action Row ──────────────────────────────────────────────
 function FlagActionRow({ flag, user, onResolved }) {
@@ -151,9 +152,9 @@ function NofoCard({ nofo, orgType, onApply }) {
 
 // ── Allocation Card ────────────────────────────────────────────────────────
 function AllocationCard({ grant, onViewDetails }) {
-  const expRate = grant.expenditure_rate || 0;
+  const expRate = utilization(grant.analytics_expended || 0, grant.awarded_amount);
   const awarded = Number(grant.awarded_amount) || 0;
-  const expended = Number(grant.total_expended) || 0;
+  const expended = Number(grant.analytics_expended) || 0;
   // Calculate remaining dynamically (DB field may be stale)
   const remaining = awarded - expended;
   const daysLeft = grant.performance_end
@@ -170,6 +171,7 @@ function AllocationCard({ grant, onViewDetails }) {
           <div className="flex items-center gap-2 mt-1.5 flex-wrap">
             <span className="px-2 py-0.5 rounded-md bg-primary/10 text-primary text-xs font-bold tracking-wide">{grant.program_code}</span>
             <span className="text-xs text-muted-foreground font-mono">{grant.application_number}</span>
+            {grant.organization_name && <span className="text-xs text-muted-foreground">{grant.organization_name}</span>}
           </div>
         </div>
         <StatusBadge status={grant.status} />
@@ -271,7 +273,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
     for (const att of attachments.filter(a => a.url)) {
       await base44.entities.Document.create({
         name: att.name, doc_type: 'ProgressNarrative', file_url: att.url,
-        uploaded_by: user.email, organization_id: user.organization_id,
+        uploaded_by: user.email, organization_id: schedule.organization_id,
         application_id: schedule.application_id, application_number: schedule.application_number,
         organization_name: schedule.organization_name, review_status: 'Pending',
         uploaded_at: new Date().toISOString(),
@@ -365,7 +367,7 @@ function AllocationDetailDialog({ grant, onClose }) {
   useEffect(() => {
     if (!grant) return;
     setLoadingItems(true);
-    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date', 100)
+    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date', 5000)
       .then(async (frs) => {
         if (!frs.length) { setLineItems([]); setLoadingItems(false); return; }
         const allItems = await Promise.all(frs.map(f => base44.entities.FundingRequestLineItem.filter({ funding_request_id: f.id })));
@@ -399,10 +401,10 @@ function AllocationDetailDialog({ grant, onClose }) {
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               {[
                 { label: 'Awarded Amount', value: formatCurrency(grant.awarded_amount), color: 'text-green-700' },
-                { label: 'Total Expended', value: formatCurrency(grant.total_expended), color: '' },
-                { label: 'Remaining Balance', value: formatCurrency((Number(grant.awarded_amount)||0) - (Number(grant.total_expended)||0)), color: 'text-blue-700' },
+                { label: 'Total Expended', value: formatCurrency(grant.analytics_expended), color: '' },
+                { label: 'Remaining Balance', value: formatCurrency((Number(grant.awarded_amount)||0) - (Number(grant.analytics_expended)||0)), color: 'text-blue-700' },
                 { label: 'Match Committed', value: formatCurrency(grant.match_amount), color: '' },
-                { label: 'Expenditure Rate', value: `${Math.round(Number(grant.expenditure_rate) || 0)}%`, color: '' },
+                { label: 'Expenditure Rate', value: `${utilization(grant.analytics_expended || 0, grant.awarded_amount).toFixed(1)}%`, color: '' },
               ].map(({ label, value, color }) => (
                 <div key={label} className="bg-muted/40 rounded-lg p-3">
                   <p className="text-xs text-muted-foreground">{label}</p>
@@ -410,7 +412,7 @@ function AllocationDetailDialog({ grant, onClose }) {
                 </div>
               ))}
             </div>
-            <div className="mt-3"><ExpenditureBar rate={grant.expenditure_rate || 0} /></div>
+            <div className="mt-3"><ExpenditureBar rate={utilization(grant.analytics_expended || 0, grant.awarded_amount)} /></div>
           </div>
           {(grant.project_narrative || grant.revision_notes) && (
             <div className="space-y-3">
@@ -450,8 +452,8 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
   const DOC_TYPES = ['Invoice', 'PerformanceEvidence', 'Contract', 'BudgetJustification', 'MatchDocumentation', 'ProgressNarrative', 'FinalReport', 'Other'];
 
   useEffect(() => {
-    if (!user?.organization_id) { setLoadingDocs(false); return; }
-    base44.entities.Document.filter({ organization_id: user.organization_id }, '-created_date', 20)
+    if (!user?.organization_ids?.length && !user?.organization_id) { setLoadingDocs(false); return; }
+    base44.entities.Document.list('-created_date', 100)
       .then(docs => { setRecentDocs(docs); setLoadingDocs(false); });
   }, [user]);
 
@@ -478,13 +480,13 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
     await base44.entities.Document.create({
       name: file.name, doc_type: docType, description, file_url,
       uploaded_by: user.email, uploaded_at: new Date().toISOString(),
-      organization_id: user.organization_id, organization_name: app?.organization_name || '',
+      organization_id: app?.organization_id, organization_name: app?.organization_name || '',
       application_id: appId, application_number: app?.application_number || '',
       review_status: 'Pending', version: 1,
     });
     setUploadProgress(90);
     await logAudit(base44, user, 'Uploaded', 'Document', appId, `Uploaded "${file.name}" for ${app?.application_number}`);
-    const docs = await base44.entities.Document.filter({ organization_id: user.organization_id }, '-created_date', 20);
+    const docs = await base44.entities.Document.list('-created_date', 100);
     setRecentDocs(docs);
     setFile(null); setAppId(''); setDocType(''); setDescription(''); setErrors({});
     setUploadProgress(100);
@@ -638,6 +640,8 @@ export default function SubrecipientHome() {
   const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [org, setOrg] = useState(null);
+  const [organizations, setOrganizations] = useState([]);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState('all');
   const [nofos, setNofos] = useState([]);
   const [apps, setApps] = useState([]);
   const [schedules, setSchedules] = useState([]);
@@ -658,46 +662,65 @@ export default function SubrecipientHome() {
   const [sendingReply, setSendingReply] = useState({});
   const [expandedThread, setExpandedThread] = useState(null);
 
-  const loadData = async () => {
+  const loadData = async (organizationId = selectedOrganizationId) => {
     const u = await base44.auth.me();
     setUser(u);
-    if (!u.organization_id) { setLoading(false); return; }
+    const memberIds = (u.organization_ids?.length ? u.organization_ids : [u.organization_id]).filter(Boolean).map(String);
+    if (!memberIds.length) { setLoading(false); return; }
 
-    const [openNofos, myApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments] = await Promise.all([
-      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20).catch(() => []),
-      base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
+    const [openNofos, allApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments, memberOrgs] = await Promise.all([
+      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 5000).catch(() => []),
+      base44.entities.Application.list('-created_date', 5000).catch(() => []),
       base44.entities.ReportSchedule.list('-due_date', 100).catch(() => []),
       base44.entities.ComplianceFlag.list('-created_date', 50).catch(() => []),
-      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200).catch(() => []),
-      base44.entities.Task.filter({ assigned_to: u.email }, '-created_date', 50).catch(() => []),
-      base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-created_date', 20).catch(() => []),
-      base44.entities.Message.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
-      base44.entities.Milestone.filter({ organization_id: u.organization_id }, 'due_date', 50).catch(() => []),
-      base44.entities.BudgetAmendment.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
+      base44.entities.FundingRequest.list('-created_date', 5000).catch(() => []),
+      base44.entities.Task.list('-created_date', 5000).catch(() => []),
+      base44.entities.GeneratedDocument.list('-created_date', 100).catch(() => []),
+      base44.entities.Message.list('-created_date', 500).catch(() => []),
+      base44.entities.Milestone.list('due_date', 200).catch(() => []),
+      base44.entities.BudgetAmendment.list('-created_date', 200).catch(() => []),
+      base44.entities.Organization.list('-name', 5000).catch(() => []),
     ]);
 
-    const orgs = await base44.entities.Organization.filter({ id: u.organization_id });
-    setOrg(orgs[0] || null);
+    const orgs = (memberOrgs || []).filter(item => memberIds.includes(String(item.id)));
+    const organizationNameById = new Map(orgs.map(item => [String(item.id), item.name]));
+    const withOrganizationName = row => row && row.organization_name ? row : ({ ...row, organization_name: organizationNameById.get(String(row.organization_id)) || '' });
+    const activeOrganizationId = organizationId === 'all' ? 'all' : memberIds.includes(String(organizationId)) ? String(organizationId) : 'all';
+    setOrganizations(orgs);
+    setSelectedOrganizationId(activeOrganizationId);
+    const selectedOrg = activeOrganizationId === 'all' ? null : orgs.find(item => String(item.id) === activeOrganizationId) || null;
+    setOrg(selectedOrg || orgs[0] || null);
+    const belongsToSelected = row => activeOrganizationId === 'all' || memberIds.includes(String(row.organization_id)) && String(row.organization_id) === activeOrganizationId;
+    const myApps = (allApps || []).filter(belongsToSelected).map(withOrganizationName);
+    const allFRsForUser = (allFRs || []).filter(belongsToSelected).map(withOrganizationName);
+    const schedulesForUser = (allSchedules || []).filter(schedule => myApps.some(app => app.id === schedule.application_id)).map(schedule => ({ ...schedule, organization_name: myApps.find(app => app.id === schedule.application_id)?.organization_name || schedule.organization_name || '' }));
+    const docsForUser = (myGenDocs || []).filter(belongsToSelected).map(withOrganizationName);
+    const messagesForUser = (myMessages || []).filter(belongsToSelected).map(withOrganizationName);
+    const milestonesForUser = (allMilestones || []).filter(belongsToSelected).map(withOrganizationName);
+    const amendmentsForUser = (myAmendments || []).filter(belongsToSelected).map(withOrganizationName);
 
     // Filter NOFOs to those scoped to the org's state (or with no state restriction)
-    const orgState = orgs[0]?.state;
+    const eligibleOrgs = activeOrganizationId === 'all' ? orgs : selectedOrg ? [selectedOrg] : [];
     const _now = new Date();
-    const filteredNofos = (orgState
-        ? openNofos.filter(n => !n.scope_states?.length || n.scope_states.includes(orgState))
-        : openNofos).filter(n => !n.close_date || new Date(n.close_date) >= _now);
+    const filteredNofos = (openNofos || []).filter(n => eligibleOrgs.some(organization => {
+      const inState = !n.scope_states?.length || n.scope_states.includes(organization.state);
+      const inType = !n.eligible_org_types?.length || n.eligible_org_types.includes(organization.type) || n.override_org_ids?.includes(organization.id);
+      return inState && inType;
+    })).filter(n => !n.close_date || new Date(n.close_date) >= _now);
     setNofos(filteredNofos);
-    setApps(myApps);
+    const paidByApplication = buildPaidByApplication(allFRsForUser);
+    setApps((myApps || []).map(app => ({ ...app, analytics_expended: paidByApplication.get(app.id) || 0 })));
     const appIds = new Set(myApps.map(x => x.id));
-    setSchedules(allSchedules.filter(s => appIds.has(s.application_id)));
+    setSchedules(schedulesForUser.filter(s => appIds.has(s.application_id)));
     setFlags(allFlags.filter(f => appIds.has(f.application_id) && !f.is_resolved));
-    setFundingRequests(allFRs);
-    setTasks(myTasks.filter(t => !['Resolved', 'Cancelled'].includes(t.status)));
-    const revisionAmends = (Array.isArray(myAmendments) ? myAmendments : []).filter(a => a.status === 'RevisionRequested');
+    setFundingRequests(allFRsForUser);
+    setTasks(myTasks.filter(t => !['Resolved', 'Cancelled'].includes(t.status)).map(withOrganizationName));
+    const revisionAmends = (Array.isArray(amendmentsForUser) ? amendmentsForUser : []).filter(a => a.status === 'RevisionRequested');
     setPendingAmendments(revisionAmends);
-    setGenDocs(myGenDocs.filter(d => ['Pending Signature', 'Sent'].includes(d.status)));
+    setGenDocs(docsForUser.filter(d => ['Pending Signature', 'Sent'].includes(d.status)));
     const appIdSet = new Set(myApps.map(x => x.id));
-    setMessages(myMessages.filter(m => m.application_id && appIdSet.has(m.application_id)));
-    setMilestones(allMilestones.filter(m => appIdSet.has(m.application_id) && !['Completed', 'Waived'].includes(m.status)));
+    setMessages(messagesForUser.filter(m => m.application_id && appIdSet.has(m.application_id)));
+    setMilestones(milestonesForUser.filter(m => appIdSet.has(m.application_id) && !['Completed', 'Waived'].includes(m.status)));
     setLoading(false);
   };
 
@@ -709,7 +732,8 @@ export default function SubrecipientHome() {
     </div>
   );
 
-  if (!user?.organization_id) return (
+  const userOrganizationIds = user?.organization_ids?.length ? user.organization_ids : [user?.organization_id].filter(Boolean);
+  if (!userOrganizationIds.length) return (
     <div className="flex flex-col items-center justify-center h-[60vh] text-center px-4">
       <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
         <Building2 className="h-8 w-8 text-primary" />
@@ -749,7 +773,7 @@ export default function SubrecipientHome() {
     await base44.entities.Message.create({
       application_id: applicationId,
       application_number: applicationNumber,
-      organization_id: user.organization_id,
+      organization_id: apps.find(app => app.id === applicationId)?.organization_id,
       organization_name: org?.name || '',
       sender_email: user.email,
       sender_name: user.full_name,
@@ -773,6 +797,13 @@ export default function SubrecipientHome() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">My Dashboard</h1>
           <p className="text-muted-foreground text-sm mt-1">Welcome back, {user?.full_name?.split(' ')[0] || 'there'}</p>
+        </div>
+        <div className="min-w-[220px]">
+          <Label htmlFor="portal-organization-filter" className="text-xs text-muted-foreground">Organization</Label>
+          <Select value={selectedOrganizationId} onValueChange={value => { setSelectedOrganizationId(value); setLoading(true); loadData(value).catch(() => setLoading(false)); }}>
+            <SelectTrigger id="portal-organization-filter" className="mt-1"><SelectValue placeholder="All Organizations" /></SelectTrigger>
+            <SelectContent><SelectItem value="all">All Organizations</SelectItem>{organizations.map(item => <SelectItem key={item.id} value={String(item.id)}>{item.name}</SelectItem>)}</SelectContent>
+          </Select>
         </div>
 
       </div>
@@ -893,7 +924,7 @@ export default function SubrecipientHome() {
               {/* My Applications */}
               <div className="bg-card border rounded-xl overflow-hidden">
                 <div className="px-4 py-3 border-b flex items-center justify-between">
-                  <h2 className="font-semibold text-sm flex items-center gap-2"><CircleDot className="h-4 w-4 text-primary" /> My Applications</h2>
+                  <h2 className="font-semibold text-sm flex items-center gap-2"><CircleDot className="h-4 w-4 text-primary" /> Applications</h2>
                   <Link to="/my-applications">
                     <Button variant="ghost" size="sm" className="text-xs h-7">View All <ChevronRight className="h-3 w-3 ml-1" /></Button>
                   </Link>
@@ -906,7 +937,7 @@ export default function SubrecipientHome() {
                       <div key={app.id} className="px-4 py-3 flex items-center justify-between gap-2">
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{app.project_title || 'Untitled'}</p>
-                          <p className="text-xs text-muted-foreground font-mono">{app.application_number || 'Draft'} · {app.program_code}</p>
+                          <p className="text-xs text-muted-foreground font-mono">{app.application_number || 'Draft'} · {app.program_code} {app.organization_name && `· ${app.organization_name}`}</p>
                         </div>
                         <StatusBadge status={app.status} />
                       </div>
@@ -1096,6 +1127,7 @@ export default function SubrecipientHome() {
                   <thead>
                     <tr className="border-b bg-muted/40">
                       <th className="text-left p-3 font-medium text-muted-foreground">Request #</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                       <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -1109,6 +1141,7 @@ export default function SubrecipientHome() {
                       return (
                         <tr key={fr.id} className="border-b last:border-0 hover:bg-muted/20">
                           <td className="p-3 font-mono text-xs">{fr.request_number || ' - '}</td>
+                          <td className="p-3 text-xs">{fr.organization_name || ' - '}</td>
                           <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-primary/10 text-primary font-medium">{fr.request_type}</span></td>
                           <td className="p-3 text-right font-semibold">{formatCurrency(fr.amount_requested)}</td>
                           <td className="p-3"><StatusBadge status={fr.status} /></td>
@@ -1160,6 +1193,7 @@ export default function SubrecipientHome() {
                 <thead>
                   <tr className="border-b bg-muted/40">
                     <th className="text-left p-3 font-medium text-muted-foreground">Grant</th>
+                    <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Period</th>
                     <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
@@ -1171,6 +1205,7 @@ export default function SubrecipientHome() {
                   {schedules.map(s => (
                     <tr key={s.id} className={`border-b last:border-0 ${s.status === 'Overdue' ? 'bg-red-50/50' : 'hover:bg-muted/20'}`}>
                       <td className="p-3 font-mono text-xs">{s.application_number}</td>
+                      <td className="p-3 text-xs">{s.organization_name || ' - '}</td>
                       <td className="p-3 font-medium">{s.report_type}</td>
                       <td className="p-3 text-xs text-muted-foreground">{formatDateShort(s.period_start)} - {formatDateShort(s.period_end)}</td>
                       <td className={`p-3 text-xs font-medium ${s.status === 'Overdue' ? 'text-red-600' : ''}`}>{formatDateShort(s.due_date)}</td>
@@ -1183,7 +1218,7 @@ export default function SubrecipientHome() {
                     </tr>
                   ))}
                   {schedules.length === 0 && (
-                    <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No report schedules found.</td></tr>
+                    <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No report schedules found.</td></tr>
                   )}
                 </tbody>
               </table>
@@ -1409,6 +1444,7 @@ export default function SubrecipientHome() {
                     <tr className="border-b bg-muted/40">
                       <th className="text-left p-3 font-medium text-muted-foreground">Milestone</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Grant</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">Organization</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -1425,6 +1461,7 @@ export default function SubrecipientHome() {
                             {m.notes && <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">{m.notes}</p>}
                           </td>
                           <td className="p-3 text-xs font-mono text-muted-foreground">{m.application_number || ' - '}</td>
+                          <td className="p-3 text-xs">{m.organization_name || ' - '}</td>
                           <td className="p-3 text-xs"><span className="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-medium">{m.milestone_type?.replace(/([A-Z])/g, ' $1').trim() || 'Custom'}</span></td>
                           <td className={`p-3 text-xs font-medium ${m.status === 'Overdue' ? 'text-red-600' : isNear ? 'text-amber-700' : ''}`}>
                             {formatDateShort(m.due_date)}

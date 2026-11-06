@@ -7,7 +7,7 @@ const PAGE_SIZE = 25;
 
 const STATUS_FIELDS = new Set(['status', 'flag_type', 'severity', 'report_type', 'request_type']);
 const CURRENCY_FIELDS = new Set(['requested_amount','awarded_amount','match_amount','total_expended',
-  'remaining_balance','amount_requested','amount_approved','match_documented','amount',
+  'remaining_balance','amount_requested','amount_approved','amount_paid','match_documented','amount',
   'expenditure_ytd','match_ytd','total_funding_available','min_award','max_award',
   '_remaining_balance_calc','_match_gap']);
 const PERCENT_FIELDS = new Set(['expenditure_rate']);

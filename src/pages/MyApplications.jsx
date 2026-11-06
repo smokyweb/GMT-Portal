@@ -2,6 +2,10 @@ import AwardDetailsTabContent from '@/components/awards/AwardDetailsTabContent';
 import AwardDetailsTabTrigger from '@/components/awards/AwardDetailsTabTrigger';
 import {draftForm} from '@/lib/forms/applicationDraft';
 import ApplicationFormValues from '@/components/application-form/ApplicationFormValues';
+import ApplicationReadOnlySections from '@/components/application-form/ApplicationReadOnlySections';
+import ApplicationViewHeader from '@/components/application-form/ApplicationViewHeader';
+import ApplicationViewSummary from '@/components/application-form/ApplicationViewSummary';
+import GanHistoryTab from '@/components/awards/GanHistoryTab';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { base44 } from '@/api/base44Client';
@@ -11,11 +15,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Copy, Trash2, ChevronDown, ChevronRight, FilePen } from 'lucide-react';
-import ApplicationPdfExport from '../components/ApplicationPdfExport';
 import DocumentUploadPanel from '../components/DocumentUploadPanel';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '../components/StatusBadge';
-import LifecycleProgress from '../components/LifecycleProgress';
 import ContextualThread from '../components/ContextualThread';
 import ApplicationAuditTab from '../components/ApplicationAuditTab';
 import ComplianceChecklist from '../components/ComplianceChecklist';
@@ -25,6 +27,7 @@ import BudgetAmendmentDialog from '../components/BudgetAmendmentDialog';
 import BudgetAmendmentReview from '../components/BudgetAmendmentReview';
 import RfiPanel from '../components/RfiPanel';
 
+const applicationDate=value=>value?new Date(value).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}):'Not provided';
 
 function ExpenditureHistory({ applicationId, application }) {
   const [fundingRequests, setFundingRequests] = useState([]);
@@ -230,20 +233,30 @@ export default function MyApplications() {
   const [copyError,setCopyError]=useState('');
   const [amendmentApp, setAmendmentApp] = useState(null);
   const [selectedBudgets, setSelectedBudgets] = useState([]);
+  const [selectedProjects, setSelectedProjects] = useState([]);
+  const [selectedDocuments, setSelectedDocuments] = useState([]);
+
+  const loadSelectedData = async (app) => {
+    setSelected(app);
+    const [projects,budgets,documents] = await Promise.all([
+      base44.entities.Project.filter({ application_id: app.id }).catch(() => []),
+      base44.entities.ApplicationBudget.filter({ application_id: app.id }).catch(() => []),
+      base44.entities.Document.filter({ application_id: app.id }).catch(() => []),
+    ]);
+    setSelectedProjects(projects||[]);setSelectedBudgets(budgets||[]);setSelectedDocuments(documents||[]);
+  };
 
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      if (u.organization_id) {
-        const a = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50);
-        setApps(a);
-      }
+      const a = await base44.entities.Application.list('-created_date', 5000);
+      setApps(a || []);
       setLoading(false);
       // Auto-open app from ?id= param (e.g. from Tasks & Actions link)
       const idParam = searchParams.get('id');
       if (idParam && a?.length) {
         const target = a.find(app => app.id === idParam);
-        if (target) setSelected(target);
+        if (target) loadSelectedData(target);
       }
     });
     base44.entities.Nofo.filter({ status: 'Published' }).then(setNofos);
@@ -350,11 +363,7 @@ export default function MyApplications() {
                     {(app.status === 'Draft' || app.status === 'RevisionRequested') && (
                       <Link to={`/new-application?id=${app.id}`}><Button variant="ghost" size="sm">Edit</Button></Link>
                     )}
-                    <Button variant="ghost" size="sm" onClick={async () => {
-                        setSelected(app);
-                        const b = await base44.entities.ApplicationBudget.filter({ application_id: app.id });
-                        setSelectedBudgets(b);
-                      }}>View</Button>
+                    <Button variant="ghost" size="sm" onClick={() => loadSelectedData(app)}>View</Button>
                     <Button variant="ghost" size="sm" onClick={() => openCopyDialog(app)} title="Copy to new grant period">
                         <Copy className="h-3.5 w-3.5 mr-1" /> Copy
                       </Button>
@@ -381,21 +390,13 @@ export default function MyApplications() {
       {/* Application Detail Dialog */}
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between pr-8">
-              <DialogTitle>Application {selected?.application_number}</DialogTitle>
-              {selected && <ApplicationPdfExport app={selected} budgets={selectedBudgets} />}
-            </div>
-          </DialogHeader>
+          <DialogHeader><ApplicationViewHeader application={selected} budgets={selectedBudgets}/></DialogHeader>
           {selected && (
             <>
-              <div className="bg-muted/40 rounded-xl p-4 mb-2">
-                <p className="text-xs text-muted-foreground font-medium mb-3 uppercase tracking-wide">Application Progress</p>
-                <LifecycleProgress status={selected.status} type="application" />
-              </div>
             <Tabs defaultValue="details">
               <TabsList className="mb-4 flex-wrap h-auto">
                 <TabsTrigger value="details">Details</TabsTrigger>
+                {user && ['user','admin','reviewer','isc_admin','federal_admin','federal_officer'].includes(user.role) && <TabsTrigger value="gan-history">GAN History</TabsTrigger>}
                 <TabsTrigger value="expenditures">Expenditures</TabsTrigger>
                 <TabsTrigger value="rfi">RFIs</TabsTrigger>
                 <AwardDetailsTabTrigger/>
@@ -405,42 +406,17 @@ export default function MyApplications() {
                 <TabsTrigger value="audit">Audit Log</TabsTrigger>
                 </TabsList>
               <TabsContent value="details" className="space-y-4">
-                <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><p className="text-xs text-muted-foreground">Application #</p><p className="font-medium font-mono">{selected.application_number || 'Draft'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Status</p><StatusBadge status={selected.status} /></div>
-                  <div className="col-span-2"><p className="text-xs text-muted-foreground">Project Title</p><p className="font-medium">{selected.project_title || ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Program</p><p className="font-medium">{selected.program_code || ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">NOFO</p><p className="font-medium">{selected.nofo_title || ' - '}</p></div>
-                  {selected.grant_number && <div><p className="text-xs text-muted-foreground">Subaward #</p><p className="font-medium font-mono">{selected.grant_number}</p></div>}
-                  <div><p className="text-xs text-muted-foreground">Requested Amount</p><p className="font-semibold">{formatCurrency(selected.requested_amount)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Awarded Amount</p><p className="font-semibold">{selected.awarded_amount ? formatCurrency(selected.awarded_amount) : ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Match / Cost-Share</p><p className="font-medium">{formatCurrency(selected.match_amount)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Total Expended</p><p className="font-medium">{selected.total_expended ? formatCurrency(selected.total_expended) : ' - '}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance Start</p><p className="font-medium">{selected.performance_start ? selected.performance_start.substring(0,10) : '-'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Performance End</p><p className="font-medium">{selected.performance_end ? selected.performance_end.substring(0,10) : '-'}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Submitted</p><p className="font-medium">{formatDateShort(selected.submitted_at)}</p></div>
-                  <div><p className="text-xs text-muted-foreground">Submitted By</p><p className="font-medium">{selected.submitted_by || ' - '}</p></div>
-                </div>
-                {selected.project_narrative && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Project Narrative</p>
-                    <p className="text-sm bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{selected.project_narrative}</p>
-                  </div>
-                )}
-                {selected.work_plan && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">Work Plan</p>
-                    <p className="text-sm bg-muted/40 rounded-lg p-3 whitespace-pre-wrap">{selected.work_plan}</p>
-                  </div>
-                )}
+                <ApplicationViewSummary application={selected}/>
                 {selected.revision_notes && (
                   <div className="bg-orange-50 border border-orange-200 rounded-lg p-3">
                     <p className="text-xs text-orange-700 font-semibold">Revision Notes</p>
                     <p className="text-sm text-orange-800 mt-1">{selected.revision_notes}</p>
                   </div>
                 )}
-              <ApplicationFormValues applicationId={selected.id} audience="edit"/>
+              <ApplicationFormValues applicationId={selected.id} audience="edit" compact/>
+              <ApplicationReadOnlySections application={selected} projects={selectedProjects} budgets={selectedBudgets} documents={selectedDocuments} organization={{name:selected.organization_name}}/>
               </TabsContent>
+              {user && ['user','admin','reviewer','isc_admin','federal_admin','federal_officer'].includes(user.role) && <TabsContent value="gan-history"><GanHistoryTab applicationId={selected.id}/></TabsContent>}
               <TabsContent value="expenditures">
                 <ExpenditureHistory applicationId={selected.id} application={selected} />
               </TabsContent>

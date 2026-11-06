@@ -65,6 +65,8 @@ export default function FundingRequestReview() {
   const [denyReason, setDenyReason] = useState('');
   const [showPaymentPanel, setShowPaymentPanel] = useState(false);
   const [paymentAction, setPaymentAction] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('');
+  const [amountPaid, setAmountPaid] = useState('');
   const [paymentReference, setPaymentReference] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [voucherNumber, setVoucherNumber] = useState('');
@@ -72,6 +74,10 @@ export default function FundingRequestReview() {
   const [filterType, setFilterType] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [filterOrg, setFilterOrg] = useState('');
+  const [sortSubmittedDesc, setSortSubmittedDesc] = useState(true);
+  const [sortCreatedDesc, setSortCreatedDesc] = useState(true);
+  const [sortField, setSortField] = useState('created');
+  const [legacyConfig, setLegacyConfig] = useState({enabled:false,systemName:'Legacy'});
   const dateFilter = useDateRangeFilter();
 
   useEffect(() => {
@@ -94,6 +100,8 @@ export default function FundingRequestReview() {
       }
       setRequests(visible);
       setUser(u);
+      const grants=u?.grantee_id?await base44.entities.Grantee.filter({id:u.grantee_id}).catch(()=>[]):u?.scope_state?await base44.entities.Grantee.filter({state_code:u.scope_state}).catch(()=>[]):[];
+      const grantee=grants?.[0];setLegacyConfig({enabled:Boolean(grantee?.legacy_fields_enabled),systemName:grantee?.legacy_system_name?.trim()||'Legacy'});
       setLoading(false);
     };
     loadData();
@@ -113,10 +121,13 @@ export default function FundingRequestReview() {
     setDenyReason('');
     setShowPaymentPanel(false);
     setPaymentAction('');
+    setPaymentMethod(req.payment_method || '');
+    setAmountPaid(req.amount_paid ?? req.amount_approved ?? '');
     setPaymentReference('');
     setPaymentDate('');
     setVoucherNumber('');
   };
+  const openView = async req => {setViewReq(req);setPaymentMethod(req.payment_method || '');setAmountPaid(req.amount_paid ?? req.amount_approved ?? '');setPaymentReference(req.payment_reference || '');setPaymentDate(req.payment_date || '');setLineItems(await base44.entities.FundingRequestLineItem.filter({funding_request_id:req.id}).catch(()=>[]));};
 
   const PAYMENT_STATUS_CONFIG = {
     PendingDisbursement:  { label: 'Pending Disbursement',      bg: 'bg-slate-100',  text: 'text-slate-700',  dot: 'bg-slate-400' },
@@ -138,6 +149,17 @@ export default function FundingRequestReview() {
     );
   };
 
+  const paidAmountNumber = amountPaid === '' || amountPaid === null ? null : Number(amountPaid);
+  const linePaidTotal = lineItems.reduce((sum, line) => sum + (Number(line.amount_paid) || 0), 0);
+  const paymentWarnings = paymentAction === 'Paid' && paidAmountNumber !== null && Number.isFinite(paidAmountNumber)
+    ? [
+        viewReq?.amount_approved ?? selected?.amount_approved,
+        linePaidTotal,
+      ].map((expected, index) => expected != null && Math.abs(paidAmountNumber - Number(expected)) > 0.005
+        ? (index === 0 ? `Paid amount differs from approved amount (${formatCurrency(expected)}).` : `Paid amount differs from line-item paid total (${formatCurrency(expected)}).`)
+        : null).filter(Boolean)
+    : [];
+
   const handlePaymentUpdate = async () => {
     try {
     // Require payment date when marking as Paid
@@ -145,7 +167,17 @@ export default function FundingRequestReview() {
       toast('A payment date is required when marking a request as Paid.', 'error');
       return;
     }
+    if (paymentAction === 'Paid' && !paymentMethod) {
+      toast('A payment method is required when marking a request as Paid.', 'error');
+      return;
+    }
+    if (paymentAction === 'Paid' && (amountPaid === '' || amountPaid === null || !Number.isFinite(Number(amountPaid)) || Number(amountPaid) < 0)) {
+      toast('A valid paid amount is required when marking a request as Paid.', 'error');
+      return;
+    }
     const updates = { payment_status: paymentAction };
+    updates.payment_method = paymentMethod || null;
+    updates.amount_paid = amountPaid === '' || amountPaid === null ? null : Number(amountPaid);
     if (paymentReference) updates.payment_reference = paymentReference;
     if (paymentDate) updates.payment_date = paymentDate;
     if (voucherNumber) updates.voucher_number = voucherNumber;
@@ -231,14 +263,14 @@ export default function FundingRequestReview() {
 
   const filteredRequests = requests.filter(req => {
     const q = search.toLowerCase();
-    const matchSearch = !q || req.request_number?.toLowerCase().includes(q) || req.application_number?.toLowerCase().includes(q) || req.organization_name?.toLowerCase().includes(q);
+    const matchSearch = !q || req.request_number?.toLowerCase().includes(q) || req.application_number?.toLowerCase().includes(q) || req.organization_name?.toLowerCase().includes(q) || req.legacy_reimbursement_id?.toLowerCase().includes(q);
     const matchType = !filterType || req.request_type === filterType;
     const matchStatus = !filterStatus || req.status === filterStatus;
     const matchOrg = !filterOrg || req.organization_name === filterOrg;
     const matchDateStart = !rangeStart || (req.period_start && new Date(req.period_start) >= new Date(rangeStart));
     const matchDateEnd = !rangeEnd || (req.period_end && new Date(req.period_end) <= new Date(rangeEnd));
     return matchSearch && matchType && matchStatus && matchOrg && matchDateStart && matchDateEnd;
-  });
+  }).sort((a,b)=>{const av=new Date(sortField==='submitted'?(a.submitted_at||0):(a.original_created_at||a.created_date||0)).getTime(),bv=new Date(sortField==='submitted'?(b.submitted_at||0):(b.original_created_at||b.created_date||0)).getTime();return sortField==='submitted'?(sortSubmittedDesc?bv-av:av-bv):(sortCreatedDesc?bv-av:av-bv);});
 
   const hasFilters = search || filterType || filterStatus || filterOrg || dateFilter.dateMode !== 'none';
 
@@ -276,6 +308,9 @@ export default function FundingRequestReview() {
           <option value="AdditionalInfoRequested">Info Requested</option>
           <option value="Approved">Approved</option>
           <option value="Denied">Denied</option>
+          <option value="Complete">Legacy: Complete</option>
+          <option value="Vouchered">Legacy: Vouchered</option>
+          <option value="Build">Legacy: Build</option>
         </select>
         {orgs.length > 0 && (
           <select value={filterOrg} onChange={e => setFilterOrg(e.target.value)} className="h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring max-w-[200px]">
@@ -323,6 +358,8 @@ export default function FundingRequestReview() {
                 <th className="text-left p-3 font-medium text-muted-foreground">Type</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">App #</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Period</th>
+                <th className="text-left p-3 font-medium text-muted-foreground"><button type="button" className="hover:text-primary" onClick={()=>{setSortField('created');setSortCreatedDesc(v=>!v)}}>Created {sortField==='created'?(sortCreatedDesc?'↓':'↑'):''}</button></th>
+                <th className="text-left p-3 font-medium text-muted-foreground"><button type="button" className="hover:text-primary" onClick={()=>{setSortField('submitted');setSortSubmittedDesc(v=>!v)}}>Submitted {sortField==='submitted'?(sortSubmittedDesc?'↓':'↑'):''}</button></th>
                 <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                 <th className="text-left p-3 font-medium text-muted-foreground min-w-[120px]">Expenditure</th>
                 <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
@@ -342,12 +379,14 @@ export default function FundingRequestReview() {
                   <td className="p-3 text-xs text-muted-foreground">
                     {formatDateShort(req.period_start)} - {formatDateShort(req.period_end)}
                   </td>
+                  <td className="p-3 text-xs text-muted-foreground">{formatDateShort(req.original_created_at||req.created_date)}</td>
+                  <td className="p-3 text-xs text-muted-foreground">{req.submitted_at ? formatDateShort(req.submitted_at) : '—'}</td>
                   <td className="p-3 text-right font-medium">{formatCurrency(req.amount_requested)}</td>
                   <td className="p-3"><ExpenditureBar rate={req.expenditure_rate || 0} /></td>
                   <td className="p-3"><StatusBadge status={req.status} /></td>
                   <td className="p-3"><PaymentBadge status={req.payment_status} /></td>
                   <td className="p-3 flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setViewReq(req)}>
+                    <Button variant="ghost" size="sm" onClick={() => openView(req)}>
                       <FileText className="h-3.5 w-3.5 mr-1" /> View
                     </Button>
                     <Button variant="ghost" size="sm" onClick={() => openReview(req)}>
@@ -357,7 +396,7 @@ export default function FundingRequestReview() {
                 </tr>
               ))}
               {filteredRequests.length === 0 && (
-                <tr><td colSpan={9} className="p-8 text-center text-muted-foreground">{requests.length === 0 ? 'No funding requests' : 'No requests match your filters'}</td></tr>
+                <tr><td colSpan={11} className="p-8 text-center text-muted-foreground">{requests.length === 0 ? 'No funding requests' : 'No requests match your filters'}</td></tr>
               )}
             </tbody>
           </table>
@@ -382,8 +421,14 @@ export default function FundingRequestReview() {
                 <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewReq.program_code || ' - '}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Amount Requested</Label><p className="font-bold text-lg">{formatCurrency(viewReq.amount_requested)}</p></div>
                 {viewReq.amount_approved != null && <div><Label className="text-muted-foreground text-xs">Amount Approved</Label><p className="font-bold text-lg text-green-700">{formatCurrency(viewReq.amount_approved)}</p></div>}
+                <div><Label className="text-muted-foreground text-xs">Amount Paid</Label><p className="font-medium">{formatCurrency(viewReq.amount_paid)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Payment Method</Label><p className="font-medium">{viewReq.payment_method || '—'}</p></div>
                 <div><Label className="text-muted-foreground text-xs">Period</Label><p className="font-medium">{formatDateShort(viewReq.period_start)} - {formatDateShort(viewReq.period_end)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Created</Label><p className="font-medium">{formatDateShort(viewReq.original_created_at||viewReq.created_date)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Submitted</Label><p className="font-medium">{viewReq.submitted_at ? formatDateShort(viewReq.submitted_at) : '—'}</p></div>
+                {legacyConfig.enabled&&<div><Label className="text-muted-foreground text-xs">{legacyConfig.systemName} Reimbursement ID</Label><p className="font-mono font-medium">{viewReq.legacy_reimbursement_id||'—'}</p></div>}
                 <div><Label className="text-muted-foreground text-xs">Match Documented</Label><p className="font-medium">{formatCurrency(viewReq.match_documented)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Subgrantee Funds</Label><p className="font-medium">{formatCurrency(lineItems.reduce((sum,line)=>sum+(Number(line.amount_subgrantee)||0),0))}</p></div>
               </div>
               {viewReq.modification_type && (
                 <div><Label className="text-muted-foreground text-xs">Modification Type</Label><p className="font-medium">{viewReq.modification_type}</p></div>
@@ -391,9 +436,8 @@ export default function FundingRequestReview() {
               {viewReq.modification_justification && (
                 <div><Label className="text-muted-foreground text-xs">Justification</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewReq.modification_justification}</p></div>
               )}
-              {viewReq.payment_reference && (
-                <div><Label className="text-muted-foreground text-xs">Payment Reference</Label><p className="font-medium font-mono">{viewReq.payment_reference}</p></div>
-              )}
+              <div><Label className="text-muted-foreground text-xs">Payment # (EFT / Check)</Label><p className="font-medium font-mono">{viewReq.payment_reference || '—'}</p></div>
+              <div><Label className="text-muted-foreground text-xs">Payment Date</Label><p className="font-medium">{viewReq.payment_date ? viewReq.payment_date.substring(0, 10) : '—'}</p></div>
               {viewReq.voucher_number && (
                 <div><Label className="text-muted-foreground text-xs">Voucher Number</Label><p className="font-medium font-mono">{viewReq.voucher_number}</p></div>
               )}
@@ -420,7 +464,17 @@ export default function FundingRequestReview() {
                       </select>
                     </div>
                     <div>
-                      <Label className="text-xs">Payment Reference (optional)</Label>
+                      <Label className="text-xs">Payment Method</Label>
+                      <select className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                        <option value="">Select method...</option><option value="EFT">EFT</option><option value="Check">Check</option><option value="Multiple Payables">Multiple Payables</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Amount Paid</Label>
+                      <input type="number" min="0" step="0.01" className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm text-right focus:outline-none" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Payment # (EFT / Check)</Label>
                       <input
                         className="mt-1 w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm focus:outline-none"
                         placeholder="e.g. ACH-2026-001"
@@ -438,6 +492,7 @@ export default function FundingRequestReview() {
                       />
                     </div>
                   </div>
+                  {paymentWarnings.length > 0 && <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">{paymentWarnings.map(warning => <p key={warning}>Warning: {warning}</p>)}</div>}
                   <div className="flex justify-end">
                     <button
                       className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium disabled:opacity-50"
@@ -447,7 +502,15 @@ export default function FundingRequestReview() {
                         // Temporarily set selected to viewReq for handlePaymentUpdate
                         const fr = viewReq;
                         try {
-                          const updates = { payment_status: paymentAction };
+                          if (paymentAction === 'Paid' && !paymentDate) {
+                            toast('A payment date is required when marking a request as Paid.', 'error');
+                            return;
+                          }
+                          if (paymentAction === 'Paid' && (!paymentMethod || amountPaid === '' || amountPaid === null || !Number.isFinite(Number(amountPaid)) || Number(amountPaid) < 0)) {
+                            toast('Payment method and a valid paid amount are required when marking a request as Paid.', 'error');
+                            return;
+                          }
+                          const updates = { payment_status: paymentAction, payment_method: paymentMethod || null, amount_paid: amountPaid === '' || amountPaid === null ? null : Number(amountPaid) };
                           if (paymentReference) updates.payment_reference = paymentReference;
                           if (paymentDate) updates.payment_date = paymentDate;
                           await base44.entities.FundingRequest.update(fr.id, updates);
@@ -478,7 +541,11 @@ export default function FundingRequestReview() {
                           setRequests(prev => prev.map(r => r.id === fr.id ? { ...r, ...updates } : r));
                           setViewReq(null);
                           setPaymentAction('');
-                          setPaymentReference('');
+                          setPaymentMethod('');
+                          setAmountPaid('');
+    setPaymentMethod('');
+    setAmountPaid('');
+    setPaymentReference('');
                           setPaymentDate('');
                         } catch (err) {
                           toast('Failed to update: ' + (err?.detail || err?.message || 'Please try again.', 'error'));
@@ -540,9 +607,10 @@ export default function FundingRequestReview() {
                     <div className="mt-1"><PaymentBadge status={selected.payment_status} /></div>
                   </div>
                 )}
-                {selected.payment_reference && (
-                  <div><Label className="text-muted-foreground text-xs">Payment Reference</Label><p className="font-medium font-mono">{selected.payment_reference}</p></div>
-                )}
+                <div><Label className="text-muted-foreground text-xs">Payment Method</Label><p className="font-medium">{selected.payment_method || '—'}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Amount Paid</Label><p className="font-medium">{formatCurrency(selected.amount_paid)}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Payment # (EFT / Check)</Label><p className="font-medium font-mono">{selected.payment_reference || '—'}</p></div>
+                <div><Label className="text-muted-foreground text-xs">Payment Date</Label><p className="font-medium">{selected.payment_date ? selected.payment_date.substring(0, 10) : '—'}</p></div>
                 {selected.voucher_number && (
                   <div><Label className="text-muted-foreground text-xs">Voucher Number</Label><p className="font-medium font-mono">{selected.voucher_number}</p></div>
                 )}
@@ -553,6 +621,7 @@ export default function FundingRequestReview() {
               {lineItems.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Expenditure Line Items</p>
+                <p className="text-sm font-semibold">Total Match: {formatCurrency(lineItems.reduce((sum,line)=>sum+(Number(line.amount_match)||0),0))} · Subgrantee Funds: {formatCurrency(lineItems.reduce((sum,line)=>sum+(Number(line.amount_subgrantee)||0),0))}</p>
                   {lineItems.map(li => (
                     <div key={li.id} className="rounded-lg border p-3 bg-muted/10 text-xs space-y-2">
                       <div className="flex items-center justify-between">
@@ -560,7 +629,7 @@ export default function FundingRequestReview() {
                           <span className="px-2 py-0.5 rounded bg-muted font-medium">{li.budget_category}</span>
                           {li.expenditure_name && <span className="font-semibold">{li.expenditure_name}</span>}
                         </div>
-                        <span className="font-bold text-sm">{formatCurrency(li.amount)}</span>
+                        <span className="font-bold text-sm">Federal {formatCurrency(li.amount_requested??li.amount)} · Line Total {formatCurrency(li.amount)} · Match {formatCurrency(li.amount_match)} · Subgrantee {formatCurrency(li.amount_subgrantee)}{li.amount_approved!=null?` · Approved ${formatCurrency(li.amount_approved)}`:''}{li.amount_paid!=null?` · Paid ${formatCurrency(li.amount_paid)}`:''}</span>
                       </div>
                       {(li.ael_number || li.ael_category) && (
                         <div className="text-muted-foreground">
@@ -580,6 +649,7 @@ export default function FundingRequestReview() {
                           {li.unit_cost && <span><span className="font-medium">Unit Cost:</span> {formatCurrency(li.unit_cost)}</span>}
                         </div>
                       )}
+                      {Math.abs((Number(li.amount)||0)-((Number(li.amount_requested??li.amount)||0)+(Number(li.amount_match)||0)+(Number(li.amount_subgrantee)||0)))>0.005&&<p className="text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">Warning: line total does not equal federal amount plus match plus subgrantee funds.</p>}
                       {li.item_detail_description && <p className="text-muted-foreground"><span className="font-medium">Description:</span> {li.item_detail_description}</p>}
                       {li.sole_source_justification && <p className="text-amber-700 bg-amber-50 rounded px-2 py-1"><span className="font-medium">Sole Source:</span> {li.sole_source_justification}</p>}
                       {li.description && <p className="text-muted-foreground border-t pt-1">{li.description}</p>}
@@ -760,14 +830,25 @@ export default function FundingRequestReview() {
                       </select>
                     </div>
                     <div>
+                      <Label className="text-xs">Payment Method</Label>
+                      <select className="mt-1 w-full h-9 rounded-md border border-input bg-white px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                        <option value="">Select method...</option><option value="EFT">EFT</option><option value="Check">Check</option><option value="Multiple Payables">Multiple Payables</option>
+                      </select>
+                    </div>
+                    <div>
+                      <Label className="text-xs">Amount Paid</Label>
+                      <Input type="number" min="0" step="0.01" className="mt-1 bg-white text-right" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
+                    </div>
+                    <div>
                       <Label className="text-xs">Payment Date</Label>
                       <Input type="date" className="mt-1 bg-white" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
                     </div>
                   </div>
                   <div>
-                    <Label className="text-xs">Reference / Check Number</Label>
+                    <Label className="text-xs">Payment # (EFT / Check)</Label>
                     <Input className="mt-1 bg-white" placeholder="e.g. CHK-1234 or ACH ref..." value={paymentReference} onChange={e => setPaymentReference(e.target.value)} />
                   </div>
+                  {paymentWarnings.length > 0 && <div className="rounded border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">{paymentWarnings.map(warning => <p key={warning}>Warning: {warning}</p>)}</div>}
                   <div>
                     <Label className="text-xs">Voucher Number</Label>
                     <Input className="mt-1 bg-white" placeholder="e.g. VCH-2025-001" value={voucherNumber} onChange={e => setVoucherNumber(e.target.value)} />

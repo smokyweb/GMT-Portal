@@ -103,6 +103,7 @@ const AuthenticatedApp = () => {
         <Route path="/reports-compliance" element={<RequireAdmin><ReportsCompliance /></RequireAdmin>} />
         <Route path="/compliance-flags" element={<RequireAdmin><ComplianceFlags /></RequireAdmin>} />
         <Route path="/grant-programs" element={<RequireAdmin><GrantPrograms /></RequireAdmin>} />
+        <Route path="/programs" element={<Navigate to="/grant-programs" replace />} />
         <Route path="/organizations" element={<RequireAdmin><Organizations /></RequireAdmin>} />
         <Route path="/organizations/:id" element={<RequireAdmin><OrganizationProfile /></RequireAdmin>} />
         <Route path="/email-settings" element={<RequireAdmin><EmailSettings /></RequireAdmin>} />

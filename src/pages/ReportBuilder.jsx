@@ -61,7 +61,7 @@ export default function ReportBuilder() {
 
   useEffect(() => {
     if (!legacyFieldsLoaded || legacyFieldsEnabled) return;
-    const hidden = new Set(['legacy_spars_id', 'vendor_number', 'duns', 'region', 'org_legacy_spars_id', 'org_vendor_number']);
+    const hidden = new Set(['legacy_spars_id', 'duns', 'region', 'org_legacy_spars_id']);
     setConfig(current => ({ ...current, selected_fields: (current.selected_fields || []).filter(field => !hidden.has(field.key)), filters: (current.filters || []).filter(filter => !hidden.has(filter.field)) }));
   }, [legacyFieldsLoaded, legacyFieldsEnabled]);
 

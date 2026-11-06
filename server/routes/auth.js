@@ -7,6 +7,7 @@ import { publicAccount } from '../services/accountPolicy.js';
 export function createAuthRouter(db=pool, welcome=sendWelcomeEmail) {
   const router=Router();
   const authenticate=createAuthentication(db);
+  const setSessionCookie=(res,token)=>res.setHeader('Set-Cookie',`gmt_token=${encodeURIComponent(token)}; Max-Age=604800; Path=/; HttpOnly; SameSite=Lax${process.env.NODE_ENV==='production'?'; Secure':''}`);
   router.post('/register',async(req,res)=>{
     const {email,password,full_name,role}=req.body;
     if(!email||!password) return res.status(400).json({error:'email and password are required'});
@@ -20,7 +21,7 @@ export function createAuthRouter(db=pool, welcome=sendWelcomeEmail) {
         VALUES($1,$2,$3,'user') RETURNING *`,[normalized,full_name||normalized.split('@')[0],hash]);
       const user=rows[0];
       welcome(user.email,user.full_name).catch(()=>{});
-      res.status(201).json({user:publicAccount(user),token:generateToken(user)});
+      const token=generateToken(user);setSessionCookie(res,token);res.status(201).json({user:publicAccount(user),token});
     } catch(error) {
       console.error('Register error:',error.code||error.name);
       res.status(500).json({error:'Registration failed'});
@@ -36,7 +37,7 @@ export function createAuthRouter(db=pool, welcome=sendWelcomeEmail) {
         || !(await bcrypt.compare(password,user.password_hash))) return res.status(401).json({error:'Invalid credentials'});
       const result=await db.query('UPDATE users SET last_login=NOW() WHERE id=$1 RETURNING *',[user.id]);
       const loggedIn=result.rows[0];
-      res.json({user:publicAccount(loggedIn),token:generateToken(loggedIn)});
+      const token=generateToken(loggedIn);setSessionCookie(res,token);res.json({user:publicAccount(loggedIn),token});
     } catch(error) {
       console.error('Login error:',error.code||error.name);
       res.status(500).json({error:'Login failed'});

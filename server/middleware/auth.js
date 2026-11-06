@@ -8,10 +8,12 @@ export function generateToken(user) {
 export function createAuthentication(db=pool) {
   return async function authenticate(req,res,next) {
     const header=req.headers.authorization;
-    if(!header?.startsWith('Bearer ')) return res.status(401).json({error:'Missing token'});
+    const cookieToken=String(req.headers.cookie||'').split(';').map(part=>part.trim()).find(part=>part.startsWith('gmt_token='))?.slice('gmt_token='.length);
+    const token=header?.startsWith('Bearer ')?header.slice(7):cookieToken;
+    if(!token) return res.status(401).json({error:'Missing token'});
     try {
-      const claims=jwt.verify(header.slice(7),JWT_SECRET);
-      const {rows}=await db.query('SELECT * FROM users WHERE id=$1',[claims.id]);
+      const claims=jwt.verify(token,JWT_SECRET);
+      const {rows}=await db.query(`SELECT u.*, COALESCE((SELECT array_agg(uo.organization_id::text ORDER BY uo.organization_id::text) FROM user_organizations uo WHERE uo.user_id=u.id::text), CASE WHEN u.organization_id IS NOT NULL THEN ARRAY[u.organization_id::text] ELSE ARRAY[]::text[] END) AS organization_ids FROM users u WHERE u.id=$1`,[claims.id]);
       const user=rows[0];
       if(!user || ['inactive','deactivated','invited'].includes(user.active_status)
         || Number(claims.av||0)!==Number(user.auth_version||0)) {

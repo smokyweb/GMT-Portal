@@ -13,6 +13,7 @@ import { Paperclip, X, Loader2 } from 'lucide-react';
 
 export default function MyReports() {
   const [schedules, setSchedules] = useState([]);
+  const [applications, setApplications] = useState([]);
   const [user, setUser] = useState(null);
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(null);
@@ -34,12 +35,11 @@ export default function MyReports() {
   const loadData = async () => {
     const u = await base44.auth.me();
     setUser(u);
-    if (u.organization_id) {
-      const apps = await base44.entities.Application.filter({ organization_id: u.organization_id });
-      const appIds = new Set(apps.map(a => a.id));
-      const all = await base44.entities.ReportSchedule.list('-due_date', 100);
-      setSchedules(all.filter(s => appIds.has(s.application_id)));
-    }
+    const apps = await base44.entities.Application.list('-created_date', 5000);
+    const appIds = new Set((apps || []).map(a => a.id));
+    setApplications(apps || []);
+    const all = await base44.entities.ReportSchedule.list('-due_date', 5000);
+    setSchedules((all || []).filter(s => appIds.has(s.application_id)));
     setLoading(false);
   };
 
@@ -119,7 +119,7 @@ export default function MyReports() {
         doc_type: 'ProgressNarrative',
         file_url: att.url,
         uploaded_by: user.email,
-        organization_id: user.organization_id,
+        organization_id: applications.find(app => app.id === selected.application_id)?.organization_id,
         application_id: selected.application_id,
         application_number: selected.application_number,
         organization_name: selected.organization_name,

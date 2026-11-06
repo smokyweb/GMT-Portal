@@ -8,6 +8,7 @@ import {
 import { DollarSign, TrendingUp, Award, BarChart2, Filter, X } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '../lib/helpers';
+import { paidFundingByApplication } from '../lib/fundingMetrics';
 
 const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#06b6d4', '#f97316'];
 
@@ -178,13 +179,17 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
 
   // ── KPI metrics ──────────────────────────────────────────────────────────
   const approvedApps   = useMemo(() => filteredApps.filter(a => a.status === 'Approved'), [filteredApps]);
+  const paidExpendedByApp = useMemo(() => paidFundingByApplication(filteredFRs), [filteredFRs]);
   const totalAwarded   = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.awarded_amount) || 0), 0), [approvedApps]);
-  const totalExpended  = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.total_expended) || 0), 0), [approvedApps]);
-  const totalRemaining = useMemo(() => approvedApps.reduce((s, a) => s + (Number(a.remaining_balance) || 0), 0), [approvedApps]);
+  const totalExpended  = useMemo(() => approvedApps.reduce((s, a) => s + (paidExpendedByApp.get(a.id) || 0), 0), [approvedApps, paidExpendedByApp]);
+  const totalRemaining = useMemo(() => totalAwarded - totalExpended, [totalAwarded, totalExpended]);
   const avgUtilization = useMemo(() => {
-    const rates = approvedApps.filter(a => Number(a.expenditure_rate) > 0).map(a => Number(a.expenditure_rate));
+    const rates = approvedApps.map(a => {
+      const awarded = Number(a.awarded_amount) || 0;
+      return awarded ? ((paidExpendedByApp.get(a.id) || 0) / awarded) * 100 : 0;
+    }).filter(rate => rate > 0);
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
-  }, [approvedApps]);
+  }, [approvedApps, paidExpendedByApp]);
 
   // ── Chart 1: Spent vs Awarded (by grant / program) ─────────────────────
   const spentVsAwardedData = useMemo(() => {
@@ -193,7 +198,7 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
       return approvedApps.slice(0, 8).map(a => ({
         name: a.application_number || a.project_title?.slice(0, 12) || ' - ',
         Awarded:  Number(a.awarded_amount) || 0,
-        Expended: Number(a.total_expended) || 0,
+        Expended: paidExpendedByApp.get(a.id) || 0,
       }));
     }
     // By program for state admin
@@ -202,10 +207,10 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
       const code = a.program_code || 'Other';
       if (!map[code]) map[code] = { name: code, Awarded: 0, Expended: 0 };
       map[code].Awarded  += Number(a.awarded_amount)  || 0;
-      map[code].Expended += Number(a.total_expended)  || 0;
+      map[code].Expended += paidExpendedByApp.get(a.id) || 0;
     });
     return Object.values(map);
-  }, [approvedApps, organizationId]);
+  }, [approvedApps, organizationId, paidExpendedByApp]);
 
   // ── Chart 2: Expenditure trend over time ─────────────────────────────────
   const trendData = useMemo(() => {

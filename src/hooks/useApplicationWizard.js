@@ -6,11 +6,16 @@ import {defaultForm} from '@/lib/forms/defaultForm';
 import {validateFormValues,validateBudget} from '@/lib/forms/valueValidation';
 import {draftForm,persistDraft,applyFieldValue,budgetTotals,allProjectBudgets,reviewFields} from '@/lib/forms/applicationDraft';
 import {normalizeProjectFieldConfig,FEMA_CORE_CAPABILITIES} from '@/lib/projects/projectFieldConfig';
+function contactValues(user={}) {
+  const parts=String(user.full_name||'').trim().split(/\s+/).filter(Boolean);
+  return {poc_user_id:user.id||'',poc_first_name:user.first_name||parts.shift()||'',poc_last_name:user.last_name||parts.join(' '),poc_title:user.title||'',poc_email:user.email||'',poc_phone:user.phone||''};
+}
 export function useApplicationWizard() {
   const navigate=useNavigate(),savePromise=useRef(null),appRef=useRef(null);
-  const [user,setUser]=useState(null),[organization,setOrganization]=useState(null),[organizations,setOrganizations]=useState([]),[nofos,setNofos]=useState([]);
+  const [user,setUser]=useState(null),[organization,setOrganization]=useState(null),[organizations,setOrganizations]=useState([]),[organizationUsers,setOrganizationUsers]=useState([]),[nofos,setNofos]=useState([]);
   const [nofo,setNofo]=useState(null),[application,setApplication]=useState(null),[definition,setDefinition]=useState(defaultForm()),[form,setForm]=useState(draftForm()),[projectConfig,setProjectConfig]=useState(normalizeProjectFieldConfig(null,null));
-  const [projects,setProjects]=useState([]),[removedProjectIds,setRemovedProjectIds]=useState([]),[stepId,setStepId]=useState('organization');
+  const [projects,setProjects]=useState([]),[removedProjectIds,setRemovedProjectIds]=useState([]),[documents,setDocuments]=useState([]),[stepId,setStepId]=useState('organization');
+  const refreshDocuments=async()=>{if(!application?.id){setDocuments([]);return [];}const rows=await base44.entities.Document.filter({application_id:application.id},'-created_date',500);setDocuments(rows||[]);return rows||[];};
   const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[errors,setErrors]=useState([]),[confirmed,setConfirmed]=useState(false),[submitted,setSubmitted]=useState(false);
   useEffect(()=>{
     let active=true;
@@ -28,15 +33,22 @@ export function useApplicationWizard() {
       else if(selectedNofo)version=await base44.forms.nofo(selectedNofo.id);
       const [budgets,loadedProjects]=existing?await Promise.all([base44.entities.ApplicationBudget.filter({application_id:existing.id}),base44.entities.Project.filter({application_id:existing.id})]):[[],[]];
       if(!active)return;
-      setUser(actor);setOrganizations(orgs.filter(org=>org.is_active!==false&&(actor.role==='user'?org.id===actor.organization_id:actor.role==='isc_admin'||org.state===(actor.scope_state||actor.grantee_state))));
+      const availableOrganizations=orgs.filter(org=>org.is_active!==false&&(actor.role==='user'?org.id===actor.organization_id:actor.role==='isc_admin'||org.state===(actor.scope_state||actor.grantee_state)));
+      const initialOrganization=selectedOrg||(!existing&&availableOrganizations.length===1?availableOrganizations[0]:null);
+      setUser(actor);setOrganizations(availableOrganizations);
       setNofos(notices.filter(notice=>notice.id===selectedNofo?.id||['Published','Active'].includes(notice.status)));
-      setOrganization(selectedOrg||null);setNofo(selectedNofo);setDefinition(version?.definition||(existing?legacyForm(selectedNofo||{program_code:existing.program_code}):defaultForm(selectedNofo||{})));
+      const selectedUsers=initialOrganization?.id?await base44.entities.User.filter({organization_id:initialOrganization.id},'-full_name',500):[];
+      const eligibleUsers=(selectedUsers||[]).filter(item=>!['inactive','deactivated'].includes(item.active_status||'active'));
+      const initialForm=draftForm(existing||{});
+      if(existing?.poc_user_id){const savedContact=eligibleUsers.find(item=>String(item.id)===String(existing.poc_user_id));if(savedContact)Object.assign(initialForm,contactValues(savedContact));}else{const defaultContact=eligibleUsers.find(item=>String(item.id)===String(initialOrganization?.primary_contact_user_id))||(eligibleUsers.length===1?eligibleUsers[0]:null);if(defaultContact)Object.assign(initialForm,contactValues(defaultContact));}
+      setOrganization(initialOrganization);setOrganizationUsers(eligibleUsers);setNofo(selectedNofo);setDefinition(version?.definition||(existing?legacyForm(selectedNofo||{program_code:existing.program_code}):defaultForm(selectedNofo||{})));
       setProjectConfig(normalizeProjectFieldConfig(selectedProgram||{code:selectedNofo?.program_code},selectedNofo,coreCapabilities));
       const initialProjects=(loadedProjects||[]).map(project=>({...project,isExisting:true,budgets:(budgets||[]).filter(item=>item.project_id===project.id||(!item.project_id&&project===loadedProjects[0])).map(item=>({...item,isExisting:true}))}));
       if(!initialProjects.length&&!existing)initialProjects.push({title:'',project_type:'Other',funding_type:'Pass-Through',is_active:true,budgets:[]});
-      appRef.current=existing;setApplication(existing);setSubmitted(Boolean(existing&&!['Draft','RevisionRequested','ChangesRequested'].includes(existing.status)));setForm(draftForm(existing||{}));setProjects(initialProjects);
+      appRef.current=existing;setApplication(existing);setSubmitted(Boolean(existing&&!['Draft','RevisionRequested','ChangesRequested'].includes(existing.status)));setForm(initialForm);setProjects(initialProjects);
     }catch(err){if(active)setError(err.message);}finally{if(active)setLoading(false);}})();return()=>{active=false;};
   },[]);
+  useEffect(()=>{let active=true;if(application?.id)base44.entities.Document.filter({application_id:application.id},'-created_date',500).then(rows=>{if(active)setDocuments(rows||[]);});else setDocuments([]);return()=>{active=false;};},[application?.id]);
   const sections=definition.sections.filter(section=>section.enabled),section=sections.find(item=>item.id===stepId)||sections[0];
   const context={application:form,organization:organization||{},values:form.form_values};
   const saveDraft=async()=>{
@@ -55,6 +67,19 @@ export function useApplicationWizard() {
     })();savePromise.current=operation;
     try{return await operation;}finally{setBusy(false);savePromise.current=null;}
   };
+  const chooseOrganization=async nextOrganization=>{
+    if(submitted)return;
+    setOrganization(nextOrganization||null);setOrganizationUsers([]);
+    setForm(current=>({...current,poc_user_id:'',poc_first_name:'',poc_last_name:'',poc_title:'',poc_email:'',poc_phone:''}));
+    if(nextOrganization?.id){const users=(await base44.entities.User.filter({organization_id:nextOrganization.id},'-full_name',500)).filter(item=>!['inactive','deactivated'].includes(item.active_status||'active'));setOrganizationUsers(users);const defaultContact=users.find(item=>String(item.id)===String(nextOrganization.primary_contact_user_id))||(users.length===1?users[0]:null);if(defaultContact)setForm(current=>({...current,...contactValues(defaultContact)}));}
+  };
+  const choosePoc=selectedId=>{
+    const selected=organizationUsers.find(item=>String(item.id)===String(selectedId));
+    setForm(current=>({...current,...(selected?contactValues(selected):{poc_user_id:'',poc_first_name:'',poc_last_name:'',poc_title:'',poc_email:'',poc_phone:''})}));
+  };
+  const updatePoc=async changes=>{if(!form.poc_user_id)return null;setBusy(true);setError('');try{const updated=await base44.accounts.update(form.poc_user_id,changes);setOrganizationUsers(current=>current.map(item=>item.id===updated.id?updated:item));setForm(current=>({...current,...contactValues(updated)}));return updated;}catch(err){setError(err.message);throw err;}finally{setBusy(false);}};
+  const addPoc=async input=>{if(!organization)return null;setBusy(true);setError('');try{const result=await base44.accounts.invite({...input,role:'user',organization_id:organization.id});const created=result.user;setOrganizationUsers(current=>[...current,created]);setForm(current=>({...current,...contactValues(created)}));return created;}catch(err){setError(err.message);throw err;}finally{setBusy(false);}};
+  const updateOrganization=async changes=>{if(!organization)return null;setBusy(true);setError('');try{const updated=await base44.entities.Organization.update(organization.id,changes);setOrganization(current=>({...current,...updated}));return updated;}catch(err){setError(err.message);throw err;}finally{setBusy(false);}};
   const chooseNofo=async id=>{
     if(application&&!['Draft','RevisionRequested','ChangesRequested'].includes(application.status))return;
     setBusy(true);setError('');
@@ -96,7 +121,7 @@ export function useApplicationWizard() {
     catch(err){setError(err.message);}finally{setBusy(false);}
   };
   const items=allProjectBudgets(projects);
-  return {user,organization,organizations,setOrganization,nofos,nofo,chooseNofo,application,form,definition,projects,projectConfig,changeProject,addProject,removeProject,items,sections,section,
+  return {user,organization,organizations,setOrganization,chooseOrganization,organizationUsers,choosePoc,updateOrganization,updatePoc,addPoc,nofos,nofo,chooseNofo,application,form,definition,projects,projectConfig,changeProject,addProject,removeProject,documents,refreshDocuments,items,sections,section,
     stepId,setStepId,loading,busy,error,errors,confirmed,setConfirmed,submitted,saveDraft,save,next,submit,upload,
     setField:(field,value)=>setForm(current=>applyFieldValue(current,field,value)),context,fields:reviewFields(definition,context),navigate};
 }

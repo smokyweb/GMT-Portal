@@ -25,7 +25,7 @@ export default function ProjectBuilder({project,index,onChange,onRemove,nofo,can
     </div>
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div className="md:col-span-2"><label className="text-xs font-medium">Project Title <span className="text-red-500">*</span></label><Input className="mt-1" value={project.title||''} onChange={e=>set('title',e.target.value)} placeholder="Project title"/></div>
-      {legacyEnabled&&<div><label className="text-xs font-medium">Legacy Project ID</label><Input className="mt-1" value={project.legacy_project_id||''} onChange={e=>set('legacy_project_id',e.target.value)} /></div>}
+      {legacyEnabled&&<div><label className="text-xs font-medium">Legacy Project ID</label><Input className="mt-1 bg-muted" readOnly value={project.legacy_project_id||''} /></div>}
       <div><label className="text-xs font-medium">Project ZIP <span className="text-red-500">*</span></label><Input className="mt-1" inputMode="numeric" maxLength={5} value={project.project_zip||''} onChange={e=>set('project_zip',e.target.value.replace(/[^0-9]/g,'').slice(0,5))} placeholder="5-digit ZIP"/></div>
       <div><label className="text-xs font-medium">Project Type</label><Select value={project.project_type||'Other'} onValueChange={v=>set('project_type',v)}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent>{PROJECT_TYPES.map(v=><SelectItem key={v} value={v}>{v}</SelectItem>)}</SelectContent></Select></div>
       <div><label className="text-xs font-medium">Funding Type</label><Select value={project.funding_type||'Pass-Through'} onValueChange={v=>set('funding_type',v)}><SelectTrigger className="mt-1"><SelectValue/></SelectTrigger><SelectContent><SelectItem value="Pass-Through">Pass-Through</SelectItem><SelectItem value="Retained">Retained</SelectItem></SelectContent></Select></div>
@@ -46,6 +46,6 @@ export default function ProjectBuilder({project,index,onChange,onRemove,nofo,can
       {visible.has('deployable')&&<label className="flex items-center gap-2">Deployable <Switch checked={!!project.deployable} onCheckedChange={v=>set('deployable',v)}/></label>}
       <label className="flex items-center gap-2">Active <Switch checked={project.is_active!==false} onCheckedChange={v=>set('is_active',v)}/></label>
     </div>
-    <div><h4 className="font-medium mb-3">Project Budget</h4><BudgetBuilder items={project.budgets||[]} onChange={budgets=>onChange({...project,budgets})} nofo={nofo}/></div>
+    <div><h4 className="font-medium mb-3">Project Budget</h4><BudgetBuilder items={project.budgets||[]} onChange={budgets=>onChange({...project,budgets})} nofo={nofo} legacyEnabled={legacyEnabled}/></div>
   </div>;
 }

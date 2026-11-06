@@ -18,8 +18,9 @@ export function createApplicationBudgetAccess(db=pool) {
       assertApplicationAccess(actor,application,organization,true);
       if(req.body?.project_id&&(await db.query('SELECT id FROM projects WHERE id::text=$1 AND application_id=$2',[req.body.project_id,application.id])).rows.length===0)throw accountError(400,'Choose a project from this application');
       for(const key of ['amount_requested','amount_match'])if(req.body?.[key]!==undefined&&moneyCents(req.body[key])===null)throw accountError(400,'Budget amounts must be nonnegative with at most two decimals');
+      for(const key of ['quantity','unit_cost'])if(req.body?.[key]!==undefined&&req.body[key]!==null&&moneyCents(req.body[key])===null)throw accountError(400,'Quantity and unit cost must be nonnegative with at most two decimals');
       if(actor.role==='user') {
-        const allowed=['application_id','project_id','budget_category','line_description','amount_requested','amount_match','is_allowable'];
+        const allowed=['application_id','project_id','budget_category','poete_category','line_description','quantity','unit_cost','amount_requested','amount_match','ael_category','ael_number','vulnerability_addressed','is_allowable'];
         if(Object.keys(req.body||{}).some(key=>!allowed.includes(key)))throw accountError(403,'Only a reviewer can change budget review fields');
         if(req.body?.is_allowable!==undefined)delete req.body.is_allowable;
       }

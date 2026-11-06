@@ -36,7 +36,7 @@ export async function normalizeApplicationInput(db, input, {id = null, previous 
   }
   return data;
 }
-const userFields=new Set(['nofo_id','nofo_title','organization_id','organization_name','submitted_by','program_code','program_name','grant_number','status','requested_amount','match_amount','version','performance_start','performance_end','ehp_required','ehp_screening_answers','ehp_status','ehp_notes','form_values','form_version_id',
+const userFields=new Set(['nofo_id','nofo_title','organization_id','organization_name','submitted_by','program_code','program_name','grant_number','status','requested_amount','match_amount','version','performance_start','performance_end','ehp_required','ehp_screening_answers','ehp_status','ehp_notes','form_values','form_version_id','poc_user_id','poc_first_name','poc_last_name','poc_title','poc_email','poc_phone',
   ...['SHSP','EMPG','SLCGP','NSGP','EOC'].flatMap(program_code=>formFields(defaultForm({program_code})).filter(field=>field.source==='application').map(field=>field.key))]);
 async function organizationFor(db,id) {
   const organization=(await db.query('SELECT * FROM organizations WHERE id::text=$1',[id])).rows[0];
@@ -61,6 +61,7 @@ export async function saveFormApplication(pool,actorId,id,input,verifyFile) {
     if(!['isc_admin','admin'].includes(actor.role)&&data.awarded_amount!==undefined)throw accountError(403,'An administrator must set the award amount');
     let previous=id?(await db.query('SELECT * FROM applications WHERE id::text=$1',[id])).rows[0]:null;
     if(id&&!previous)throw accountError(404,'Application not found');
+    if(actor.role==='user'&&!previous&&!data.organization_id&&Array.isArray(actor.organization_ids)&&actor.organization_ids.length>1)throw accountError(400,'Select an organization before starting an application');
     const nofoId=data.nofo_id||previous?.nofo_id,nofo=nofoId?await formNofo(db,nofoId,true):null;
     if(id) {
       previous=(await db.query('SELECT * FROM applications WHERE id::text=$1 FOR UPDATE',[id])).rows[0];

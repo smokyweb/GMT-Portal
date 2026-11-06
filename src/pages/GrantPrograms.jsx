@@ -13,13 +13,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {PROJECT_FIELD_KEYS,PROJECT_FIELD_LABELS,DEFAULT_PROJECT_FIELDS_BY_PROGRAM} from '@/lib/projects/projectFieldConfig';
 
-const PRESET_CODES = ['SHSP', 'UASI', 'EMPG', 'HSGP', 'NSGP', 'SLCGP', 'BRIC'];
+const PRESET_CODES = ['SHSP', 'UASI', 'EMPG', 'HSGP', 'NSGP', 'NE-NSGP', 'NSGP-NSS', 'EOC', 'EOCGP', 'SLCGP', 'BRIC'];
 const FUNDING_CYCLES = ['Annual', 'Biennial', 'Multi-year'];
 const REPORTING_FREQUENCIES = ['Quarterly', 'Biannual', 'Annual'];
 const projectConfigFor=(code,config)=>({visible:Array.isArray(config?.visible)?config.visible:(DEFAULT_PROJECT_FIELDS_BY_PROGRAM[code]||[]),completion_role:config?.completion_role||'Subrecipient'});
+const reportingFrequencies = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value !== 'string' || !value.trim()) return [];
+  try { const parsed = JSON.parse(value); return Array.isArray(parsed) ? parsed : []; }
+  catch { return []; }
+};
 
 export default function GrantPrograms() {
   const [programs, setPrograms] = useState([]);
@@ -36,10 +43,22 @@ export default function GrantPrograms() {
   const [scrapeUrl, setScrapeUrl] = useState('');
   const [scraping, setScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
+  const [loadError, setLoadError] = useState('');
 
-  useEffect(() => {
-    base44.entities.GrantProgram.list().then((p) => {setPrograms(p);setLoading(false);});
-  }, []);
+  const loadPrograms = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const p = await base44.entities.GrantProgram.listStrict();
+      setPrograms(Array.isArray(p) ? p : []);
+    } catch (error) {
+      console.error('[GMT] Grant Programs load failed', error);
+      setPrograms([]);
+      setLoadError(error?.message || 'Grant programs could not be loaded.');
+    } finally { setLoading(false); }
+  };
+
+  useEffect(() => { loadPrograms(); }, []);
 
   const handleSave = async () => {
     if (!form.name?.trim()) { toast('Program Name is required.', 'error'); return; }
@@ -97,8 +116,7 @@ export default function GrantPrograms() {
     setFormExtra({ type: '', fundingCycle: '' });
     setCustomCode('');
     setUseCustomCode(false);
-    const p = await base44.entities.GrantProgram.list();
-    setPrograms(p);
+    await loadPrograms();
   };
 
   const handleScrape = async () => {
@@ -182,7 +200,7 @@ export default function GrantPrograms() {
     setOpen(true);
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
+  if (loading) return <div role="status" className="flex items-center justify-center h-64"><div className="w-8 h-8 border-4 border-muted border-t-primary rounded-full animate-spin" /></div>;
 
   return (
     <div className="space-y-6">
@@ -193,6 +211,8 @@ export default function GrantPrograms() {
         </div>
         <Button onClick={openNewForm}><Plus className="h-4 w-4 mr-1" /> Add Program</Button>
       </div>
+
+      {loadError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 flex items-center justify-between gap-4"><span>Grant programs could not be loaded: {loadError}</span><Button variant="outline" size="sm" onClick={loadPrograms}>Retry</Button></div>}
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList>
@@ -215,7 +235,7 @@ export default function GrantPrograms() {
                 <div className="text-xs text-muted-foreground space-y-1">
                   {p.federal_agency && <p>Agency: {p.federal_agency}</p>}
                   {p.cfda_number && <p>CFDA: {p.cfda_number}</p>}
-                  {(() => { const rr = typeof p.reporting_requirements === 'string' ? JSON.parse(p.reporting_requirements || '[]') : (p.reporting_requirements || []); const freq = p.reporting_frequency || rr[0]; return freq ? <p className="text-primary font-medium">Reports: {freq}</p> : null; })()}
+                  {(() => { const rr = reportingFrequencies(p.reporting_requirements); const freq = p.reporting_frequency || rr[0]; return freq ? <p className="text-primary font-medium">Reports: {freq}</p> : null; })()}
                 </div>
                 <div className="flex items-center justify-between">
                   <div className={`text-xs font-medium ${p.is_active !== false ? 'text-green-600' : 'text-red-600'}`}>
@@ -228,6 +248,7 @@ export default function GrantPrograms() {
                 <ProgramFormDefaultsButton program={p}/>
               </div>
             )}
+            {!loadError && programs.length === 0 && <div className="col-span-full rounded-xl border border-dashed p-8 text-center text-muted-foreground">No grant programs are configured yet.</div>}
           </div>
         </TabsContent>
 
@@ -252,7 +273,7 @@ export default function GrantPrograms() {
                       <td className="p-3 font-mono text-xs bg-primary/5 rounded">{program.code}</td>
                       <td className="p-3 text-xs">{program.federal_agency || '-'}</td>
                       <td className="p-3 text-xs text-muted-foreground">{program.cfda_number || '-'}</td>
-                      <td className="p-3 text-xs font-medium">{(() => { const rr = typeof program.reporting_requirements === 'string' ? JSON.parse(program.reporting_requirements || '[]') : (program.reporting_requirements || []); return program.reporting_frequency || rr[0] || '-'; })()}</td>
+                      <td className="p-3 text-xs font-medium">{(() => { const rr = reportingFrequencies(program.reporting_requirements); return program.reporting_frequency || rr[0] || '-'; })()}</td>
                       <td className="p-3 flex items-center gap-2">
                         <Button size="sm" variant="outline" onClick={() => { handleEdit(program); }}><Pencil className="h-3 w-3" /> Edit</Button>
                         <Button size="sm" variant="outline" onClick={() => setViewing(program)}>Requirements</Button>
@@ -274,7 +295,7 @@ export default function GrantPrograms() {
         program={viewing}
         onClose={() => setViewing(null)}
         isAdmin={false}
-        onSaved={() => base44.entities.GrantProgram.list().then(setPrograms)} />
+        onSaved={loadPrograms} />
       
 
       <Dialog open={open} onOpenChange={(v) => {setOpen(v);if (!v) {setScrapeUrl('');setScrapeError('');}}}>

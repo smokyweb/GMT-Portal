@@ -6,8 +6,20 @@ import {auditForm} from '../forms/formAccess.js';
 import {ehpApplication} from './ehpAccess.js';
 import {checkFundingRelease} from './ehpFundingPolicy.js';
 import {writeFundingRow,fundingDates,fundingNumber} from './fundingRepository.js';
+import {legacyContext,assertLegacyFundingLineMutation,assertLegacyFundingRequestMutation} from '../legacyFields.js';
 const userKeys=['application_id','request_type','period_start','period_end','match_documented','modification_type','modification_justification','scope_of_work_current','scope_of_work_proposed','budget_modification_notes','status'];
 const release=request=>['Submitted','UnderReview','Approved'].includes(request.status)||(Boolean(request.payment_status)&&!['PendingDisbursement','PaymentFailed'].includes(request.payment_status));
+const PAYMENT_METHODS=new Set(['EFT','Check','Multiple Payables']);
+function validatePaymentInput(previous,data){
+  if(data.payment_method!==undefined&&data.payment_method!==null&&data.payment_method!==''&&!PAYMENT_METHODS.has(data.payment_method))throw accountError(400,'Choose a valid payment method');
+  if(data.amount_paid!==undefined&&data.amount_paid!==null&&data.amount_paid!==''&&(!Number.isFinite(Number(data.amount_paid))||Number(data.amount_paid)<0))throw accountError(400,'Paid amount cannot be negative');
+  if(data.payment_status==='Paid'&&previous?.payment_status!=='Paid'){
+    const method=data.payment_method??previous?.payment_method;
+    const paid=data.amount_paid??previous?.amount_paid;
+    if(!method)throw accountError(422,'Payment method is required when marking a request as Paid');
+    if(paid===undefined||paid===null||paid==='')throw accountError(422,'Paid amount is required when marking a request as Paid');
+  }
+}
 export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT') {
   return transaction(pool,async db=>{
     const table=entity==='FundingRequest'?'funding_requests':'funding_request_line_items',lineEntity=table==='funding_request_line_items';
@@ -19,6 +31,8 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     if(request)request=(await db.query('SELECT * FROM funding_requests WHERE id=$1 FOR UPDATE',[request.id])).rows[0];
     if(previous)previous=(await db.query('SELECT * FROM '+table+' WHERE id=$1 FOR UPDATE',[id])).rows[0];
     const data={...input};
+    if(!lineEntity)assertLegacyFundingRequestMutation(actor,data,await legacyContext(db,actor));
+    if(!lineEntity)validatePaymentInput(request,data);
     if(!lineEntity&&request&&data.request_type&&data.request_type!==request.request_type)throw accountError(400,'Create a new request to change the request type');
     if(!lineEntity&&data.application_id&&data.application_id!==application.id)throw accountError(400,'A funding request cannot move to another grant');
     if(lineEntity&&['funding_request_id','fund_request_id'].some(key=>data[key]&&data[key]!==request.id))throw accountError(400,'An expenditure cannot move to another request');
@@ -27,7 +41,7 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     if(requestedProjectId&&(await db.query('SELECT id FROM projects WHERE id::text=$1 AND application_id=$2',[requestedProjectId,application.id])).rows.length===0)throw accountError(400,'Choose a project from this application');
     if(actor.role==='user') {
       if(request&&!['Draft','AdditionalInfoRequested'].includes(request.status))throw accountError(409,'This request is not open for editing');
-      const allowed=lineEntity?['funding_request_id','fund_request_id','project_id','budget_category','description','amount','amount_requested','application_budget_id','ehp_affected','invoice_number','invoice_date','vendor']:userKeys.concat('project_id');
+      const allowed=lineEntity?['funding_request_id','fund_request_id','project_id','budget_category','description','expenditure_name','quantity','unit_cost','amount','amount_requested','amount_match','amount_subgrantee','application_budget_id','ehp_affected','invoice_number','invoice_date','vendor','legacy_expenditure_id','ael_number','ael_category']:userKeys.concat('project_id');
       if(Object.keys(data).some(key=>!allowed.includes(key)))throw accountError(403,'Only a reviewer can change funding review or payment fields');
       if(!lineEntity&&data.status&&!['Draft','Submitted'].includes(data.status))throw accountError(403,'Use the review workflow for funding decisions');
     }
@@ -39,6 +53,9 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     }
     if(lineEntity) {
       if(data.ehp_affected!==undefined&&data.ehp_affected!==null&&typeof data.ehp_affected!=='boolean')throw accountError(400,'EHP classification must be yes or no');
+      if(data.amount_match!==undefined&&data.amount_match!==null&&(!Number.isFinite(Number(data.amount_match))||Number(data.amount_match)<0))throw accountError(400,'Match amount cannot be negative');
+      if(data.amount_subgrantee!==undefined&&data.amount_subgrantee!==null&&(!Number.isFinite(Number(data.amount_subgrantee))||Number(data.amount_subgrantee)<0))throw accountError(400,'Subgrantee funds cannot be negative');
+      assertLegacyFundingLineMutation(actor,data,await legacyContext(db,actor));
       const saved=await writeFundingRow(db,table,id,{...data,project_id:data.project_id||request.project_id||null,funding_request_id:request.id});
       if(release(request)&&['Approved','Paid'].includes(request.status))await checkFundingRelease(db,application,request);
       return saved;
@@ -50,6 +67,7 @@ export async function mutateFunding(pool,actorId,entity,id,input={},method='PUT'
     }
     Object.assign(data,{application_id:application.id,application_number:application.application_number,organization_id:organization.id,organization_name:organization.name,program_code:application.program_code,project_id:data.project_id||request?.project_id||null});
     const proposed={...previous,...data};fundingDates(proposed);
+    if(proposed.status==='Submitted'&&!previous?.submitted_at)data.submitted_at=new Date();
     if(proposed.request_type==='Modification') {
       if(proposed.payment_status&&!['PendingDisbursement','PaymentFailed'].includes(proposed.payment_status))throw accountError(400,'A modification request is not payable');
       data.amount_requested=0;data.amount_approved=0;

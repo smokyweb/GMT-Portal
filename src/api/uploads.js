@@ -28,6 +28,21 @@ export async function uploadFileToServer(file) {
   return data.url || '';
 }
 
+export async function uploadFileToServerDetails(file) {
+  if (!file) throw new Error('Choose a file to upload');
+  const formData = new FormData();
+  formData.append('file', file);
+  const token = localStorage.getItem('gmt_token');
+  const response = await fetch(`${import.meta.env.VITE_API_URL || ''}/api/upload`, {
+    method: 'POST',
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Upload failed. Please try again.');
+  return { ...data, url: data.url || '', originalName: data.originalName || file.name };
+}
+
 export function createUploadClient(apiBase,getToken) {
   return {
     async UploadFile({file}) {

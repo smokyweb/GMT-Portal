@@ -56,11 +56,11 @@ export default function DashboardExportButton({ filteredApps }) {
     ]));
 
     // Funding requests sheet (appended below with separator)
-    const frHeaders = ['Request #', 'App #', 'Organization', 'Type', 'Status', 'Period Start', 'Period End', 'Requested', 'Approved'];
+    const frHeaders = ['Request #', 'App #', 'Organization', 'Type', 'Status', 'Submitted', 'Period Start', 'Period End', 'Requested', 'Approved', 'Amount Paid', 'Payment Method', 'Match'];
     const frRows = frs.map(r => toCsvRow([
       r.request_number, r.application_number, r.organization_name,
-      r.request_type, r.status, r.period_start, r.period_end,
-      r.amount_requested, r.amount_approved,
+      r.request_type, r.status, r.submitted_at, r.period_start, r.period_end,
+      r.amount_requested, r.amount_approved, r.amount_paid, r.payment_method, r.match_documented,
     ]));
 
     const csv = [
@@ -145,10 +145,10 @@ export default function DashboardExportButton({ filteredApps }) {
       const frRows = frs.map(r => [
         r.request_number || ' - ', r.application_number || ' - ',
         (r.organization_name || '').slice(0, 18), r.request_type || ' - ',
-        r.status || ' - ', r.period_start || ' - ', r.period_end || ' - ',
-        formatCurrency(r.amount_requested), formatCurrency(r.amount_approved),
+        r.status || ' - ', r.submitted_at || ' - ', r.period_start || ' - ', r.period_end || ' - ',
+        formatCurrency(r.amount_requested), formatCurrency(r.amount_approved), formatCurrency(r.amount_paid), r.payment_method || ' - ', formatCurrency(r.match_documented),
       ]);
-      drawTable(nextY, 'Funding Requests', ['Req #', 'App #', 'Organization', 'Type', 'Status', 'Period Start', 'Period End', 'Requested', 'Approved'], frRows);
+      drawTable(nextY, 'Funding Requests', ['Req #', 'App #', 'Organization', 'Type', 'Status', 'Submitted', 'Period Start', 'Period End', 'Requested', 'Approved', 'Amount Paid', 'Payment Method', 'Match'], frRows);
     }
 
     doc.save(`gmt-export-${new Date().toISOString().slice(0, 10)}.pdf`);

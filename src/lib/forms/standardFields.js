@@ -1,4 +1,5 @@
 const field=(key,label,type='text',required=false,extra={})=>({id:'std_'+key,key,label,type,required,source:'application',visible:true,reviewerVisible:true,exportVisible:true,...extra});
+import {canonicalProgramCode} from '../programCompatibility.js';
 export const PROJECT_FIELDS=[
   field('project_title','Project Title','text',true,{maxLength:250}),
   field('project_narrative','Project Narrative','longtext',true),
@@ -17,7 +18,7 @@ const programFields={
   EOC:[['eoc_construction_timeline','Construction Timeline','longtext'],['eoc_procurement_plan','Procurement Plan','longtext'],['eoc_site_control_status','Site Control Status','dropdown'],['eoc_site_control_notes','Site Control Notes','longtext',false]],
 };
 export function standardProgramFields(code) {
-  const fields=(programFields[code]||[]).map(([key,label,type,required=true])=>field(key,label,type,required,key==='eoc_site_control_status'?{options:['Owned','Leased','In-Progress','Not-Established']}:{}));
+  const fields=(programFields[canonicalProgramCode(code)]||[]).map(([key,label,type,required=true])=>field(key,label,type,required,key==='eoc_site_control_status'?{options:['Owned','Leased','In-Progress','Not-Established']}:{}));
   return [...fields,
     field('procurement_method','Primary Procurement Method','dropdown',false,{options:['CompetitiveBid','SoleSource','SmallPurchase','MicroPurchase','NotApplicable'],optionLabels:{CompetitiveBid:'Competitive Bid / Sealed Bid',SoleSource:'Sole Source',SmallPurchase:'Small Purchase',MicroPurchase:'Micro-Purchase',NotApplicable:'Not Applicable'}}),
     field('procurement_justification','Sole Source Justification','longtext',true,{condition:{fieldId:'std_procurement_method',operator:'equals',value:'SoleSource'}}),

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { CheckCircle, AlertTriangle, FileText, BookOpen, DollarSign, Calendar, Users, Pencil, Plus, X, Save } from 'lucide-react';
+import { canonicalProgramCode } from '@/lib/programCompatibility';
 
 // Hardcoded FEMA defaults used as fallback when no custom data is saved
 const FEMA_DEFAULTS = {
@@ -125,7 +126,7 @@ export default function GrantProgramDetail({ program, onClose, isAdmin = false, 
 
   if (!program) return null;
 
-  const defaults = FEMA_DEFAULTS[program.code] || DEFAULT_FALLBACK;
+  const defaults = FEMA_DEFAULTS[canonicalProgramCode(program.code)] || DEFAULT_FALLBACK;
 
   // Helper: parse text field (newline-delimited) into array, fallback to DB array or defaults
   const parseTextOrArray = (textField, arrayField, defaultArr) => {

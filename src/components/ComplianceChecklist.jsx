@@ -3,23 +3,11 @@ import { base44 } from '@/api/base44Client';
 import { CheckCircle2, Circle, AlertCircle, Upload, Loader2, ExternalLink, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Fallback required compliance documents if no NOFO required_documents defined
-const REQUIRED_DOCS = [
-  { key: 'RiskAssessment',        label: 'Risk Assessment',              mandatory: true  },
-  { key: 'WorkPlan',              label: 'Work Plan',                    mandatory: true  },
-  { key: 'BudgetJustification',   label: 'Budget Justification',         mandatory: true  },
-  { key: 'Contract',              label: 'Signed Subrecipient Agreement', mandatory: true  },
-  { key: 'MatchDocumentation',    label: 'Match / Cost-Share Documentation', mandatory: true },
-  { key: 'PerformanceEvidence',   label: 'Proof of Insurance',           mandatory: false },
-  { key: 'ProgressNarrative',     label: 'Initial Progress Narrative',   mandatory: false },
-  { key: 'Other',                 label: 'Other Supporting Documents',   mandatory: false },
-];
-
 function DocRow({ item, uploaded, canUpload, applicationId, applicationNumber, organizationName, user, onRefresh }) {
   const [uploading, setUploading] = useState(false);
   const inputRef = useRef();
 
-  // Match by name (NOFO docs) or by doc_type (fallback hardcoded docs)
+  // Match NOFO-required docs by name or doc_type.
   // Only show the latest upload per doc slot (in case of replacements)
   const allMatchingDocs = item.matchByName
     ? uploaded.filter(d => d.name === item.key || d.doc_type === item.key)
@@ -166,22 +154,19 @@ export default function ComplianceChecklist({ applicationId, applicationNumber, 
 
   useEffect(() => { load(); }, [applicationId, nofoProp]);
 
-  // Build the effective required doc list:
-  // If NOFO has required_documents, use those (matching by doc name or doc_type)
-  // Otherwise fall back to hardcoded REQUIRED_DOCS
+  // The NOFO is authoritative. An empty list means this application has no
+  // required documents; never substitute a hard-coded checklist.
   const rawNofoReqs = nofo?.required_documents || [];
   const nofoRequiredDocs = Array.isArray(rawNofoReqs)
     ? rawNofoReqs
     : (rawNofoReqs && typeof rawNofoReqs === 'object' && rawNofoReqs.name ? [rawNofoReqs] : []);
 
-  const effectiveDocs = nofoRequiredDocs.length > 0
-    ? nofoRequiredDocs.map(r => ({
-        key: r.name,       // use name as key for NOFO docs
-        label: r.name,
-        mandatory: r.mandatory !== false,
-        matchByName: true, // flag to match by doc name not doc_type
-      }))
-    : REQUIRED_DOCS;
+  const effectiveDocs = nofoRequiredDocs.map(r => ({
+    key: r.name,
+    label: r.name,
+    mandatory: r.mandatory !== false,
+    matchByName: true,
+  }));
 
   // Match uploaded docs: NOFO docs match by name, fallback docs match by doc_type
   const isDocFulfilled = (item) => {
@@ -227,22 +212,27 @@ export default function ComplianceChecklist({ applicationId, applicationNumber, 
         )}
       </div>
 
-      {/* Document rows - uses NOFO required docs when available, falls back to hardcoded list */}
-      <div className="space-y-2">
-        {effectiveDocs.map(item => (
-          <DocRow
-            key={item.key}
-            item={item}
-            uploaded={docs}
-            canUpload={canUpload}
-            applicationId={applicationId}
-            applicationNumber={applicationNumber}
-            organizationName={organizationName}
-            user={user}
-            onRefresh={load}
-          />
-        ))}
-      </div>
+      {effectiveDocs.length > 0 ? (
+        <div className="space-y-2">
+          {effectiveDocs.map(item => (
+            <DocRow
+              key={item.key}
+              item={item}
+              uploaded={docs}
+              canUpload={canUpload}
+              applicationId={applicationId}
+              applicationNumber={applicationNumber}
+              organizationName={organizationName}
+              user={user}
+              onRefresh={load}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-xl border border-dashed p-4 text-sm text-muted-foreground">
+          No documents are required for this NOFO.
+        </div>
+      )}
 
       {/* Show all uploaded docs not in required list */}
       {docs.filter(d => !effectiveDocs.find(r => isDocFulfilled(r) && (d.name === r.key || d.doc_type === r.key))).length > 0 && (

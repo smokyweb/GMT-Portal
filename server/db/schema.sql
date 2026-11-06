@@ -18,7 +18,7 @@ $$ LANGUAGE plpgsql;
 CREATE TABLE IF NOT EXISTS grant_programs (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   name          TEXT NOT NULL,
-  code          TEXT NOT NULL CHECK (code IN ('SHSP','UASI','EMPG','HSGP','NSGP','EOC','SLCGP','Other')),
+  code          TEXT NOT NULL CHECK (code IN ('SHSP','UASI','EMPG','HSGP','NSGP','EOC','EOCGP','NE-NSGP','NSGP-NSS','SLCGP','BRIC','Other')),
   description   TEXT,
   federal_agency TEXT,
   cfda_number   TEXT,
@@ -103,6 +103,14 @@ CREATE TABLE IF NOT EXISTS users (
   updated_date    TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
+CREATE TABLE IF NOT EXISTS user_organizations (
+  user_id TEXT NOT NULL,
+  organization_id TEXT NOT NULL,
+  created_date TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (user_id, organization_id)
+);
+CREATE INDEX IF NOT EXISTS idx_user_organizations_org ON user_organizations(organization_id);
+
 -- ============================================================
 -- 5. nofos (Notices of Funding Opportunity)
 -- ============================================================
@@ -149,13 +157,21 @@ CREATE TABLE IF NOT EXISTS applications (
   organization_id    TEXT NOT NULL,
   organization_name  TEXT,
   submitted_by       TEXT,
+  poc_user_id        TEXT,
+  poc_first_name     TEXT,
+  poc_last_name      TEXT,
+  poc_title          TEXT,
+  poc_email          TEXT,
+  poc_phone          TEXT,
   application_number TEXT,
+  legacy_subaward_id TEXT,
   project_title      TEXT,
   project_narrative  TEXT,
   work_plan          TEXT,
   risk_assessment    TEXT,
   requested_amount   NUMERIC,
   awarded_amount     NUMERIC,
+  original_award_amount NUMERIC,
   match_amount       NUMERIC,
   total_expended     NUMERIC,
   remaining_balance  NUMERIC,
@@ -209,8 +225,15 @@ CREATE TABLE IF NOT EXISTS application_budgets (
   project_id       TEXT,
   budget_category  TEXT NOT NULL CHECK (budget_category IN ('Personnel','Equipment','Training','Travel','Contractual','Planning','Other')),
   line_description TEXT,
+  quantity         NUMERIC,
+  unit_cost        NUMERIC,
   amount_requested NUMERIC,
   amount_match     NUMERIC,
+  legacy_budget_line_id TEXT,
+  vulnerability_addressed TEXT,
+  poete_category   TEXT,
+  ael_number       TEXT,
+  ael_category     TEXT,
   is_allowable     BOOLEAN,
   reviewer_notes   TEXT,
   created_date     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -262,6 +285,12 @@ CREATE TABLE IF NOT EXISTS compliance_flags (
   is_resolved        BOOLEAN DEFAULT false,
   resolved_by        TEXT,
   resolved_at        TIMESTAMPTZ,
+  issue_type         TEXT,
+  issue_key          TEXT,
+  issue_metadata     JSONB,
+  resolution_reason  TEXT,
+  snoozed_until      TIMESTAMPTZ,
+  last_evaluated_at  TIMESTAMPTZ,
   created_date       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -274,6 +303,8 @@ CREATE TABLE IF NOT EXISTS documents (
   name                TEXT NOT NULL,
   doc_type            TEXT NOT NULL CHECK (doc_type IN ('Invoice','PerformanceEvidence','Contract','BudgetJustification','MatchDocumentation','ProgressNarrative','FinalReport','Other')),
   file_url            TEXT,
+  file_name           TEXT,
+  file_size           BIGINT,
   uploaded_by         TEXT,
   organization_id     TEXT,
   application_id      TEXT,
@@ -323,6 +354,7 @@ CREATE TABLE IF NOT EXISTS funding_requests (
   organization_name        TEXT,
   submitted_by             TEXT,
   request_number           TEXT,
+  legacy_reimbursement_id  TEXT,
   request_type             TEXT NOT NULL CHECK (request_type IN ('Reimbursement','Advance','Modification')),
   period_start             DATE,
   period_end               DATE,
@@ -336,10 +368,14 @@ CREATE TABLE IF NOT EXISTS funding_requests (
   scope_of_work_current    TEXT,
   scope_of_work_proposed   TEXT,
   budget_modification_notes TEXT,
-  status                   TEXT NOT NULL CHECK (status IN ('Submitted','UnderReview','AdditionalInfoRequested','Approved','Denied')),
+  status                   TEXT NOT NULL CHECK (status IN ('Submitted','UnderReview','AdditionalInfoRequested','Approved','Denied','Complete','Vouchered','Build')),
   reviewer_notes           TEXT,
   modification_notes       TEXT,
   program_code             TEXT,
+  submitted_at             TIMESTAMPTZ,
+  original_created_at      TIMESTAMPTZ,
+  payment_method           TEXT CHECK (payment_method IS NULL OR payment_method IN ('EFT','Check','Multiple Payables')),
+  amount_paid              NUMERIC CHECK (amount_paid IS NULL OR amount_paid >= 0),
   created_date             TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date             TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -353,9 +389,18 @@ CREATE TABLE IF NOT EXISTS funding_request_line_items (
   project_id         TEXT,
   budget_category    TEXT NOT NULL CHECK (budget_category IN ('Personnel','Equipment','Training','Travel','Contractual','Planning','Other')),
   description        TEXT,
+  expenditure_name   TEXT,
+  quantity           NUMERIC,
+  unit_cost          NUMERIC,
   amount             NUMERIC,
+  amount_requested   NUMERIC,
+  amount_approved    NUMERIC,
+  amount_paid        NUMERIC,
   is_allowable       BOOLEAN,
   reviewer_notes     TEXT,
+  legacy_expenditure_id TEXT,
+  amount_match       NUMERIC NOT NULL DEFAULT 0 CHECK (amount_match >= 0),
+  amount_subgrantee  NUMERIC NOT NULL DEFAULT 0 CHECK (amount_subgrantee >= 0),
   created_date       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_date       TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
@@ -585,6 +630,8 @@ $$;
 -- Indexes for common filter/sort patterns
 -- ============================================================
 CREATE UNIQUE INDEX IF NOT EXISTS nofos_legacy_grant_id_unique ON nofos(legacy_grant_id) WHERE legacy_grant_id IS NOT NULL AND btrim(legacy_grant_id) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS funding_requests_legacy_reimbursement_id_unique ON funding_requests(legacy_reimbursement_id) WHERE legacy_reimbursement_id IS NOT NULL AND btrim(legacy_reimbursement_id) <> '';
+CREATE UNIQUE INDEX IF NOT EXISTS application_budgets_legacy_line_id_unique ON application_budgets(legacy_budget_line_id) WHERE legacy_budget_line_id IS NOT NULL AND btrim(legacy_budget_line_id) <> '';
 
 CREATE INDEX IF NOT EXISTS idx_applications_org     ON applications(organization_id);
 CREATE INDEX IF NOT EXISTS idx_applications_status  ON applications(status);
@@ -596,6 +643,7 @@ CREATE INDEX IF NOT EXISTS idx_compliance_app       ON compliance_flags(applicat
 CREATE INDEX IF NOT EXISTS idx_documents_app        ON documents(application_id);
 CREATE INDEX IF NOT EXISTS idx_documents_org        ON documents(organization_id);
 CREATE INDEX IF NOT EXISTS idx_funding_req_app      ON funding_requests(application_id);
+CREATE UNIQUE INDEX IF NOT EXISTS funding_line_legacy_expenditure_unique ON funding_request_line_items(legacy_expenditure_id) WHERE legacy_expenditure_id IS NOT NULL AND btrim(legacy_expenditure_id) <> '';
 CREATE INDEX IF NOT EXISTS idx_fr_line_items_fr     ON funding_request_line_items(funding_request_id);
 CREATE INDEX IF NOT EXISTS idx_gen_docs_app         ON generated_documents(application_id);
 CREATE INDEX IF NOT EXISTS idx_messages_app         ON messages(application_id);

@@ -4,6 +4,7 @@ import { AlertTriangle, TrendingUp, DollarSign, CheckCircle2, Search, ChevronRig
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency, formatDateShort } from '../lib/helpers';
+import { paidLineActuals } from '../lib/fundingMetrics';
 
 const CATEGORY_COLORS = {
   Personnel:     'bg-blue-500',
@@ -40,6 +41,9 @@ export default function BudgetTracker() {
   const [selectedAppId, setSelectedAppId] = useState('');
   const [budgetLines, setBudgetLines] = useState([]);
   const [expenditures, setExpenditures] = useState([]);
+  const [fundingRequests, setFundingRequests] = useState([]);
+  const [paidActualsByLine, setPaidActualsByLine] = useState(new Map());
+  const [paidMatchActualsByLine, setPaidMatchActualsByLine] = useState(new Map());
   const [loading, setLoading] = useState(true);
   const [lineLoading, setLineLoading] = useState(false);
   const [categorySearch, setCategorySearch] = useState('');
@@ -82,47 +86,64 @@ export default function BudgetTracker() {
       base44.entities.FundingRequest.filter({ application_id: appId }),
     ]);
 
-    // Get all active funding request IDs for this app (Submitted + Approved)
-    const activeFRIds = new Set(
-      fundingRequests.filter(fr => ['Approved', 'Submitted', 'Pending'].includes(fr.status)).map(fr => fr.id)
-    );
-
-    // Filter line items to active FRs for this app
-    const relevantLines = frLines.filter(l => activeFRIds.has(l.funding_request_id));
+    // Actual expenditure is money paid, not every submitted/approved line.
+    // De-duplicate by request/line ID so reselecting Paid cannot double count.
+    const relevantRequestIds = new Set(fundingRequests.filter(fr => fr.payment_status === 'Paid').map(fr => fr.id));
+    const relevantLines = frLines.filter(l => relevantRequestIds.has(l.funding_request_id));
     setExpenditures(relevantLines);
+    setFundingRequests(fundingRequests);
+    setPaidActualsByLine(paidLineActuals(fundingRequests, relevantLines));
+    setPaidMatchActualsByLine(new Map(relevantLines.map(l => [l.id, Number(l.amount_match) || 0])));
     setBudgetLines(budgets);
     setLineLoading(false);
   };
 
-  // Aggregate actuals per budget category
-  const getActualsByCategory = () => {
-    const map = {};
+  // Aggregate actuals to the exact imported budget line first. Falling back
+  // to category is retained only for older lines that predate the mapping.
+  const getActualsByBudget = () => {
+    const byBudget = {};
+    const byCategory = {};
+    const matchByBudget = {};
+    const matchByCategory = {};
     expenditures.forEach(l => {
+      const actual = paidActualsByLine.get(l.id) || 0;
+      const matchActual = paidMatchActualsByLine.get(l.id) || 0;
+      if (l.application_budget_id) byBudget[l.application_budget_id] = (byBudget[l.application_budget_id] || 0) + actual;
+      if (l.application_budget_id) matchByBudget[l.application_budget_id] = (matchByBudget[l.application_budget_id] || 0) + matchActual;
       const cat = l.budget_category || 'Other';
-      map[cat] = (map[cat] || 0) + (l.amount || 0);
+      byCategory[cat] = (byCategory[cat] || 0) + actual;
+      matchByCategory[cat] = (matchByCategory[cat] || 0) + matchActual;
     });
-    return map;
+    return { byBudget, byCategory, matchByBudget, matchByCategory };
   };
 
   const selectedApp = apps.find(a => a.id === selectedAppId);
-  const actualsByCategory = getActualsByCategory();
+  const { byBudget: actualsByBudget, byCategory: actualsByCategory, matchByBudget: matchActualsByBudget, matchByCategory: matchActualsByCategory } = getActualsByBudget();
 
   // Build merged rows per category
   const categoryRows = budgetLines.map(b => {
     const budgeted = b.amount_requested || 0;
-    const actual = actualsByCategory[b.budget_category] || 0;
+    const actual = b.id && actualsByBudget[b.id] !== undefined
+      ? actualsByBudget[b.id]
+      : actualsByCategory[b.budget_category] || 0;
+    const matchActual = b.id && matchActualsByBudget[b.id] !== undefined
+      ? matchActualsByBudget[b.id]
+      : matchActualsByCategory[b.budget_category] || 0;
+    const matchBudgeted = Number(b.amount_match) || 0;
     const pct = budgeted > 0 ? (actual / budgeted) * 100 : 0;
     const warning = pct >= 90 && pct < 100;
-    const over = pct >= 100;
-    return { ...b, actual, pct, warning, over };
+    const over = pct > 100;
+    return { ...b, actual, matchActual, matchBudgeted, pct, warning, over };
   });
 
   // Totals
   const totalBudgeted = categoryRows.reduce((s, r) => s + (Number(r.amount_requested) || 0), 0);
   const totalActual = categoryRows.reduce((s, r) => s + r.actual, 0);
+  const totalMatchBudgeted = categoryRows.reduce((s, r) => s + r.matchBudgeted, 0);
+  const totalMatchActual = categoryRows.reduce((s, r) => s + r.matchActual, 0);
   const totalPct = totalBudgeted > 0 ? (totalActual / totalBudgeted) * 100 : 0;
   const totalWarning = totalPct >= 90 && totalPct < 100;
-  const totalOver = totalPct >= 100;
+  const totalOver = totalPct > 100;
 
   const warnings = categoryRows.filter(r => r.warning || r.over);
 
@@ -189,6 +210,14 @@ export default function BudgetTracker() {
               <div>
                 <p className="text-xs text-muted-foreground">Program</p>
                 <p className="font-semibold">{selectedApp.program_code || '-'}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Grant Amount</p>
+                <p className="font-semibold">{formatCurrency(selectedApp.requested_amount)}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground">Match Amount</p>
+                <p className="font-semibold">{formatCurrency(selectedApp.match_amount)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Total Awarded</p>
@@ -325,15 +354,23 @@ export default function BudgetTracker() {
                       </div>
                       <div className="flex gap-6 text-right flex-shrink-0">
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Budgeted</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Federal budget</p>
                           <p className="text-sm font-semibold">{formatCurrency(row.amount_requested)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Expended</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Federal paid</p>
                           <p className={`text-sm font-semibold ${row.over ? 'text-red-600' : ''}`}>{formatCurrency(row.actual)}</p>
                         </div>
                         <div>
-                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Remaining</p>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Match budget</p>
+                          <p className="text-sm font-semibold">{formatCurrency(row.matchBudgeted)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Match paid</p>
+                          <p className="text-sm font-semibold">{formatCurrency(row.matchActual)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[10px] text-muted-foreground uppercase tracking-wide">Federal remaining</p>
                           <p className={`text-sm font-semibold ${row.over ? 'text-red-600' : 'text-green-700'}`}>
                             {formatCurrency(row.amount_requested - row.actual)}
                           </p>
@@ -352,6 +389,8 @@ export default function BudgetTracker() {
                   <div className="flex gap-6 text-right text-sm">
                     <span>{formatCurrency(totalBudgeted)}</span>
                     <span className={totalOver ? 'text-red-600' : ''}>{formatCurrency(totalActual)}</span>
+                    <span>{formatCurrency(totalMatchBudgeted)}</span>
+                    <span>{formatCurrency(totalMatchActual)}</span>
                     <span className={totalOver ? 'text-red-600' : 'text-green-700'}>{formatCurrency(totalBudgeted - totalActual)}</span>
                   </div>
                 </div>

@@ -4,12 +4,12 @@ import {useBulkAccountUpload} from '@/hooks/useBulkAccountUpload';
 import BulkAccountTemplate from '@/components/admin/BulkAccountTemplate';
 import BulkAccountPreview from '@/components/admin/BulkAccountPreview';
 import BulkAccountResult from '@/components/admin/BulkAccountResult';
-export default function BulkUserUpload({onSuccess}) {
+export default function BulkUserUpload({onSuccess,user}) {
   const state=useBulkAccountUpload(onSuccess);
   return <><Button variant="outline" size="sm" className="gap-2" onClick={()=>state.setOpen(true)}><Users className="h-3.5 w-3.5"/>Bulk Upload</Button>
     <Dialog open={state.open} onOpenChange={open=>!open&&state.close()}><DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
       <DialogHeader><DialogTitle>Bulk Upload Users</DialogTitle></DialogHeader>
-      <DialogDescription className="text-sm text-muted-foreground">ISC Administrators only. Review the dry run before creating accounts and sending invitations.</DialogDescription>
+      <DialogDescription className="text-sm text-muted-foreground">Administrators only. Review the dry run before creating accounts and sending invitations.</DialogDescription>
       {state.error&&<p role="alert" className="text-sm text-red-700">{state.error}</p>}
       <div className="space-y-5 py-1">{!state.result&&<><BulkAccountTemplate/>
         <section className="space-y-2"><p className="text-sm font-semibold flex items-center gap-2"><Upload className="h-4 w-4 text-primary"/>Step 2 — Upload Your CSV</p>

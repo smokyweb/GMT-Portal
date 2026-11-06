@@ -9,7 +9,7 @@ export function requireAccountAdmin(actor) {
 }
 export function canManageAccount(actor, target) {
   if (actor?.role === 'isc_admin') return true;
-  if (actor?.role !== 'admin' || target?.role !== 'user') return false;
+  if (actor?.role !== 'admin' || target?.role === 'isc_admin') return false;
   if (actor.grantee_id && actor.grantee_id !== target.grantee_id) return false;
   const state = normalizedState(actor.scope_state || actor.grantee_state);
   return Boolean(state && state === normalizedState(target.scope_state || target.organization_state));
@@ -25,7 +25,7 @@ export function validateInvite(actor, input, organization) {
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw accountError(400, 'Enter a valid email address');
   const role = input.role || 'user';
   if (!['user', 'reviewer', 'admin', 'isc_admin'].includes(role)) throw accountError(400, 'Invalid role');
-  if (actor.role !== 'isc_admin' && role !== 'user') throw accountError(403, 'State administrators may invite subrecipients only');
+  if (actor.role !== 'isc_admin' && role === 'isc_admin') throw accountError(403, 'State administrators cannot create ISC Administrator accounts');
   if (role === 'user' && !organization) throw accountError(400, 'Select an organization for the subrecipient');
   const scopeState = normalizedState(organization?.state || input.scope_state);
   if(organization&&input.scope_state&&normalizedState(input.scope_state)!==normalizedState(organization.state)) throw accountError(400,'State does not match the selected organization');
@@ -37,7 +37,7 @@ export function validateInvite(actor, input, organization) {
   if (role !== 'isc_admin' && !scopeState) throw accountError(400, 'Select a state for this account');
   return { email, role, scope_state: scopeState, grantee_id: granteeId,
     full_name: String(input.full_name || '').trim() || email.split('@')[0],
-    organization_id: organization?.id || null, organization_name: organization?.name || null, phone:String(input.phone||'').trim().slice(0,50) };
+    title:String(input.title||'').trim().slice(0,120), organization_id: organization?.id || null, organization_name: organization?.name || null, phone:String(input.phone||'').trim().slice(0,50), send_invite:input.send_invite!==false };
 }
 export function validatePassword(password) {
   if (typeof password !== 'string' || password.length < 12 || password.length > 128) {

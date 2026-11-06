@@ -87,6 +87,16 @@ function createEntityClient(entityName) {
       return api('GET', `${base}${qs ? '?' + qs : ''}`).catch(e => { console.warn('[GMT] list', entityName, e.message); return []; });
     },
 
+    /** listStrict(sort?, limit?, options?) - preserve API errors for screens with an error state */
+    async listStrict(sort, limit, options) {
+      const params = new URLSearchParams();
+      if (sort) params.set('sort', sort);
+      if (limit) params.set('limit', String(limit));
+      Object.entries(options || {}).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== '') params.set(key, String(value)); });
+      const qs = params.toString();
+      return api('GET', `${base}${qs ? '?' + qs : ''}`);
+    },
+
     /** filter(conditions, sort?, limit?) */
     async filter(conditions, sort, limit) {
       return api('POST', `${base}/filter`, {

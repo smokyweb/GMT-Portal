@@ -1,10 +1,11 @@
 import {PROJECT_FIELDS,standardProgramFields,EHP_FIELDS,ORGANIZATION_FIELDS} from './standardFields.js';
+import {canonicalProgramCode} from '../programCompatibility.js';
 export const FIELD_TYPES=['text','longtext','number','currency','date','daterange','dropdown','multiselect','checkbox','yesno','file','table'];
 export function defaultForm(nofo={}) {
   const section=(id,label,kind,fields=[])=>({id,label,kind,enabled:true,fields:JSON.parse(JSON.stringify(fields))});
   const custom=(id,label,type,extra={})=>({id,key:id,label,type,source:'custom',visible:true,required:true,reviewerVisible:true,exportVisible:true,...extra});
-  const program=standardProgramFields(nofo.program_code);
-  if(nofo.program_code==='EMPG')program.push(
+  const programCode=canonicalProgramCode(nofo.program_code),program=standardProgramFields(programCode);
+  if(programCode==='EMPG')program.push(
     custom('cf_empg_personnel','EMPG-funded Personnel','table',{columns:[
       {id:'name',label:'Name',type:'text',required:true},
       {id:'position',label:'Position',type:'text',required:true},
@@ -16,7 +17,7 @@ export function defaultForm(nofo={}) {
     custom('cf_empg_exercises','Additional Exercise Participation Notes','longtext',{required:false}),
   );
   const rawDocuments=nofo.required_documents||[],documents=(Array.isArray(rawDocuments)?rawDocuments:rawDocuments.name?[rawDocuments]:[]).map(doc=>typeof doc==='string'?{name:doc,mandatory:true}:{name:doc.name,mandatory:Boolean(doc.mandatory)});
-  const percent=nofo.match_requirement==null?(nofo.program_code==='EMPG'?50:0):Number(nofo.match_requirement);
+  const percent=nofo.match_requirement==null?(programCode==='EMPG'?50:0):Number(nofo.match_requirement);
   return {schemaVersion:1,sections:[
     section('organization','Organization','organization',ORGANIZATION_FIELDS),
     section('project','Project Details','project',PROJECT_FIELDS),

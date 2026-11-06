@@ -1,22 +1,30 @@
 import {accountError,assertAccountAccess,normalizedState,publicAccount} from './accountPolicy.js';
 import {auditAccount,managedTarget,transaction} from './accountRepository.js';
-const allowed=['full_name','title','department','phone','role','active_status','organization_id','organization_name','scope_state'];
+import {syncMemberships} from './organizationMembership.js';
+const allowed=['email','full_name','title','department','phone','role','active_status','organization_id','organization_name','organization_ids','scope_state'];
 export async function updateManagedAccount(pool,actorId,targetId,input,ip) {
   return transaction(pool,db=>updateAccountInTransaction(db,actorId,targetId,input,ip));
 }
 export async function updateAccountInTransaction(db,actorId,targetId,input,ip) {
     const {actor,target}=await managedTarget(db,actorId,targetId);
     if(Object.keys(input).some(key=>!allowed.includes(key))) throw accountError(400,'Use the account access workflow for this change');
-    const data=Object.fromEntries(Object.entries(input).filter(([key])=>key!=='organization_name'));
+    const data=Object.fromEntries(Object.entries(input).filter(([key])=>!['organization_name','organization_ids'].includes(key)));
     if(!Object.keys(data).length) throw accountError(400,'No valid account fields');
+    if(data.email!==undefined){data.email=String(data.email||'').trim().toLowerCase();if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.email))throw accountError(400,'Enter a valid email address');const duplicate=await db.query('SELECT id FROM users WHERE lower(email)=lower($1) AND id::text<>$2 LIMIT 1',[data.email,targetId]);if(duplicate.rowCount)throw accountError(409,'That email address is already in use');}
     const role=data.role||target.role;
     if(!['user','reviewer','admin','isc_admin'].includes(role)) throw accountError(400,'Invalid role');
-    if(actor.role!=='isc_admin'&&role!=='user') throw accountError(403,'This role change is not permitted');
+    if(actor.role!=='isc_admin'&&role==='isc_admin') throw accountError(403,'State administrators cannot assign the ISC Administrator role');
     if(data.active_status && data.active_status!==target.active_status&&!['active','inactive'].includes(data.active_status)) {
       throw accountError(400,'Choose an active or inactive account status');
     }
     let org;
-    if(data.organization_id!==undefined) {
+    if(input.organization_ids!==undefined) {
+      if(role!=='user') throw accountError(400,'Organization memberships are only assigned to subrecipient users');
+      const organizations=await syncMemberships(db,actor,target,input.organization_ids);
+      data.organization_id=organizations[0]?.id||null;
+      data.organization_name=organizations[0]?.name||null;
+      data.scope_state=normalizedState(organizations[0]?.state)||null;
+    } else if(data.organization_id!==undefined) {
       if(data.organization_id && data.organization_id!=='__none__') {
         org=(await db.query('SELECT * FROM organizations WHERE id::text=$1',[data.organization_id])).rows[0];
         if(!org||org.is_active===false) throw accountError(400,'Select an active organization');

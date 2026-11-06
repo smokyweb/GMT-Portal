@@ -3,6 +3,9 @@ import AwardDetailsTabTrigger from '@/components/awards/AwardDetailsTabTrigger';
 import GanHistoryTab from '@/components/awards/GanHistoryTab';
 import EhpReviewPanel from '@/components/ehp/EhpReviewPanel';
 import ApplicationFormValues from '@/components/application-form/ApplicationFormValues';
+import ApplicationReadOnlySections from '@/components/application-form/ApplicationReadOnlySections';
+import ApplicationViewHeader from '@/components/application-form/ApplicationViewHeader';
+import ApplicationViewSummary from '@/components/application-form/ApplicationViewSummary';
 import { useState, useEffect } from 'react';
 import { confirmAction } from '@/components/ui/confirm-simple';
 import { toast } from '@/components/ui/toast-simple';
@@ -21,7 +24,6 @@ import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import StatusBadge from '../components/StatusBadge';
 import ApplicationAuditTab from '../components/ApplicationAuditTab';
-import ApplicationPdfExport from '../components/ApplicationPdfExport';
 import AuditPackageExport from '../components/AuditPackageExport';
 import ReviewHistory from '../components/ReviewHistory';
 import AppLockedBanner from '../components/AppLockedBanner';
@@ -60,6 +62,10 @@ export default function ApplicationReviewQueue() {
   const [reviewerUsers, setReviewerUsers] = useState([]);
   const [awardAmount, setAwardAmount] = useState('');
   const [viewApp, setViewApp] = useState(null);
+  const [viewBudgets, setViewBudgets] = useState([]);
+  const [viewProjects, setViewProjects] = useState([]);
+  const [viewDocuments, setViewDocuments] = useState([]);
+  const [documents, setDocuments] = useState([]);
   const [dateStart, setDateStart] = useState('');
   const [dateEnd, setDateEnd] = useState('');
   const [dateMode, setDateMode] = useState('none'); // 'none', 'fiscal', 'custom'
@@ -125,16 +131,18 @@ export default function ApplicationReviewQueue() {
   };
 
   const openReview = async (app) => {
-    const [b, t, p, n, programs, coreSettings] = await Promise.all([
+    const [b, t, p, n, programs, coreSettings, d] = await Promise.all([
       base44.entities.ApplicationBudget.filter({ application_id: app.id }),
       base44.entities.Task.filter({ application_id: app.id }, '-created_date', 50),
       base44.entities.Project.filter({ application_id: app.id }, 'created_date', 100),
       base44.entities.Nofo.filter({id:app.nofo_id}),
       base44.entities.GrantProgram.list('-name',500),
       base44.entities.AppSettings.filter({key:'project_ij_core_capabilities'}).catch(()=>[]),
+      base44.entities.Document.filter({application_id:app.id}).catch(()=>[]),
     ]);
     setBudgets(b);
     setProjects(p || []);
+    setDocuments(d || []);
     const raw=coreSettings?.[0]?.value;let caps;try{caps=typeof raw==='string'?JSON.parse(raw):raw;}catch{};
     setProjectConfig(normalizeProjectFieldConfig(programs.find(x=>x.id===n?.[0]?.program_id)||{code:n?.[0]?.program_code},n?.[0],caps));
     setAppTasks(t);
@@ -152,6 +160,14 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
       }).catch(() => {});
     }
     setScoreCardValues({});
+  };
+  const openView = async app => {
+    const [b,p,d] = await Promise.all([
+      base44.entities.ApplicationBudget.filter({application_id:app.id}).catch(()=>[]),
+      base44.entities.Project.filter({application_id:app.id},'created_date',100).catch(()=>[]),
+      base44.entities.Document.filter({application_id:app.id},'-created_date',100).catch(()=>[]),
+    ]);
+    setViewBudgets(b||[]);setViewProjects(p||[]);setViewDocuments(d||[]);setViewApp(app);
   };
 
   const handleClose = async () => {
@@ -455,7 +471,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   <td className="p-3"><div className="flex items-center gap-1"><StatusBadge status={app.status} />{allOpenRfis[app.id] ? <span className="ml-1 bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5 font-bold" title={allOpenRfis[app.id] + " open RFI(s)"}>RFI</span> : null}</div></td>
                   <td className="p-3 text-xs text-muted-foreground">{formatDateShort(app.submitted_at)}</td>
                   <td className="p-3 flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => setViewApp(app)}>
+                    <Button variant="ghost" size="sm" onClick={() => openView(app)}>
                       <FileText className="h-3.5 w-3.5 mr-1" /> View
                     </Button>
                     {app.submitted_at && (
@@ -500,33 +516,18 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
 
       {/* View Dialog (read-only) */}
       <Dialog open={!!viewApp} onOpenChange={() => setViewApp(null)}>
-        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>Application {viewApp?.application_number}</DialogTitle>
-              <StatusBadge status={viewApp?.status} />
-            </div>
-          </DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><ApplicationViewHeader application={viewApp} budgets={viewBudgets}/></DialogHeader>
           {viewApp && (
-            <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-4">
-                <div><Label className="text-muted-foreground text-xs">Organization</Label><p className="font-medium">{viewApp.organization_name}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Program</Label><p className="font-medium">{viewApp.program_code} - {viewApp.program_name}</p></div>
-                {viewApp.grant_number && <div><Label className="text-muted-foreground text-xs">Subaward #</Label><p className="font-medium font-mono">{viewApp.grant_number}</p></div>}
-                <div><Label className="text-muted-foreground text-xs">Requested Amount</Label><p className="font-bold text-lg">{formatCurrency(viewApp.requested_amount)}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Match Commitment</Label><p className="font-medium">{formatCurrency(viewApp.match_amount)}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Performance Period</Label><p className="font-medium">{formatDateShort(viewApp.performance_start)} - {formatDateShort(viewApp.performance_end)}</p></div>
-                <div><Label className="text-muted-foreground text-xs">Submitted</Label><p className="font-medium">{formatDateShort(viewApp.submitted_at)}</p></div>
-              </div>
-              <div><Label className="text-muted-foreground text-xs">Project Title</Label><p className="font-medium">{viewApp.project_title}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Project Narrative</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.project_narrative || 'Not provided'}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Work Plan</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.work_plan || 'Not provided'}</p></div>
-              <div><Label className="text-muted-foreground text-xs">Risk Assessment</Label><p className="whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{viewApp.risk_assessment || 'Not provided'}</p></div>
-              <ApplicationFormValues applicationId={viewApp.id}/>
-              {viewApp.revision_notes && (
-                <div><Label className="text-muted-foreground text-xs">Revision Notes</Label><p className="whitespace-pre-wrap bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg">{viewApp.revision_notes}</p></div>
-              )}
-            </div>
+            <Tabs defaultValue="details">
+              <TabsList className="mb-4 flex-wrap"><TabsTrigger value="details">Details</TabsTrigger>{user && ['admin','reviewer','isc_admin','federal_admin','federal_officer'].includes(user.role) && <TabsTrigger value="gan-history">GAN History</TabsTrigger>}</TabsList>
+              <TabsContent value="details" className="space-y-4 text-sm">
+                <ApplicationViewSummary application={viewApp}/>
+                <ApplicationReadOnlySections application={viewApp} projects={viewProjects} budgets={viewBudgets} documents={viewDocuments} organization={{name:viewApp.organization_name}}/>
+                {viewApp.revision_notes && <div><Label className="text-muted-foreground text-xs">Revision Notes</Label><p className="whitespace-pre-wrap bg-amber-50 border border-amber-200 text-amber-800 p-3 rounded-lg">{viewApp.revision_notes}</p></div>}
+              </TabsContent>
+              {user && ['admin','reviewer','isc_admin','federal_admin','federal_officer'].includes(user.role) && <TabsContent value="gan-history"><GanHistoryTab applicationId={viewApp.id}/></TabsContent>}
+            </Tabs>
           )}
         </DialogContent>
       </Dialog>
@@ -535,12 +536,9 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
       <Dialog open={!!selected} onOpenChange={() => setSelected(null)}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <div className="flex items-center justify-between">
-              <DialogTitle>Review Application {selected?.application_number}</DialogTitle>
-              <div className="flex items-center gap-2">
-                <AuditPackageExport application={selected} />
-                <ApplicationPdfExport app={selected} budgets={budgets} />
-              </div>
+            <div className="space-y-3">
+              <ApplicationViewHeader application={selected} budgets={budgets}/>
+              <div><AuditPackageExport application={selected} /></div>
             </div>
           </DialogHeader>
           {selected && (() => {
@@ -555,9 +553,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
             <Tabs defaultValue="summary">
               <TabsList className="mb-4 flex-wrap">
                 <TabsTrigger value="summary">Summary</TabsTrigger>
-                <TabsTrigger value="projects">Projects</TabsTrigger>
                 {scoringEnabled && <TabsTrigger value="scoring">Scoring</TabsTrigger>}
-                <TabsTrigger value="budget">Budget</TabsTrigger>
                 <AwardDetailsTabTrigger/>
                 <TabsTrigger value="gan-history">GAN History</TabsTrigger>
                 <TabsTrigger value="documents">Documents</TabsTrigger>
@@ -570,6 +566,9 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
               </TabsList>
 
               <TabsContent value="summary" className="space-y-4">
+                <ApplicationViewSummary application={selected}/>
+                <ApplicationReadOnlySections application={selected} projects={projects} budgets={budgets} documents={documents} organization={{name:selected.organization_name}}/>
+                {false && <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label className="text-muted-foreground text-xs">Organization</Label>
@@ -619,6 +618,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   <p className="text-sm whitespace-pre-wrap bg-muted/50 p-3 rounded-lg">{selected.risk_assessment || 'Not provided'}</p>
                 </div>
 
+                </>}
                 <EhpReviewPanel applicationId={selected.id} onUpdate={application=>{setSelected(application);setApps(current=>current.map(item=>item.id===application.id?application:item));}} />
 
                 {/* Program-specific highlights */}
@@ -692,6 +692,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                     <tr className="border-b bg-muted/50">
                       <th className="text-left p-3 font-medium text-muted-foreground">Category</th>
                       <th className="text-left p-3 font-medium text-muted-foreground">Description</th>
+                      <th className="text-left p-3 font-medium text-muted-foreground">AEL</th>
                       <th className="text-right p-3 font-medium text-muted-foreground">Requested</th>
                       <th className="text-right p-3 font-medium text-muted-foreground">Match</th>
                       <th className="text-center p-3 font-medium text-muted-foreground">Allowable</th>
@@ -704,6 +705,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                           <span className="px-2 py-0.5 rounded bg-muted text-xs font-medium">{b.budget_category}</span>
                         </td>
                         <td className="p-3">{b.line_description}</td>
+                        <td className="p-3 text-xs">{[b.ael_category,b.ael_number].filter(Boolean).join(' · ')||'—'}</td>
                         <td className="p-3 text-right font-medium">{formatCurrency(b.amount_requested)}</td>
                         <td className="p-3 text-right">{formatCurrency(b.amount_match)}</td>
                         <td className="p-3 text-center">
@@ -712,12 +714,12 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                       </tr>
                     ))}
                     {budgets.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-muted-foreground">No budget items</td></tr>
+                      <tr><td colSpan={6} className="p-8 text-center text-muted-foreground">No budget items</td></tr>
                     )}
                   </tbody>
                   <tfoot>
                     <tr className="bg-muted/50 font-bold">
-                      <td className="p-3" colSpan={2}>Total</td>
+                      <td className="p-3" colSpan={3}>Total</td>
                       <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (Number(b.amount_requested) || 0), 0))}</td>
                       <td className="p-3 text-right">{formatCurrency(budgets.reduce((s, b) => s + (Number(b.amount_match) || 0), 0))}</td>
                       <td></td>

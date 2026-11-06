@@ -5,6 +5,7 @@ import { ShieldCheck, CheckCircle, XCircle, Clock, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 
 const STEP_STATUS_COLORS = {
   Approved: 'text-green-700 bg-green-100 border-green-200',
@@ -27,6 +28,10 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
   const [actionStep, setActionStep] = useState(null); // 'pm' | 'fo'
   const [actionType, setActionType] = useState(''); // 'Approved' | 'Rejected'
   const [notes, setNotes] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState(selected.payment_method || '');
+  const [amountPaid, setAmountPaid] = useState(selected.amount_paid ?? selected.amount_approved ?? '');
+  const [paymentReference, setPaymentReference] = useState(selected.payment_reference || '');
+  const [paymentDate, setPaymentDate] = useState(selected.payment_date || '');
   const [submitting, setSubmitting] = useState(false);
 
   const isPM = user?.role === 'program_manager' || user?.role === 'admin';
@@ -37,6 +42,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
 
   const handleSubmit = async () => {
     setSubmitting(true);
+    let completed = false;
     try {
       const now = new Date().toISOString();
       const updates = {};
@@ -46,12 +52,24 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
         updates.pm_approval_notes = notes;
         updates.payment_status = actionType === 'Approved' ? 'PendingFOApproval' : 'PaymentFailed';
       } else if (actionStep === 'fo') {
+        if (actionType === 'Approved' && (!paymentMethod || amountPaid === '' || amountPaid === null || !Number.isFinite(Number(amountPaid)) || Number(amountPaid) < 0 || !paymentDate)) {
+          toast('Payment method, paid amount, and payment date are required when marking a request as Paid.', 'error');
+          setSubmitting(false);
+          return;
+        }
         updates.fo_approved_by = user?.email;
         updates.fo_approved_at = now;
         updates.fo_approval_notes = notes;
         updates.payment_status = actionType === 'Approved' ? 'Paid' : 'PaymentFailed';
+        if (actionType === 'Approved') {
+          updates.payment_method = paymentMethod;
+          updates.amount_paid = Number(amountPaid);
+          updates.payment_reference = paymentReference || null;
+          updates.payment_date = paymentDate;
+        }
       }
       await base44.entities.FundingRequest.update(selected.id, updates);
+      completed = true;
     } catch (err) {
       console.error('MultiStep approval error:', err);
       toast('Failed to save approval: ' + (err?.detail || err?.message || 'Please try again.', 'error'));
@@ -60,7 +78,7 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
       setNotes('');
       setActionType('');
       setSubmitting(false);
-      onComplete();
+      if (completed) onComplete();
     }
   };
 
@@ -135,11 +153,12 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
 
       {/* Confirm action form */}
       {actionStep && (
-        <div className={`rounded-lg border p-3 space-y-3 ${actionType === 'Approved' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+        <>
+      <div className={`rounded-lg border p-3 space-y-3 ${actionType === 'Approved' ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
           <p className="text-sm font-medium">
             {actionType === 'Approved' ? '✓' : '✗'} Confirm {actionType} - {actionStep === 'pm' ? 'Program Manager' : 'Finance Officer'} Step
           </p>
-          <div>
+        <div>
             <Label className="text-xs">Notes (optional)</Label>
             <Textarea
               className="mt-1 bg-white"
@@ -161,6 +180,30 @@ export default function MultiStepApprovalPanel({ selected, user, onComplete }) {
             </Button>
           </div>
         </div>
+        {actionStep === 'fo' && actionType === 'Approved' && (
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">Payment Method <span className="text-red-500">*</span></Label>
+              <select className="mt-1 w-full h-9 rounded-md border border-input bg-white px-3 text-sm" value={paymentMethod} onChange={e => setPaymentMethod(e.target.value)}>
+                <option value="">Select method...</option><option value="EFT">EFT</option><option value="Check">Check</option><option value="Multiple Payables">Multiple Payables</option>
+              </select>
+            </div>
+            <div>
+              <Label className="text-xs">Amount Paid <span className="text-red-500">*</span></Label>
+              <Input type="number" min="0" step="0.01" className="mt-1 bg-white text-right" value={amountPaid} onChange={e => setAmountPaid(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Payment # (EFT / Check)</Label>
+              <Input className="mt-1 bg-white" value={paymentReference} onChange={e => setPaymentReference(e.target.value)} />
+            </div>
+            <div>
+              <Label className="text-xs">Payment Date <span className="text-red-500">*</span></Label>
+              <Input type="date" className="mt-1 bg-white" value={paymentDate} onChange={e => setPaymentDate(e.target.value)} />
+            </div>
+            {Number.isFinite(Number(amountPaid)) && selected.amount_approved != null && Math.abs(Number(amountPaid) - Number(selected.amount_approved)) > 0.005 && <p className="col-span-2 text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded p-2">Warning: paid amount differs from approved amount ({Number(selected.amount_approved).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}).</p>}
+          </div>
+        )}
+        </>
       )}
     </div>
   );

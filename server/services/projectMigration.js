@@ -25,12 +25,33 @@ export async function migrateProjects(db) {
       updated_date TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
     ALTER TABLE grant_programs ADD COLUMN IF NOT EXISTS project_field_config JSONB NOT NULL DEFAULT '{}'::jsonb;
+    ALTER TABLE grant_programs DROP CONSTRAINT IF EXISTS grant_programs_code_check;
+    ALTER TABLE grant_programs ADD CONSTRAINT grant_programs_code_check CHECK (code IN ('SHSP','UASI','EMPG','HSGP','NSGP','EOC','EOCGP','NE-NSGP','NSGP-NSS','SLCGP','BRIC','Other'));
+    INSERT INTO grant_programs(name,code,description,is_active,project_field_config)
+      SELECT 'Emergency Operations Center Grant Program','EOCGP','SPARS import program; follows EOC application behavior.',true,'{}'::jsonb
+      WHERE NOT EXISTS (SELECT 1 FROM grant_programs WHERE code='EOCGP');
+    INSERT INTO grant_programs(name,code,description,is_active,project_field_config)
+      SELECT 'Nebraska Nonprofit Security Grant Program','NE-NSGP','SPARS import program; follows NSGP application behavior.',true,'{}'::jsonb
+      WHERE NOT EXISTS (SELECT 1 FROM grant_programs WHERE code='NE-NSGP');
+    INSERT INTO grant_programs(name,code,description,is_active,project_field_config)
+      SELECT 'NSGP Nonprofit Security Supplemental','NSGP-NSS','SPARS import program; follows NSGP application behavior.',true,'{}'::jsonb
+      WHERE NOT EXISTS (SELECT 1 FROM grant_programs WHERE code='NSGP-NSS');
     ALTER TABLE nofos ADD COLUMN IF NOT EXISTS project_field_config JSONB NOT NULL DEFAULT '{}'::jsonb;
     ALTER TABLE nofos ADD COLUMN IF NOT EXISTS project_investments JSONB NOT NULL DEFAULT '[]'::jsonb;
     ALTER TABLE nofos ADD COLUMN IF NOT EXISTS national_priority_areas JSONB NOT NULL DEFAULT '[]'::jsonb;
     ALTER TABLE application_budgets ADD COLUMN IF NOT EXISTS project_id TEXT;
+    ALTER TABLE application_budgets ADD COLUMN IF NOT EXISTS ael_number TEXT;
+    ALTER TABLE application_budgets ADD COLUMN IF NOT EXISTS ael_category TEXT;
+    ALTER TABLE application_budgets ADD COLUMN IF NOT EXISTS vulnerability_addressed TEXT;
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS legacy_subaward_id TEXT;
+    ALTER TABLE applications ADD COLUMN IF NOT EXISTS original_award_amount NUMERIC;
     ALTER TABLE funding_requests ADD COLUMN IF NOT EXISTS project_id TEXT;
+    ALTER TABLE funding_requests ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMPTZ;
     ALTER TABLE funding_request_line_items ADD COLUMN IF NOT EXISTS project_id TEXT;
+    ALTER TABLE funding_request_line_items ADD COLUMN IF NOT EXISTS legacy_expenditure_id TEXT;
+    ALTER TABLE funding_request_line_items ADD COLUMN IF NOT EXISTS amount_match NUMERIC NOT NULL DEFAULT 0 CHECK (amount_match >= 0);
+    CREATE UNIQUE INDEX IF NOT EXISTS funding_line_legacy_expenditure_unique ON funding_request_line_items(legacy_expenditure_id) WHERE legacy_expenditure_id IS NOT NULL AND btrim(legacy_expenditure_id) <> '';
+    CREATE UNIQUE INDEX IF NOT EXISTS applications_legacy_subaward_id_unique ON applications(legacy_subaward_id) WHERE legacy_subaward_id IS NOT NULL AND btrim(legacy_subaward_id) <> '';
     ALTER TABLE progress_reports ADD COLUMN IF NOT EXISTS project_id TEXT;
     ALTER TABLE progress_reports ADD COLUMN IF NOT EXISTS change_request_number NUMERIC;
     ALTER TABLE progress_reports ADD COLUMN IF NOT EXISTS review_number NUMERIC;

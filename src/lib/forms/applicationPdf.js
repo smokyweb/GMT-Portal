@@ -239,11 +239,11 @@ export async function exportApplicationPdf(app,budgets,selected) {
         doc.setTextColor(30, 30, 30);
         doc.text(`${fr.request_number || `FR-${fi + 1}`} - ${fr.request_type}  |  ${formatCurrency(fr.amount_requested)}  |  Status: ${fr.status}`, margin, y);
         y += 5;
-        if (fr.amount_approved != null) {
+        if (fr.amount_approved != null || fr.amount_paid != null || fr.payment_status || fr.payment_method) {
           doc.setFont('helvetica', 'normal');
           doc.setFontSize(7.5);
           doc.setTextColor(80, 80, 80);
-          doc.text(`Approved: ${formatCurrency(fr.amount_approved)}${fr.payment_status ? `  |  Payment: ${fr.payment_status}` : ''}${fr.payment_reference ? `  |  Ref: ${fr.payment_reference}` : ''}`, margin, y);
+          doc.text(`Approved: ${formatCurrency(fr.amount_approved)}${fr.amount_paid != null ? `  |  Paid: ${formatCurrency(fr.amount_paid)}` : ''}${fr.payment_status ? `  |  Payment: ${fr.payment_status}` : ''}${fr.payment_method ? `  |  Method: ${fr.payment_method}` : ''}${fr.payment_reference ? `  |  Ref: ${fr.payment_reference}` : ''}`, margin, y);
           y += 4.5;
         }
         if (fr.reviewer_notes) {

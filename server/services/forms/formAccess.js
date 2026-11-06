@@ -25,7 +25,8 @@ export function assertNofoAccess(actor,nofo,organization,starting=false) {
 export function assertApplicationAccess(actor,application,organization,writing=false) {
   if(actor.role==='isc_admin')return;
   if(actor.role==='user') {
-    if(!actor.organization_id||actor.organization_id!==application.organization_id)throw accountError(403,'This application belongs to another organization');
+    const organizationIds=Array.isArray(actor.organization_ids)&&actor.organization_ids.length?actor.organization_ids.map(String):[actor.organization_id].filter(Boolean).map(String);
+    if(!organizationIds.includes(String(application.organization_id)))throw accountError(403,'This application belongs to another organization');
     if(writing&&!['Draft','RevisionRequested','ChangesRequested'].includes(application.status))throw accountError(409,'This application is not open for editing');
     return;
   }

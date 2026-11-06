@@ -4,6 +4,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Info } from 'lucide-react';
+import { canonicalProgramCode } from '@/lib/programCompatibility';
 
 const FieldGroup = ({ title, description, children }) => (
   <div className="space-y-3">
@@ -25,6 +26,7 @@ const Field = ({ label, required, children }) => (
 );
 
 export default function ProgramSpecificFields({ programCode, form, onChange }) {
+  programCode = canonicalProgramCode(programCode);
   const set = (key, val) => onChange({ ...form, [key]: val });
 
   if (!programCode) {

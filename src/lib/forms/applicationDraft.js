@@ -2,7 +2,7 @@ export {readableValue} from './formPresentation';
 import {base44} from '@/api/base44Client';
 import {defaultForm,formFields,parseObject,fieldValue,fieldIsVisible} from './defaultForm';
 import {moneyCents} from './valueValidation';
-const applicationKeys=[...new Set(['SHSP','EMPG','SLCGP','NSGP','EOC'].flatMap(program_code=>formFields(defaultForm({program_code})).filter(field=>field.source==='application').map(field=>field.key)))];
+const applicationKeys=[...new Set(['SHSP','EMPG','SLCGP','NSGP','EOC'].flatMap(program_code=>formFields(defaultForm({program_code})).filter(field=>field.source==='application').map(field=>field.key))),...['poc_user_id','poc_first_name','poc_last_name','poc_title','poc_email','poc_phone']];
 const typedFields=formFields(defaultForm({program_code:'SHSP'})).concat(...['EMPG','SLCGP','NSGP','EOC'].map(program_code=>formFields(defaultForm({program_code}))));
 const fieldType=key=>typedFields.find(field=>field.source==='application'&&field.key===key)?.type;
 export function draftForm(application={}) {
@@ -34,8 +34,8 @@ export async function persistDraft({application,form,nofo,organization,projects=
     const row=project.id&&project.isExisting?await base44.entities.Project.update(project.id,projectPayload):await base44.entities.Project.create(projectPayload);
     const budgets=[];
     for(const item of project.budgets||[]) {
-      const payload={application_id:saved.id,project_id:row.id,budget_category:item.budget_category,line_description:item.line_description,
-        amount_requested:Number(item.amount_requested||0),amount_match:Number(item.amount_match||0)};
+      const payload={application_id:saved.id,project_id:row.id,budget_category:item.budget_category,poete_category:item.poete_category||null,line_description:item.line_description,
+        quantity:item.quantity===''||item.quantity==null?null:Number(item.quantity),unit_cost:item.unit_cost===''||item.unit_cost==null?null:Number(item.unit_cost),amount_requested:Number(item.amount_requested||0),amount_match:Number(item.amount_match||0),ael_number:item.ael_number||null,ael_category:item.ael_category||null};
       const budget=item.id&&item.isExisting?await base44.entities.ApplicationBudget.update(item.id,payload):await base44.entities.ApplicationBudget.create(payload);
       budgets.push({...budget,isExisting:true});
     }
