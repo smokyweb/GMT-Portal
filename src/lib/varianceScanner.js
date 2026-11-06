@@ -10,8 +10,8 @@ const VARIANCE_THRESHOLD = 0.15; // 15%
 export async function runVarianceScanner(triggeredByUser) {
   const [applications, existingFlags, users] = await Promise.all([
     base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200),
-    base44.entities.ComplianceFlag.filter({ flag_type: 'FinancialDiscrepancy', is_resolved: false }),
-    base44.entities.User.list(),
+    base44.entities.ComplianceFlag.filter({ flag_type: 'FinancialDiscrepancy', is_resolved: false }, undefined, 500),
+    base44.entities.User.list(undefined, 500),
   ]);
 
   const stateAdmins = users.filter(u => u.role === 'admin' || u.role === 'reviewer');

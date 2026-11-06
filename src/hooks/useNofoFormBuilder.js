@@ -11,7 +11,7 @@ export function useNofoFormBuilder(target,mode='nofo',scopeState='') {
   useEffect(()=>{
     let active=true;setLoading(true);setError('');setSource(null);setDirty(false);setDefinition(null);setVersion(null);setAppliedDefaults(undefined);setSelected('organization');setFieldId('');
     (async()=>{try{
-      const [current,list]=await Promise.all([mode==='program'?base44.forms.program(target.id,scopeState):base44.forms.nofo(target.id),base44.entities.Nofo.list('-created_date',500)]);
+      const [current,list]=await Promise.all([mode==='program'?base44.forms.program(target.id,scopeState):base44.forms.nofo(target.id),base44.entities.Nofo.list('-created_date')]);
       if(!active)return;setVersion(current);setDefinition(current.definition);setSources(list.filter(item=>(mode==='program'||item.id!==target.id)&&(current.actor_role==='isc_admin'||!(item.scope_states||[]).length||(item.scope_states||[]).some(code=>String(code).toUpperCase()===current.actor_state))));
     }catch(err){if(active)setError(err.message);}finally{if(active)setLoading(false);}})();
     return()=>{active=false;};

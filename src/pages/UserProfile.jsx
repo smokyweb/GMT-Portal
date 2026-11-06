@@ -29,7 +29,7 @@ export default function UserProfile() {
         department: u.department || '',
       });
       if (u.organization_id) {
-        const allOrgs = await base44.entities.Organization.list('-created_date', 500).catch(() => []);
+        const allOrgs = await base44.entities.Organization.list('-created_date').catch(() => []);
         const found = allOrgs.find(o => o.id === u.organization_id);
         if (found) setOrg(found);
       }

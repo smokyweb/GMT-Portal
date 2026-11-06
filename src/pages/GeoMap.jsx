@@ -40,9 +40,9 @@ export default function GeoMap() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Application.list('-created_date', 300),
-      base44.entities.Organization.list('-created_date', 200),
-      base44.entities.ComplianceFlag.filter({ is_resolved: false }, '-created_date', 200),
+      base44.entities.Application.list('-created_date'),
+      base44.entities.Organization.list('-created_date'),
+      base44.entities.ComplianceFlag.filter({ is_resolved: false }, '-created_date'),
     ]).then(([a, o, f]) => {
       setApps(a);
       setOrgs(o);

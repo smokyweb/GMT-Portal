@@ -17,7 +17,7 @@ export default function AdminApplicationsDocReview() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const allApps = await base44.entities.Application.list('-created_date', 200);
+      const allApps = await base44.entities.Application.list('-created_date');
       // Scope to state admin's state
       let appList = allApps;
       if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {

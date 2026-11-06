@@ -87,17 +87,17 @@ export default function DocumentVault() {
 
     if (isStateUser(role)) {
       [docList, appList] = await Promise.all([
-        base44.entities.Document.list('-uploaded_at', 200),
-        base44.entities.Application.list('-created_date', 200),
+        base44.entities.Document.list('-uploaded_at'),
+        base44.entities.Application.list('-created_date'),
       ]);
-      const orgList = await base44.entities.Organization.list('-created_date', 200);
+      const orgList = await base44.entities.Organization.list('-created_date');
       setOrgs(orgList);
     } else {
       const orgId = u?.organization_id;
       if (!orgId) { setLoading(false); return; }
       [docList, appList] = await Promise.all([
-        base44.entities.Document.filter({ organization_id: orgId }, '-uploaded_at', 200),
-        base44.entities.Application.filter({ organization_id: orgId }, '-created_date', 50),
+        base44.entities.Document.filter({ organization_id: orgId }, '-uploaded_at'),
+        base44.entities.Application.filter({ organization_id: orgId }, '-created_date'),
       ]);
     }
     setDocs(docList.filter(d => !d.is_template));

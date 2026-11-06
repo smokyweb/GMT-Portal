@@ -36,13 +36,13 @@ export default function ComplianceTrendsDashboard() {
 
   useEffect(() => {
     base44.auth.me().then(async (user) => {
-      let allFlags = await base44.entities.ComplianceFlag.list('-created_date', 500).catch(() => []);
+      let allFlags = await base44.entities.ComplianceFlag.list('-created_date').catch(() => []);
       // Scope to state admin's state
       if (user?.scope_state && ['admin','reviewer'].includes(user.role)) {
         const orgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
         const orgIds = new Set((orgs || []).map(o => o.id));
         // Also get state app IDs to filter flags that only have application_id (no organization_id)
-        const allApps = await base44.entities.Application.list('-created_date', 500).catch(() => []);
+        const allApps = await base44.entities.Application.list('-created_date').catch(() => []);
         const stateAppIds = new Set((allApps || []).filter(a => orgIds.has(a.organization_id)).map(a => a.id));
         allFlags = (allFlags || []).filter(f =>
           (f.organization_id && orgIds.has(f.organization_id)) ||

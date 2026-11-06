@@ -36,7 +36,7 @@ export default function OrgUserManagement({ user, org }) {
 
   const load = async () => {
     setLoading(true);
-    const all = await base44.entities.User.list('-created_date', 200);
+    const all = await base44.entities.User.list('-created_date');
     setOrgUsers(all.filter(u => u.organization_id === user.organization_id));
     setLoading(false);
   };
@@ -96,7 +96,7 @@ export default function OrgUserManagement({ user, org }) {
       let attempts = 0;
       while (attempts < 5) {
         await new Promise(r => setTimeout(r, 1000));
-        const all = await base44.entities.User.list('-created_date', 200);
+        const all = await base44.entities.User.list('-created_date');
         const newUser = all.find(u => u.email === inviteEmail);
         if (newUser) {
           await base44.entities.User.update(newUser.id, {

@@ -99,12 +99,12 @@ export default function MilestoneTracker() {
 
         if (isSubrecipient && currentUser.organization_id) {
           // Scope to this org's applications only
-          appsData = await base44.entities.Application.filter({ organization_id: currentUser.organization_id }, '-created_date', 50).catch(() => []);
+          appsData = await base44.entities.Application.filter({ organization_id: currentUser.organization_id }, '-created_date').catch(() => []);
           const appIds = new Set((appsData || []).map(a => a.id));
           // Filter milestones server-side by organization_id first, then app_id as fallback
           const [byOrg, byApps] = await Promise.all([
-            base44.entities.Milestone.filter({ organization_id: currentUser.organization_id }, '-due_date', 200).catch(() => []),
-            base44.entities.Milestone.list('-due_date', 500).catch(() => []),
+            base44.entities.Milestone.filter({ organization_id: currentUser.organization_id }, '-due_date').catch(() => []),
+            base44.entities.Milestone.list('-due_date').catch(() => []),
           ]);
           // Merge: prefer org filter, fall back to app_id filter
           const orgMilestones = Array.isArray(byOrg) && byOrg.length > 0 ? byOrg : (Array.isArray(byApps) ? byApps.filter(m => appIds.has(m.application_id)) : []);
@@ -147,7 +147,7 @@ export default function MilestoneTracker() {
     setApplications(deduped);
         setOrganizations(orgsData || []);
         // Load users for assigned_to lookup
-        base44.entities.User.list('-created_date', 200).then(u => setUserList(u || [])).catch(() => {});
+        base44.entities.User.list('-created_date').then(u => setUserList(u || [])).catch(() => {});
       } catch (error) {
         console.error('Error loading data:', error);
       } finally {

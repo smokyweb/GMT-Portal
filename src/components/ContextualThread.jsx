@@ -138,7 +138,7 @@ export default function ContextualThread({
   const bottomRef = useRef();
 
   const load = async () => {
-    const msgs = await base44.entities.Message.filter({ application_id: applicationId }, 'created_date', 200);
+    const msgs = await base44.entities.Message.filter({ application_id: applicationId }, 'created_date');
     setMessages(msgs);
     setLoading(false);
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);

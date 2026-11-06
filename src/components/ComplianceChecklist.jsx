@@ -145,7 +145,7 @@ export default function ComplianceChecklist({ applicationId, applicationNumber, 
     setDocs(Array.isArray(d) ? d : []);
     // Load NOFO if not provided
     if (!nofoProp && apps?.[0]?.nofo_id) {
-      const allNofos = await base44.entities.Nofo.list('-created_date', 200).catch(() => []);
+      const allNofos = await base44.entities.Nofo.list('-created_date').catch(() => []);
       const found = (Array.isArray(allNofos) ? allNofos : []).find(n => n.id === apps[0].nofo_id);
       if (found) setLoadedNofo(found);
     }

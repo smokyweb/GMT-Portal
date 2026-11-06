@@ -35,10 +35,10 @@ export default function MyReports() {
   const loadData = async () => {
     const u = await base44.auth.me();
     setUser(u);
-    const apps = await base44.entities.Application.list('-created_date', 5000);
+    const apps = await base44.entities.Application.list('-created_date');
     const appIds = new Set((apps || []).map(a => a.id));
     setApplications(apps || []);
-    const all = await base44.entities.ReportSchedule.list('-due_date', 5000);
+    const all = await base44.entities.ReportSchedule.list('-due_date');
     setSchedules((all || []).filter(s => appIds.has(s.application_id)));
     setLoading(false);
   };
@@ -51,7 +51,7 @@ export default function MyReports() {
 
   const openReport = (schedule) => {
     setSelected(schedule);
-    base44.entities.Project.filter({application_id:schedule.application_id},'created_date',100).then(rows=>{setProjects(rows||[]);setForm(current=>({...current,project_id:(rows||[]).length===1?rows[0].id:''}));}).catch(()=>setProjects([]));
+    base44.entities.Project.filter({application_id:schedule.application_id},'created_date').then(rows=>{setProjects(rows||[]);setForm(current=>({...current,project_id:(rows||[]).length===1?rows[0].id:''}));}).catch(()=>setProjects([]));
     setForm({ project_id: '', narrative: '', objectives_met: '', challenges: '', expenditure_ytd: 0, match_ytd: 0, change_request_number: 0, review_number: 0, complete_number: 0, on_order_number: 0, needs_poe_number: 0, invoiced_number: 0, uncommitted_number: 0 });
     setAttachments([]);
     setOpen(true);

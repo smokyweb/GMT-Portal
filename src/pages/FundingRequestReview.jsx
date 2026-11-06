@@ -83,7 +83,7 @@ export default function FundingRequestReview() {
   useEffect(() => {
     const loadData = async () => {
       const [allRequests, u] = await Promise.all([
-        base44.entities.FundingRequest.list('-created_date', 200),
+        base44.entities.FundingRequest.list('-created_date'),
         base44.auth.me(),
       ]);
       let visible = allRequests;
@@ -198,7 +198,7 @@ export default function FundingRequestReview() {
     setRequests(prev => prev.map(req => req.id === selected.id ? { ...req, ...updates } : req));
     setSelected(null);
     // Reload in background
-    base44.entities.FundingRequest.list('-created_date', 200).then(r => {
+    base44.entities.FundingRequest.list('-created_date').then(r => {
       let visible = r;
       if (user?.scope_state) {
         base44.entities.Organization.filter({ state: user.scope_state }).then(orgs => {
@@ -247,7 +247,7 @@ export default function FundingRequestReview() {
   };
 
   const refreshRequests = async () => {
-    const r = await base44.entities.FundingRequest.list('-created_date', 200);
+    const r = await base44.entities.FundingRequest.list('-created_date');
     let visible = r;
     if (user?.scope_state) {
       const orgs = await base44.entities.Organization.filter({ state: user.scope_state });

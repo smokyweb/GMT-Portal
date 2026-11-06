@@ -42,7 +42,7 @@ export default function ReportBuilder() {
   useEffect(() => {
     base44.auth.me().then(async u => {
       setUser(u);
-      const grantees = await base44.entities.Grantee.list('-created_date', 200).catch(() => []);
+      const grantees = await base44.entities.Grantee.list('-created_date').catch(() => []);
       const grantee = (grantees || []).find(g => g.id === u.grantee_id || g.state_code === u.scope_state);
       setLegacyFieldsEnabled(Boolean(grantee?.legacy_fields_enabled));
       setLegacyFieldsLoaded(true);
@@ -90,13 +90,14 @@ export default function ReportBuilder() {
       if (isSubrecipient(u?.role)) {
         orgFilter = u?.organization_id;
       } else if (u?.scope_state && ['admin','reviewer'].includes(u?.role)) {
-        const stateOrgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
+        const stateOrgs = await base44.entities.Organization.filterStrict({ state: u.scope_state });
         orgFilter = (stateOrgs || []).map(o => o.id);
       }
       const rows = await runReport(cfg, orgFilter);
       setPreviewRows(Array.isArray(rows) ? rows : []);
     } catch (err) {
       console.error('Preview error:', err);
+      toast('Failed to load report preview: ' + err.message, 'error');
       setPreviewRows([]);
     } finally {
       setPreviewLoading(false);
@@ -151,7 +152,7 @@ export default function ReportBuilder() {
       if (isSub) {
         orgFilter = user?.organization_id;
       } else if (user?.scope_state && ['admin','reviewer'].includes(user?.role)) {
-        const stateOrgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
+        const stateOrgs = await base44.entities.Organization.filterStrict({ state: user.scope_state });
         orgFilter = (stateOrgs || []).map(o => o.id);
       }
       const rows = await runReport(config, orgFilter);
@@ -165,7 +166,7 @@ export default function ReportBuilder() {
       }
     } catch (err) {
       console.error('Run report error:', err);
-      toast('Failed to run report: ' + (err?.message || 'Unknown error', 'error'));
+      toast('Failed to run report: ' + (err?.message || 'Unknown error'), 'error');
       setPreviewRows([]);
     } finally {
       setPreviewLoading(false);

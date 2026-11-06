@@ -31,12 +31,12 @@ export default function SubrecipientDocumentsInbox() {
     setUser(u);
 
     // Find user's organization via their applications
-    const userApps = await base44.entities.Application.filter({ submitted_by: u.email }, '-created_date', 200);
+    const userApps = await base44.entities.Application.filter({ submitted_by: u.email }, '-created_date');
     const orgId = userApps[0]?.organization_id;
 
     let docs = [];
     if (orgId) {
-      docs = await base44.entities.GeneratedDocument.filter({ organization_id: orgId }, '-sent_at', 100);
+      docs = await base44.entities.GeneratedDocument.filter({ organization_id: orgId }, '-sent_at');
     }
 
     // Build app lookup map for signature workflow

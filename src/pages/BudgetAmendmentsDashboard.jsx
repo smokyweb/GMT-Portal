@@ -66,7 +66,7 @@ export default function BudgetAmendmentsDashboard() {
 
   const load = async () => {
     const [data, u] = await Promise.all([
-      base44.entities.BudgetAmendment.list('-created_date', 200),
+      base44.entities.BudgetAmendment.list('-created_date'),
       base44.auth.me(),
     ]);
 

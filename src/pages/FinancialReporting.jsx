@@ -61,7 +61,7 @@ export default function FinancialReporting() {
   const loadData = async () => {
     try {
       const me = await base44.auth.me().catch(() => null);
-      const data = await base44.entities.FundingRequest.list('-created_date', 500);
+      const data = await base44.entities.FundingRequest.list('-created_date');
       let filtered = (data || []).filter(r => r.status === 'Approved');
       // Scope to state admin's orgs
       if (me?.scope_state && ['admin','reviewer'].includes(me.role)) {

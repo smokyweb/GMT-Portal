@@ -57,10 +57,10 @@ export default function NofoManagement() {
 
   const loadData = async (u = user, viewingId = selectedGranteeId) => {
     const [n, p, currentUser, gs] = await Promise.all([
-      base44.entities.Nofo.list('-created_date', 500, { grantee_id: viewingId || undefined }),
-      base44.entities.GrantProgram.list('-name', 100),
+      base44.entities.Nofo.list('-created_date', undefined, { grantee_id: viewingId || undefined }),
+      base44.entities.GrantProgram.list('-name'),
       u ? Promise.resolve(u) : base44.auth.me(),
-      base44.entities.Grantee.list('-created_date', 200),
+      base44.entities.Grantee.list('-created_date'),
     ]);
     const activeUser = currentUser || u;
     const allGrantees = gs || [];
@@ -78,7 +78,7 @@ export default function NofoManagement() {
       filtered = filtered.filter(nofo => !nofo.scope_states || nofo.scope_states.length === 0 || nofo.scope_states.includes(activeUser.scope_state));
     }
     setNofos(filtered);
-    base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500).then(apps => {
+    base44.entities.Application.filter({ status: 'Approved' }, '-created_date').then(apps => {
       const statsMap = {};
       (apps || []).forEach(app => { if (app.nofo_id) { if (!statsMap[app.nofo_id]) statsMap[app.nofo_id] = { awarded: 0 }; statsMap[app.nofo_id].awarded += Number(app.awarded_amount) || 0; } });
       setNofoStats(statsMap);
@@ -204,7 +204,7 @@ export default function NofoManagement() {
     setViewNofo(nofo);
     setHistoryLoading(true);
     setNofoHistory([]);
-    const logs = await base44.entities.AuditLog.filter({ entity_id: nofo.id }, '-created_date', 50).catch(() => []);
+    const logs = await base44.entities.AuditLog.filter({ entity_id: nofo.id }, '-created_date').catch(() => []);
     setNofoHistory(logs || []);
     setHistoryLoading(false);
   };

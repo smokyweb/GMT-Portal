@@ -15,7 +15,7 @@ export default function BrowseNofos() {
     const load = async () => {
       const [user, allNofos] = await Promise.all([
         base44.auth.me(),
-        base44.entities.Nofo.filter({ status: 'Published' }, '-created_date', 100),
+        base44.entities.Nofo.filter({ status: 'Published' }, '-created_date'),
       ]);
 
       // Load user's organization to get its type and state

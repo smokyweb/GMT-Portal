@@ -23,7 +23,7 @@ export default function Home() {
     const isState = isStateUser(user?.role);
     if (isState) {
       // State admin: load all apps then filter to their scope_state via org membership
-      base44.entities.Application.list('-created_date', 500)
+      base44.entities.Application.list('-created_date')
         .then(async apps => {
           if (user?.scope_state) {
             const orgs = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
@@ -36,7 +36,7 @@ export default function Home() {
         })
         .catch(() => setLoading(false));
     } else if (user?.organization_id) {
-      base44.entities.Application.filter({ organization_id: user.organization_id }, '-created_date', 100)
+      base44.entities.Application.filter({ organization_id: user.organization_id }, '-created_date')
         .then(apps => { setAllApps(apps || []); setLoading(false); })
         .catch(() => setLoading(false));
     } else {

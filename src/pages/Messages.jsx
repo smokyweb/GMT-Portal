@@ -34,18 +34,18 @@ export default function Messages() {
       if (isFederalOrISC) {
         // Federal/ISC: see all
         [appList, msgList] = await Promise.all([
-          base44.entities.Application.list('-created_date', 200),
-          base44.entities.Message.list('-created_date', 500),
+          base44.entities.Application.list('-created_date'),
+          base44.entities.Message.list('-created_date'),
         ]);
       } else if (isState) {
         // State admin: if scope_state set, filter to that state; otherwise see all
         [appList, msgList] = await Promise.all([
-          base44.entities.Application.list('-created_date', 200),
-          base44.entities.Message.list('-created_date', 500),
+          base44.entities.Application.list('-created_date'),
+          base44.entities.Message.list('-created_date'),
         ]);
 
         if (u?.scope_state) {
-          const orgs = await base44.entities.Organization.list('-created_date', 500);
+          const orgs = await base44.entities.Organization.list('-created_date');
           orgIds = orgs.filter(o => o.state === u.scope_state).map(o => o.id);
           appList = appList.filter(a => orgIds.includes(a.organization_id));
           msgList = msgList.filter(m => orgIds.includes(m.organization_id));
@@ -55,8 +55,8 @@ export default function Messages() {
         const orgId = u?.organization_id;
         if (!orgId) { setLoading(false); return; }
         [appList, msgList] = await Promise.all([
-          base44.entities.Application.filter({ organization_id: orgId }, '-created_date', 50),
-          base44.entities.Message.filter({ organization_id: orgId }, '-created_date', 500),
+          base44.entities.Application.filter({ organization_id: orgId }, '-created_date'),
+          base44.entities.Message.filter({ organization_id: orgId }, '-created_date'),
         ]);
       }
 
@@ -72,9 +72,9 @@ export default function Messages() {
     const isFed = ['federal_admin', 'federal_officer', 'isc_admin'].includes(user?.role);
     let msgList;
     if (isState || isFed) {
-      msgList = await base44.entities.Message.list('-created_date', 500);
+      msgList = await base44.entities.Message.list('-created_date');
     } else {
-      msgList = await base44.entities.Message.filter({ organization_id: user?.organization_id }, '-created_date', 500);
+      msgList = await base44.entities.Message.filter({ organization_id: user?.organization_id }, '-created_date');
     }
     setMessages(msgList || []);
   };

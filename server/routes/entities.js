@@ -98,14 +98,25 @@ async function assertUserEntityAccess(db, actor, table, id, data = {}) {
   if (organizationId) assertOrganizationAccess(actor,organizationId);
 }
 
-// Parse Base44-style sort string: "-created_date" → "created_date DESC"
+const ENTITY_COLLECTION_LIMIT = 5000;
+
+function parseCollectionLimit(rawLimit) {
+  const limit = Number(rawLimit);
+  return Number.isInteger(limit) && limit > 0
+    ? Math.min(limit, ENTITY_COLLECTION_LIMIT)
+    : ENTITY_COLLECTION_LIMIT;
+}
+
+// Use the primary key to keep rows with equal sort values in a stable order.
 function parseSort(sortStr) {
-  if (!sortStr) return 'created_date DESC';
+  const defaultSort = 'created_date DESC, id ASC';
+  if (typeof sortStr !== 'string') return defaultSort;
   const desc = sortStr.startsWith('-');
   const col = desc ? sortStr.slice(1) : sortStr;
   // Whitelist: only allow alphanumeric + underscore column names
-  if (!/^[a-z_][a-z0-9_]*$/i.test(col)) return 'created_date DESC';
-  return `${col} ${desc ? 'DESC' : 'ASC'}`;
+  if (!/^[a-z_][a-z0-9_]*$/i.test(col)) return defaultSort;
+  const sort = `${col} ${desc ? 'DESC' : 'ASC'}`;
+  return col.toLowerCase() === 'id' ? sort : `${sort}, id ASC`;
 }
 
 // State-scoped users must never receive another state's rows. Keep this in
@@ -171,7 +182,7 @@ router.get('/:entity', authRequired, async (req, res) => {
   if (!table) return res.status(404).json({ error: 'Unknown entity' });
 
   const sort = parseSort(req.query.sort);
-  const limit = Math.min(parseInt(req.query.limit) || 500, 5000);
+  const limit = parseCollectionLimit(req.query.limit);
 
   try {
     // Organizations are associated with a Grantee through their state in the
@@ -228,7 +239,7 @@ router.post('/:entity/filter', authRequired, async (req, res) => {
 
   const { filter = {}, sort, limit: rawLimit } = req.body;
   const orderBy = parseSort(sort);
-  const limit = Math.min(parseInt(rawLimit) || 500, 5000);
+  const limit = parseCollectionLimit(rawLimit);
 
   const conditions = [];
   const values = [];

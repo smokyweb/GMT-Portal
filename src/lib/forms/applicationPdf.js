@@ -10,12 +10,12 @@ export async function exportApplicationPdf(app,budgets,selected) {
 
     // Fetch all requested data in parallel
     const [fundingRequests, tasks, documents, messages, amendments, auditLogs] = await Promise.all([
-      selected.expenditures ? base44.entities.FundingRequest.filter({ application_id: app.id }, '-created_date', 100) : Promise.resolve([]),
-      selected.rfis ? base44.entities.Task.filter({ application_id: app.id }, '-created_date', 100) : Promise.resolve([]),
-      selected.documents ? base44.entities.Document.filter({ application_id: app.id }, '-created_date', 100) : Promise.resolve([]),
-      selected.messages ? base44.entities.Message.filter({ application_id: app.id }, '-created_date', 100) : Promise.resolve([]),
-      selected.amendments ? base44.entities.BudgetAmendment.filter({ application_id: app.id }, '-created_date', 50) : Promise.resolve([]),
-      selected.audit ? base44.entities.AuditLog.filter({ entity_id: app.id }, '-created_date', 100) : Promise.resolve([]),
+      selected.expenditures ? base44.entities.FundingRequest.filter({ application_id: app.id }, '-created_date') : Promise.resolve([]),
+      selected.rfis ? base44.entities.Task.filter({ application_id: app.id }, '-created_date') : Promise.resolve([]),
+      selected.documents ? base44.entities.Document.filter({ application_id: app.id }, '-created_date') : Promise.resolve([]),
+      selected.messages ? base44.entities.Message.filter({ application_id: app.id }, '-created_date') : Promise.resolve([]),
+      selected.amendments ? base44.entities.BudgetAmendment.filter({ application_id: app.id }, '-created_date') : Promise.resolve([]),
+      selected.audit ? base44.entities.AuditLog.filter({ entity_id: app.id }, '-created_date') : Promise.resolve([]),
     ]);
 
     // Fetch line items for funding requests

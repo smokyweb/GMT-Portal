@@ -22,7 +22,7 @@ function daysAgo(dateStr) {
 }
 
 async function notifyStateAdmins(title, message, entityType, entityId) {
-  const admins = await base44.entities.User.list();
+  const admins = await base44.entities.User.list(undefined, 500);
   const adminEmails = admins.filter(u => u.role === 'admin').map(u => u.email);
   await Promise.all(adminEmails.map(email =>
     createNotification(base44, email, title, message, 'alert', entityType, entityId)
@@ -38,9 +38,9 @@ export async function runGrantMonitor(currentUser) {
   const results = { created: 0, skipped: 0, checks: [] };
 
   const [applications, reportSchedules, existingFlags] = await Promise.all([
-    base44.entities.Application.filter({ status: 'Approved' }),
+    base44.entities.Application.filter({ status: 'Approved' }, undefined, 500),
     base44.entities.ReportSchedule.list('-due_date', 200),
-    base44.entities.ComplianceFlag.filter({ is_resolved: false }),
+    base44.entities.ComplianceFlag.filter({ is_resolved: false }, undefined, 500),
   ]);
 
   const existingFlagKeys = new Set(

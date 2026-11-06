@@ -29,15 +29,15 @@ export default function MyOrganization() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const grantees = await base44.entities.Grantee.list('-created_date', 200).catch(() => []);
+      const grantees = await base44.entities.Grantee.list('-created_date').catch(() => []);
       const grantee = (grantees || []).find(g => g.id === u.grantee_id || g.state_code === u.scope_state);
       setLegacyConfig({ enabled: Boolean(grantee?.legacy_fields_enabled), systemName: grantee?.legacy_system_name?.trim() || '', canEdit: Boolean(grantee?.legacy_fields_enabled && ['admin', 'isc_admin'].includes(u.role)) });
       try {
         if (u.organization_id) {
           // Load org by listing all and finding by id (filter by id not always supported)
           const [allOrgs, myApps] = await Promise.all([
-            base44.entities.Organization.list('-created_date', 500).catch(() => []),
-            base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100).catch(() => []),
+            base44.entities.Organization.list('-created_date').catch(() => []),
+            base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date').catch(() => []),
           ]);
           const found = allOrgs.find(o => o.id === u.organization_id);
           if (found) {

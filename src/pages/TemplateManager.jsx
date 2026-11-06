@@ -25,7 +25,7 @@ export default function TemplateManager() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const allTemplates = await base44.entities.DocumentTemplate.list('-created_date', 100);
+      const allTemplates = await base44.entities.DocumentTemplate.list('-created_date');
       setTemplates(allTemplates);
       setLoading(false);
     });

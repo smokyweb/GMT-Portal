@@ -37,7 +37,7 @@ function ExpenditureHistory({ applicationId, application }) {
 
   useEffect(() => {
     if (!applicationId) return;
-    base44.entities.FundingRequest.filter({ application_id: applicationId }, '-created_date', 100)
+    base44.entities.FundingRequest.filter({ application_id: applicationId }, '-created_date')
       .then(async (frs) => {
         setFundingRequests(frs);
         if (frs.length) {
@@ -249,7 +249,7 @@ export default function MyApplications() {
   useEffect(() => {
     base44.auth.me().then(async (u) => {
       setUser(u);
-      const a = await base44.entities.Application.list('-created_date', 5000);
+      const a = await base44.entities.Application.list('-created_date');
       setApps(a || []);
       setLoading(false);
       // Auto-open app from ?id= param (e.g. from Tasks & Actions link)

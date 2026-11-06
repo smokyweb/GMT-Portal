@@ -15,7 +15,7 @@ export default function AuditLogPage() {
 
   useEffect(() => {
     base44.auth.me().then(u => setUser(u)).catch(() => {});
-    base44.entities.AuditLog.list('-created_date', 500).then(l => { setLogs(l); setLoading(false); });
+    base44.entities.AuditLog.list('-created_date').then(l => { setLogs(l); setLoading(false); });
   }, []);
 
   const exportCsv = () => {

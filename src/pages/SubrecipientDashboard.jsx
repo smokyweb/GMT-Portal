@@ -97,12 +97,12 @@ export default function SubrecipientDashboard() {
       const u = await base44.auth.me();
       setUser(u);
       const [openNofos, apps, frs] = await Promise.all([
-        base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 20),
+        base44.entities.Nofo.filter({ status: 'Published' }, '-open_date'),
         u.organization_id
-          ? base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50)
+          ? base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date')
           : Promise.resolve([]),
         u.organization_id
-          ? base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 50)
+          ? base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date')
           : Promise.resolve([]),
       ]);
       // Fetch org for eligibility check

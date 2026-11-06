@@ -25,21 +25,28 @@ export async function fetchSourceData(sourceKey, orgFilter = null) {
   if (!src) return [];
 
   const fetched = {};
+  const scopedApplications = orgFilter
+    ? () => base44.entities.Application.filterStrict({ organization_id: orgFilter }, '-created_date')
+    : null;
+  let applications;
+  const getApplications = () => (applications ??= scopedApplications());
+
   await Promise.all(
     src.entities.map(async (entity) => {
       const e = base44.entities[ENTITY_MAP[entity]];
       if (!e) return;
-      if (orgFilter && ['Application','FundingRequest','ProgressReport','ReportSchedule','ComplianceFlag'].includes(entity)) {
-        // orgFilter can be a single id (subrecipient) or an array of ids (state admin)
-        const allRows = await e.list('-created_date', 500);
-        if (Array.isArray(orgFilter)) {
-          const orgSet = new Set(orgFilter);
-          fetched[entity] = allRows.filter(r => orgSet.has(r.organization_id));
-        } else {
-          fetched[entity] = allRows.filter(r => r.organization_id === orgFilter);
-        }
+      if (scopedApplications && entity === 'Application') {
+        fetched[entity] = await getApplications();
+      } else if (scopedApplications && entity === 'FundingRequest') {
+        fetched[entity] = await e.filterStrict({ organization_id: orgFilter }, '-created_date');
+      } else if (scopedApplications && ['ProgressReport', 'ReportSchedule', 'ComplianceFlag'].includes(entity)) {
+        // These tables are linked to an organization through their application.
+        const applicationIds = (await getApplications()).map(application => application.id);
+        fetched[entity] = applicationIds.length
+          ? await e.filterStrict({ application_id: applicationIds }, '-created_date')
+          : [];
       } else {
-        fetched[entity] = await e.list('-created_date', 500);
+        fetched[entity] = await e.listStrict('-created_date');
       }
     })
   );

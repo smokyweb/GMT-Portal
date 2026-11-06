@@ -16,7 +16,7 @@ export default function GlobalSearch() {
   // Load applications scoped to user's state
   useEffect(() => {
     base44.auth.me().then(async (u) => {
-      const all = await base44.entities.Application.list('-submitted_at', 500);
+      const all = await base44.entities.Application.list('-submitted_at');
       if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
         const orgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
         const orgIds = new Set((orgs || []).map(o => o.id));
@@ -27,7 +27,7 @@ export default function GlobalSearch() {
         // ISC/federal: see all
         setAllApps(all || []);
       }
-    }).catch(() => base44.entities.Application.list('-submitted_at', 500).then(setAllApps));
+    }).catch(() => base44.entities.Application.list('-submitted_at').then(setAllApps));
   }, []);
 
   // Filter on query change

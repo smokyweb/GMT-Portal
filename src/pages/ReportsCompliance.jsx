@@ -32,7 +32,7 @@ export default function ReportsCompliance() {
     const loadData = async () => {
       const [u, allSchedules] = await Promise.all([
         base44.auth.me(),
-        base44.entities.ReportSchedule.list('-due_date', 200),
+        base44.entities.ReportSchedule.list('-due_date'),
       ]);
       setUser(u);
       let visible = allSchedules;
@@ -62,7 +62,7 @@ export default function ReportsCompliance() {
   const exportReportsCsv = async () => {
     // Fetch progress reports for all filtered schedules
     const reportMap = {};
-    const allPRs = await base44.entities.ProgressReport.list('-submitted_at', 500).catch(() => []);
+    const allPRs = await base44.entities.ProgressReport.list('-submitted_at').catch(() => []);
     (allPRs || []).forEach(pr => { reportMap[pr.schedule_id] = pr; });
 
     const headers = ['App #','Organization','Program','Report Type','Period','Due Date','Status','Submitted By','Submitted Date','Objectives Met','Expenditure YTD','Match YTD','Progress Narrative','Challenges & Corrective Actions','Reviewer Notes'];

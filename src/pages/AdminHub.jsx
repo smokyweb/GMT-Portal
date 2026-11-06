@@ -134,7 +134,7 @@ export default function AdminHub() {
          const [allOrgs, allApps, auditLogs, programs, grantees] = await Promise.all([
            base44.entities.Organization.list(),
            base44.entities.Application.list(),
-           base44.entities.AuditLog.list('-created_date', 1000),
+           base44.entities.AuditLog.list('-created_date'),
            base44.entities.GrantProgram.list(),
            base44.entities.Grantee.list(),
          ]);

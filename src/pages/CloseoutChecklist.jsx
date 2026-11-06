@@ -19,7 +19,7 @@ export default function CloseoutChecklist() {
       const isStateAdmin = u.role === 'admin' || u.role === 'reviewer';
 
       // Load grantees
-      const grantees = await base44.entities.Grantee.list('-created_date', 100);
+      const grantees = await base44.entities.Grantee.list('-created_date');
       setStateList(grantees.filter(g => g.is_active));
 
       if (isStateAdmin && !isFederal && u.scope_state) {
@@ -38,10 +38,10 @@ export default function CloseoutChecklist() {
   const loadChecklistForState = async (stateCode) => {
     const [orgs, milestones, flags, reports, docs] = await Promise.all([
       base44.entities.Organization.list(),
-      base44.entities.Milestone.list('-created_date', 500),
-      base44.entities.ComplianceFlag.list('-created_date', 500),
-      base44.entities.ProgressReport.list('-created_date', 500),
-      base44.entities.Document.list('-created_date', 500),
+      base44.entities.Milestone.list('-created_date'),
+      base44.entities.ComplianceFlag.list('-created_date'),
+      base44.entities.ProgressReport.list('-created_date'),
+      base44.entities.Document.list('-created_date'),
     ]);
 
     const stateOrgs = orgs.filter(o => o.state === stateCode).map(o => o.id);

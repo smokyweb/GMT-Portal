@@ -90,7 +90,7 @@ export default function WorkflowRules() {
   const loadData = async () => {
     const [logs, rules, u, settings] = await Promise.all([
       base44.entities.AuditLog.filter({ user_email: 'workflow-engine@system' }, '-created_date', 30),
-      base44.entities.WorkflowRule.list('-created_date', 100),
+      base44.entities.WorkflowRule.list('-created_date'),
       base44.auth.me(),
       base44.entities.AppSettings.filter({ key: 'builtin_rule_overrides' }),
     ]);
@@ -148,7 +148,7 @@ export default function WorkflowRules() {
         is_active: true,
         created_by_name: user?.full_name || user?.email,
       });
-      const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
+      const rules = await base44.entities.WorkflowRule.list('-created_date');
       setCustomRules(rules);
       setShowTemplates(false);
     } catch (err) {
@@ -194,7 +194,7 @@ export default function WorkflowRules() {
       setShowDialog(false);
       setForm(EMPTY_FORM);
       setEditingRule(null);
-      const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
+      const rules = await base44.entities.WorkflowRule.list('-created_date');
       setCustomRules(rules);
     } catch (err) {
       console.error('Failed to save workflow rule:', err);
@@ -211,7 +211,7 @@ export default function WorkflowRules() {
   const duplicateRule = async (rule) => {
     const { id, created_date, updated_date, ...rest } = rule;
     await base44.entities.WorkflowRule.create({ ...rest, name: `${rule.name} (Copy)`, is_active: false });
-    const rules = await base44.entities.WorkflowRule.list('-created_date', 100);
+    const rules = await base44.entities.WorkflowRule.list('-created_date');
     setCustomRules(rules);
   };
 

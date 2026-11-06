@@ -19,8 +19,7 @@ export default function ReportsModule() {
       setUser(u);
       const reports = await base44.entities.SavedReport.filter(
         { created_by: u.email },
-        '-updated_date',
-        100
+        '-updated_date'
       );
       setSavedReports(reports.filter(r => !r.is_template));
       setLoading(false);

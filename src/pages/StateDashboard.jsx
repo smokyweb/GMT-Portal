@@ -70,12 +70,12 @@ export default function StateDashboard({ filteredApps, allApps, filters, setFilt
     });
     // Load all data, then filter by scope_state for state admin users
     Promise.all([
-      base44.entities.Application.list('-created_date', 500),
-      base44.entities.Organization.list('-created_date', 500),
-      base44.entities.ComplianceFlag.filter({ is_resolved: false }, '-created_date', 500),
-      base44.entities.FundingRequest.list('-created_date', 500),
-      base44.entities.ReportSchedule.filter({ status: 'Overdue' }, '-due_date', 200),
-      base44.entities.Task.list('-created_date', 200),
+      base44.entities.Application.list('-created_date'),
+      base44.entities.Organization.list('-created_date'),
+      base44.entities.ComplianceFlag.filter({ is_resolved: false }, '-created_date'),
+      base44.entities.FundingRequest.list('-created_date'),
+      base44.entities.ReportSchedule.filter({ status: 'Overdue' }, '-due_date'),
+      base44.entities.Task.list('-created_date'),
     ]).then(([a, o, f, fr, rs, t]) => {
       // Get the current user's scope_state from the already-set currentUser, or re-fetch
       base44.auth.me().then(u => {

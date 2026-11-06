@@ -37,7 +37,7 @@ function FlagActionRow({ flag, user, onResolved }) {
         resolution_notes: `Response from ${user?.email || 'subrecipient'} on ${new Date().toLocaleDateString()}: ${responseText.trim()}`,
       });
       // Notify state admin
-      const allUsers = await base44.entities.User.list('-created_date', 100).catch(() => []);
+      const allUsers = await base44.entities.User.list('-created_date').catch(() => []);
       const admins = (allUsers || []).filter(u => ['admin','reviewer','isc_admin'].includes(u.role));
       for (const admin of admins) {
         base44.entities.Notification.create({
@@ -228,7 +228,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
   const [attachments, setAttachments] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const fileInputRef = useRef(null);
-  useEffect(() => { if(schedule?.application_id) base44.entities.Project.filter({application_id:schedule.application_id},'created_date',100).then(rows => { setProjects(rows||[]); if((rows||[]).length===1)setForm(current=>({...current,project_id:rows[0].id})); }).catch(()=>{}); }, [schedule?.application_id]);
+  useEffect(() => { if(schedule?.application_id) base44.entities.Project.filter({application_id:schedule.application_id},'created_date').then(rows => { setProjects(rows||[]); if((rows||[]).length===1)setForm(current=>({...current,project_id:rows[0].id})); }).catch(()=>{}); }, [schedule?.application_id]);
 
   const handleFileAdd = async (e) => {
     const files = Array.from(e.target.files);
@@ -367,7 +367,7 @@ function AllocationDetailDialog({ grant, onClose }) {
   useEffect(() => {
     if (!grant) return;
     setLoadingItems(true);
-    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date', 5000)
+    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date')
       .then(async (frs) => {
         if (!frs.length) { setLineItems([]); setLoadingItems(false); return; }
         const allItems = await Promise.all(frs.map(f => base44.entities.FundingRequestLineItem.filter({ funding_request_id: f.id })));
@@ -453,7 +453,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
 
   useEffect(() => {
     if (!user?.organization_ids?.length && !user?.organization_id) { setLoadingDocs(false); return; }
-    base44.entities.Document.list('-created_date', 100)
+    base44.entities.Document.list('-created_date')
       .then(docs => { setRecentDocs(docs); setLoadingDocs(false); });
   }, [user]);
 
@@ -486,7 +486,7 @@ function DocumentUploadSection({ apps, user, onUploaded }) {
     });
     setUploadProgress(90);
     await logAudit(base44, user, 'Uploaded', 'Document', appId, `Uploaded "${file.name}" for ${app?.application_number}`);
-    const docs = await base44.entities.Document.list('-created_date', 100);
+    const docs = await base44.entities.Document.list('-created_date');
     setRecentDocs(docs);
     setFile(null); setAppId(''); setDocType(''); setDescription(''); setErrors({});
     setUploadProgress(100);
@@ -669,17 +669,17 @@ export default function SubrecipientHome() {
     if (!memberIds.length) { setLoading(false); return; }
 
     const [openNofos, allApps, allSchedules, allFlags, allFRs, myTasks, myGenDocs, myMessages, allMilestones, myAmendments, memberOrgs] = await Promise.all([
-      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date', 5000).catch(() => []),
-      base44.entities.Application.list('-created_date', 5000).catch(() => []),
-      base44.entities.ReportSchedule.list('-due_date', 100).catch(() => []),
-      base44.entities.ComplianceFlag.list('-created_date', 50).catch(() => []),
-      base44.entities.FundingRequest.list('-created_date', 5000).catch(() => []),
-      base44.entities.Task.list('-created_date', 5000).catch(() => []),
-      base44.entities.GeneratedDocument.list('-created_date', 100).catch(() => []),
-      base44.entities.Message.list('-created_date', 500).catch(() => []),
-      base44.entities.Milestone.list('due_date', 200).catch(() => []),
-      base44.entities.BudgetAmendment.list('-created_date', 200).catch(() => []),
-      base44.entities.Organization.list('-name', 5000).catch(() => []),
+      base44.entities.Nofo.filter({ status: 'Published' }, '-open_date').catch(() => []),
+      base44.entities.Application.list('-created_date').catch(() => []),
+      base44.entities.ReportSchedule.list('-due_date').catch(() => []),
+      base44.entities.ComplianceFlag.list('-created_date').catch(() => []),
+      base44.entities.FundingRequest.list('-created_date').catch(() => []),
+      base44.entities.Task.list('-created_date').catch(() => []),
+      base44.entities.GeneratedDocument.list('-created_date').catch(() => []),
+      base44.entities.Message.list('-created_date').catch(() => []),
+      base44.entities.Milestone.list('due_date').catch(() => []),
+      base44.entities.BudgetAmendment.list('-created_date').catch(() => []),
+      base44.entities.Organization.list('-name').catch(() => []),
     ]);
 
     const orgs = (memberOrgs || []).filter(item => memberIds.includes(String(item.id)));

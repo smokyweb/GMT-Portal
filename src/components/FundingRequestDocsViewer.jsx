@@ -52,10 +52,10 @@ export default function FundingRequestDocsViewer({ fundingRequest, user }) {
   const load = async () => {
     setLoading(true);
     // Primary: fetch by funding_request_id
-    const byFR = await base44.entities.Document.filter({ funding_request_id: fundingRequest.id }, '-created_date', 100);
+    const byFR = await base44.entities.Document.filter({ funding_request_id: fundingRequest.id }, '-created_date');
     // Fallback: fetch legacy docs linked via description (migration path)
     const legacyByApp = fundingRequest.application_id
-      ? await base44.entities.Document.filter({ application_id: fundingRequest.application_id }, '-created_date', 200)
+      ? await base44.entities.Document.filter({ application_id: fundingRequest.application_id }, '-created_date')
       : [];
     const legacyFiltered = legacyByApp.filter(d =>
       !d.funding_request_id &&

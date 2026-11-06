@@ -25,6 +25,7 @@ import { createUploadClient } from './uploads';
 // Empty string = relative URLs (/api/auth/me) - correct for production Nginx setup.
 // Set VITE_API_URL=http://localhost:3045 for local dev.
 const API_BASE = import.meta.env.VITE_API_URL || '';
+const ENTITY_COLLECTION_LIMIT = 5000;
 
 // ── Token helpers ─────────────────────────────────────────────
 function getToken() {
@@ -76,34 +77,41 @@ const ENTITY_NAMES = [
 function createEntityClient(entityName) {
   const base = `/api/entities/${entityName}`;
 
+  function listRows(sort, limit, options) {
+    const params = new URLSearchParams({ limit: String(limit || ENTITY_COLLECTION_LIMIT) });
+    if (sort) params.set('sort', sort);
+    for (const [key, value] of Object.entries(options || {})) {
+      if (value !== undefined && value !== null && value !== '') params.set(key, String(value));
+    }
+    return api('GET', `${base}?${params}`);
+  }
+
+  function filterRows(conditions, sort, limit) {
+    return api('POST', `${base}/filter`, {
+      filter: conditions,
+      sort,
+      limit: limit || ENTITY_COLLECTION_LIMIT,
+    });
+  }
+
   return {
     /** list(sort?, limit?) */
     async list(sort, limit, options) {
-      const params = new URLSearchParams();
-      if (sort) params.set('sort', sort);
-      if (limit) params.set('limit', String(limit));
-      Object.entries(options || {}).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== '') params.set(key, String(value)); });
-      const qs = params.toString();
-      return api('GET', `${base}${qs ? '?' + qs : ''}`).catch(e => { console.warn('[GMT] list', entityName, e.message); return []; });
+      return listRows(sort, limit, options).catch(e => { console.warn('[GMT] list', entityName, e.message); return []; });
     },
 
     /** listStrict(sort?, limit?, options?) - preserve API errors for screens with an error state */
     async listStrict(sort, limit, options) {
-      const params = new URLSearchParams();
-      if (sort) params.set('sort', sort);
-      if (limit) params.set('limit', String(limit));
-      Object.entries(options || {}).forEach(([key, value]) => { if (value !== undefined && value !== null && value !== '') params.set(key, String(value)); });
-      const qs = params.toString();
-      return api('GET', `${base}${qs ? '?' + qs : ''}`);
+      return listRows(sort, limit, options);
     },
 
     /** filter(conditions, sort?, limit?) */
     async filter(conditions, sort, limit) {
-      return api('POST', `${base}/filter`, {
-        filter: conditions,
-        sort,
-        limit,
-      }).catch(e => { console.warn('[GMT] filter', entityName, e.message); return []; });
+      return filterRows(conditions, sort, limit).catch(e => { console.warn('[GMT] filter', entityName, e.message); return []; });
+    },
+
+    async filterStrict(conditions, sort, limit) {
+      return filterRows(conditions, sort, limit);
     },
 
     /** create(data) - returns the created record */

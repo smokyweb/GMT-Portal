@@ -100,8 +100,8 @@ export default function DocumentTemplates() {
     base44.auth.me().then(async (u) => {
       setUser(u);
       const [tmpl, appList, orgs] = await Promise.all([
-        base44.entities.DocumentTemplate.list('-created_date', 100),
-        base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 200),
+        base44.entities.DocumentTemplate.list('-created_date'),
+        base44.entities.Application.filter({ status: 'Approved' }, '-created_date'),
         base44.entities.Organization.list(),
       ]);
       setTemplates(tmpl);

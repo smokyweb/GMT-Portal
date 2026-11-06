@@ -22,10 +22,10 @@ export default function FederalDashboard() {
   useEffect(() => {
     Promise.all([
       base44.auth.me(),
-      base44.entities.Application.list('-created_date', 500),
+      base44.entities.Application.list('-created_date'),
       base44.entities.Organization.list(),
       base44.entities.ComplianceFlag.filter({ is_resolved: false }),
-      base44.entities.FundingRequest.list('-created_date', 200),
+      base44.entities.FundingRequest.list('-created_date'),
       base44.entities.GrantProgram.list(),
     ]).then(([u, apps, orgList, flags, fundingReqs, progs]) => {
       setUser(u);

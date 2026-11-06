@@ -46,10 +46,10 @@ export default function DocumentUploadPanel({
   const load = async () => {
     setLoading(true);
     if (fundingRequestId) {
-      const results = await base44.entities.Document.filter({ funding_request_id: fundingRequestId }, '-created_date', 100);
+      const results = await base44.entities.Document.filter({ funding_request_id: fundingRequestId }, '-created_date');
       setDocs(results);
     } else {
-      const results = await base44.entities.Document.filter({ application_id: applicationId }, '-created_date', 100);
+      const results = await base44.entities.Document.filter({ application_id: applicationId }, '-created_date');
       setDocs(results.filter(d => !d.funding_request_id)); // only show app-level docs
     }
     setLoading(false);

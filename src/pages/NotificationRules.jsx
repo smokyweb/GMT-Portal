@@ -77,7 +77,7 @@ export default function NotificationRules() {
     base44.auth.me().then(async (u) => {
       setUser(u);
       try {
-        const savedRules = await base44.entities.WorkflowRule.list('-created_date', 100);
+        const savedRules = await base44.entities.WorkflowRule.list('-created_date');
         if (savedRules && savedRules.length > 0) {
           setRules(savedRules.map(r => ({
             ...r,

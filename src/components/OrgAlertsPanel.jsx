@@ -28,8 +28,8 @@ export default function OrgAlertsPanel({ user, apps }) {
     setLoading(true);
     const appIds = new Set(apps.map(a => a.id));
     const [allFlags, allNotifs] = await Promise.all([
-      base44.entities.ComplianceFlag.list('-created_date', 100),
-      base44.entities.Notification.filter({ recipient_email: user.email }, '-created_date', 50),
+      base44.entities.ComplianceFlag.list('-created_date'),
+      base44.entities.Notification.filter({ recipient_email: user.email }, '-created_date'),
     ]);
     setFlags(allFlags.filter(f => appIds.has(f.application_id)));
     setNotifications(allNotifs);

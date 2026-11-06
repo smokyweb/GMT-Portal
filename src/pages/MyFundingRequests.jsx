@@ -130,8 +130,8 @@ export default function MyFundingRequests() {
     const u = await base44.auth.me();
     setUser(u);
     const [r, a] = await Promise.all([
-      base44.entities.FundingRequest.list('-created_date', 5000),
-      base44.entities.Application.list('-created_date', 5000),
+      base44.entities.FundingRequest.list('-created_date'),
+      base44.entities.Application.list('-created_date'),
     ]);
     setRequests(r || []);
     setApps(a || []);
@@ -165,7 +165,7 @@ export default function MyFundingRequests() {
     setLineItems(prev => prev.map((l, i) => i === idx ? { ...l, [field]: value } : l));
 
   const handleApplicationChange = async applicationId => {
-    const [rows,budgets] = applicationId ? await Promise.all([base44.entities.Project.filter({ application_id: applicationId }, 'created_date', 100),base44.entities.ApplicationBudget.filter({application_id:applicationId},'created_date',500)]) : [[],[]];
+    const [rows,budgets] = applicationId ? await Promise.all([base44.entities.Project.filter({ application_id: applicationId }, 'created_date'),base44.entities.ApplicationBudget.filter({application_id:applicationId},'created_date')]) : [[],[]];
     setProjects(rows || []);
     setBudgetLines(budgets || []);
     setForm(f => ({ ...f, application_id: applicationId, project_id: rows?.length === 1 ? rows[0].id : '' }));

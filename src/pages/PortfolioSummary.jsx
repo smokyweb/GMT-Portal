@@ -22,9 +22,9 @@ export default function PortfolioSummary() {
 
       // Load all data
       const [apps, frs, flags, orgs, grantees] = await Promise.all([
-        base44.entities.Application.list('-created_date', 1000),
-        base44.entities.FundingRequest.list('-created_date', 1000),
-        base44.entities.ComplianceFlag.list('-created_date', 1000),
+        base44.entities.Application.list('-created_date'),
+        base44.entities.FundingRequest.list('-created_date'),
+        base44.entities.ComplianceFlag.list('-created_date'),
         base44.entities.Organization.list(),
         base44.entities.Grantee.list(),
       ]);

@@ -94,7 +94,7 @@ function ProgressReportForm({ schedule, user, onSubmitted, onClose }) {
   const [submitting, setSubmitting] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const fileInputRef = useRef(null);
-  useEffect(() => { if(schedule?.application_id) base44.entities.Project.filter({application_id:schedule.application_id},'created_date',100).then(rows => { setProjects(rows||[]); if((rows||[]).length===1)setForm(current=>({...current,project_id:rows[0].id})); }).catch(()=>{}); }, [schedule?.application_id]);
+  useEffect(() => { if(schedule?.application_id) base44.entities.Project.filter({application_id:schedule.application_id},'created_date').then(rows => { setProjects(rows||[]); if((rows||[]).length===1)setForm(current=>({...current,project_id:rows[0].id})); }).catch(()=>{}); }, [schedule?.application_id]);
 
   const handleFileAdd = async (e) => {
     const files = Array.from(e.target.files);
@@ -420,7 +420,7 @@ function AllocationDetailDialog({ grant, onClose }) {
     if (!grant) return;
     setLoadingItems(true);
     // Fetch funding request line items linked to this application's funding requests
-    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date', 100)
+    base44.entities.FundingRequest.filter({ application_id: grant.id }, '-created_date')
       .then(async (frs) => {
         if (!frs.length) { setLineItems([]); setLoadingItems(false); return; }
         const frIds = frs.map(f => f.id);
@@ -604,10 +604,10 @@ export default function SubrecipientPortal() {
     setUser(u);
     if (!u.organization_id) { setLoading(false); return; }
     const [a, allSchedules, allFlags, allFRs] = await Promise.all([
-      base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 100),
-      base44.entities.ReportSchedule.list('-due_date', 100),
-      base44.entities.ComplianceFlag.list('-created_date', 50),
-      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date', 200),
+      base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date'),
+      base44.entities.ReportSchedule.list('-due_date'),
+      base44.entities.ComplianceFlag.list('-created_date'),
+      base44.entities.FundingRequest.filter({ organization_id: u.organization_id }, '-created_date'),
     ]);
     setApps(a);
     const appIds = new Set(a.map(x => x.id));

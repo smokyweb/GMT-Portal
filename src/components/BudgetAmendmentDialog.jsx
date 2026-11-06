@@ -128,7 +128,7 @@ export default function BudgetAmendmentDialog({ application, open, onClose, onSu
     });
       // Notify state admins/reviewers of new amendment submission
       try {
-        const users = await base44.entities.User.list('-created_date', 500).catch(() => []);
+        const users = await base44.entities.User.list('-created_date').catch(() => []);
         const reviewers = (Array.isArray(users) ? users : []).filter(u =>
           ['admin', 'reviewer', 'isc_admin', 'federal_admin'].includes(u.role)
         );

@@ -32,7 +32,7 @@ export async function onDocumentUploaded(base44, applicationId) {
 
   if (app.status === 'Submitted') {
     await base44.entities.Application.update(applicationId, { status: 'UnderReview' });
-    const admins = await base44.entities.User.filter({ role: 'admin' });
+    const admins = await base44.entities.User.filter({ role: 'admin' }, undefined, 500);
     const emailOvr = getEmailOverride(overrides, 'doc-upload-review');
     await Promise.all(admins.map(admin =>
       base44.integrations.Core.SendEmail({
@@ -68,7 +68,7 @@ export async function onComplianceFlagResolved(base44, applicationId) {
         body: emailOvr.body || `Good news! All compliance flags for your application ${app.application_number} have been resolved.\n\nYour application is now back in review. You will be notified when a final decision is made.`,
       }).catch(() => {});
     }
-    const admins = await base44.entities.User.filter({ role: 'admin' });
+    const admins = await base44.entities.User.filter({ role: 'admin' }, undefined, 500);
     await Promise.all(admins.map(admin =>
       base44.integrations.Core.SendEmail({
         to: admin.email,
@@ -109,7 +109,7 @@ export async function onFundingRequestApproved(base44, fundingRequest, approvedA
 
   // Check expenditure threshold - warn admins if rate > 80%
   if (rate > 80) {
-    const admins = await base44.entities.User.filter({ role: 'admin' });
+    const admins = await base44.entities.User.filter({ role: 'admin' }, undefined, 500);
     await Promise.all(admins.map(admin =>
       base44.integrations.Core.SendEmail({
         to: admin.email,
@@ -186,7 +186,7 @@ export async function onReportSubmitted(base44, report, schedule) {
   if (!isRuleActive(overrides, 'report-overdue-flag')) return;
   const emailOvr = getEmailOverride(overrides, 'report-overdue-flag');
   // Notify admins
-  const admins = await base44.entities.User.filter({ role: 'admin' });
+  const admins = await base44.entities.User.filter({ role: 'admin' }, undefined, 500);
   await Promise.all(admins.map(admin =>
     base44.integrations.Core.SendEmail({
       to: admin.email,
@@ -273,7 +273,7 @@ export async function onComplianceFlagCreated(base44, flag) {
   // Only alert on Critical/High flags
   if (!['Critical', 'High'].includes(flag.severity)) return;
   const emailOvr = getEmailOverride(overrides, 'high-flag-alert');
-  const admins = await base44.entities.User.filter({ role: 'admin' });
+  const admins = await base44.entities.User.filter({ role: 'admin' }, undefined, 500);
   await Promise.all(admins.map(admin =>
     base44.integrations.Core.SendEmail({
       to: admin.email,

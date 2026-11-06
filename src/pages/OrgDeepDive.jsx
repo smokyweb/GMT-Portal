@@ -20,7 +20,7 @@ export default function OrgDeepDive() {
       const isFederal = ['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role);
 
       // Load orgs
-      const allOrgs = await base44.entities.Organization.list('-created_date', 500);
+      const allOrgs = await base44.entities.Organization.list('-created_date');
       let filteredOrgs = allOrgs;
 
       if (!isFederal && u.scope_state) {
@@ -44,7 +44,7 @@ export default function OrgDeepDive() {
       const fetchByOrg = async (entity) => {
         try {
           // Load all and match by org_id OR org_name (IDs may use different formats in seeded data)
-          const all = await entity.list('-created_date', 500).catch(() => []);
+          const all = await entity.list('-created_date').catch(() => []);
           const items = Array.isArray(all) ? all : [];
           const matched = items.filter(r =>
             r.organization_id === orgId ||

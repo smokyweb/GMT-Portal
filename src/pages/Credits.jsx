@@ -54,9 +54,9 @@ export default function Credits() {
   const load = async () => {
     const [u, c, o, a] = await Promise.all([
       base44.auth.me(),
-      base44.entities.Credit.list('-created_date', 100),
+      base44.entities.Credit.list('-created_date'),
       base44.entities.Organization.filter({ is_active: true }),
-      base44.entities.Application.list('-created_date', 200),
+      base44.entities.Application.list('-created_date'),
     ]);
     setUser(u);
 
@@ -89,7 +89,7 @@ export default function Credits() {
   const handleIssue = async () => {
     setSubmitting(true);
     try {
-    const allCredits = await base44.entities.Credit.list('-created_date', 1000).catch(() => []);
+    const allCredits = await base44.entities.Credit.list('-created_date').catch(() => []);
     const creditNum = `CRD-${new Date().getFullYear()}-${String(allCredits.length + 1).padStart(4, '0')}`;
     const org = orgs.find(o => o.id === form.organization_id);
     const amt = Number(form.amount);

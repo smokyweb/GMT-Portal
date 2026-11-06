@@ -27,8 +27,7 @@ export default function ReviewHistory({ entityType, entityId, user, readOnly = f
     try {
       const results = await base44.entities.ReviewComment.filter(
         { entity_type: entityType, entity_id: entityId },
-        '-created_date',
-        50
+        '-created_date'
       );
       setComments(Array.isArray(results) ? results : []);
     } catch (e) {

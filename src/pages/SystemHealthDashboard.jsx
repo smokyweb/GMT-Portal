@@ -45,12 +45,12 @@ export default function SystemHealthDashboard() {
 
       // Load all data
       const [apps, frs, milestones, flags, docs, messages, auditData, orgs] = await Promise.all([
-        base44.entities.Application.list('-created_date', 500),
-        base44.entities.FundingRequest.list('-created_date', 500),
-        base44.entities.Milestone.list('-created_date', 500),
-        base44.entities.ComplianceFlag.list('-created_date', 500),
-        base44.entities.Document.list('-created_date', 500),
-        base44.entities.Message.list('-created_date', 500),
+        base44.entities.Application.list('-created_date'),
+        base44.entities.FundingRequest.list('-created_date'),
+        base44.entities.Milestone.list('-created_date'),
+        base44.entities.ComplianceFlag.list('-created_date'),
+        base44.entities.Document.list('-created_date'),
+        base44.entities.Message.list('-created_date'),
         base44.entities.AuditLog.list('-created_date', 10),
         base44.entities.Organization.list(),
       ]);

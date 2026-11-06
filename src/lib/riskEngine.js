@@ -23,10 +23,10 @@ export function getRiskLevel(score) {
 
 export async function computeRiskScores() {
   const [flags, reports, allApplications, auditLogs, currentUser] = await Promise.all([
-    base44.entities.ComplianceFlag.list('-created_date', 500),
-    base44.entities.ReportSchedule.list('-due_date', 500),
-    base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500),
-    base44.entities.AuditLog.filter({ entity_type: 'Application' }, '-created_date', 500),
+    base44.entities.ComplianceFlag.list('-created_date'),
+    base44.entities.ReportSchedule.list('-due_date'),
+    base44.entities.Application.filter({ status: 'Approved' }, '-created_date'),
+    base44.entities.AuditLog.filter({ entity_type: 'Application' }, '-created_date'),
     base44.auth.me().catch(() => null),
   ]);
   // Scope to state admin's state if applicable

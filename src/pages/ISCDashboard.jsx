@@ -41,11 +41,11 @@ export default function ISCDashboard() {
 
       // Only load data if user has access
       if (u && ['isc_admin', 'federal_admin', 'federal_officer'].includes(u.role)) {
-        const g = await base44.entities.Grantee.list('-created_date', 200);
+        const g = await base44.entities.Grantee.list('-created_date');
         setGrantees(g);
         // Fetch org counts per grantee
-        const orgs = await base44.entities.Organization.list('-created_date', 500);
-        const apps = await base44.entities.Application.list('-created_date', 500);
+        const orgs = await base44.entities.Organization.list('-created_date');
+        const apps = await base44.entities.Application.list('-created_date');
         const statMap = {};
         g.forEach(gr => {
           statMap[gr.id] = {

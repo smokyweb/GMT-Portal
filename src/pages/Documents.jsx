@@ -132,39 +132,39 @@ export default function Documents() {
         const stateOrgs = allOrgs.filter(o => o.state === u.scope_state);
         const orgIds = stateOrgs.map(o => o.id);
         setOrgs(stateOrgs);
-        docList = await base44.entities.Document.list('-uploaded_at', 200);
-        const allAppsForDocs = await base44.entities.Application.list('-created_date', 200);
+        docList = await base44.entities.Document.list('-uploaded_at');
+        const allAppsForDocs = await base44.entities.Application.list('-created_date');
         const stateApps = allAppsForDocs.filter(a => orgIds.includes(a.organization_id));
         const stateAppIds = new Set(stateApps.map(a => a.id));
         docList = docList.filter(d => orgIds.includes(d.organization_id) || stateAppIds.has(d.application_id));
         appList = stateApps; // all statuses so doc grouping labels resolve correctly
-        receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
+        receivedList = await base44.entities.GeneratedDocument.list('-sent_at');
         receivedList = receivedList.filter(gd => orgIds.includes(gd.organization_id));
       } else if (u.role === 'user' && u.organization_id) {
         // Subrecipient: see only their organization's docs
         [docList, appList, receivedList] = await Promise.all([
-          base44.entities.Document.filter({ organization_id: u.organization_id }, '-uploaded_at', 200).catch(() => []),
-          base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50).catch(() => []),
-          base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at', 100).catch(() => []),
+          base44.entities.Document.filter({ organization_id: u.organization_id }, '-uploaded_at').catch(() => []),
+          base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date').catch(() => []),
+          base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at').catch(() => []),
         ]);
         // Load their org so uploads get correct organization_name
-        const userOrgList = await base44.entities.Organization.list('-created_date', 500).catch(() => []);
+        const userOrgList = await base44.entities.Organization.list('-created_date').catch(() => []);
         const userOrg = userOrgList.find(o => o.id === u.organization_id);
         if (userOrg) setOrgs([userOrg]);
       } else {
         // admin without scope_state: see all docs
-        docList = await base44.entities.Document.list('-uploaded_at', 200);
-        appList = await base44.entities.Application.list('-created_date', 200);
-        receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
-        const orgList = await base44.entities.Organization.list('-created_date', 200);
+        docList = await base44.entities.Document.list('-uploaded_at');
+        appList = await base44.entities.Application.list('-created_date');
+        receivedList = await base44.entities.GeneratedDocument.list('-sent_at');
+        const orgList = await base44.entities.Organization.list('-created_date');
         setOrgs(orgList || []);
       }
     } else {
       // ISC/federal: see all
-      docList = await base44.entities.Document.list('-uploaded_at', 200);
-      appList = await base44.entities.Application.list('-created_date', 200);
-      receivedList = await base44.entities.GeneratedDocument.list('-sent_at', 200);
-      const orgList = await base44.entities.Organization.list('-created_date', 200);
+      docList = await base44.entities.Document.list('-uploaded_at');
+      appList = await base44.entities.Application.list('-created_date');
+      receivedList = await base44.entities.GeneratedDocument.list('-sent_at');
+      const orgList = await base44.entities.Organization.list('-created_date');
       setOrgs(orgList || []);
     }
 

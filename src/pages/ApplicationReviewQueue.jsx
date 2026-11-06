@@ -77,9 +77,9 @@ export default function ApplicationReviewQueue() {
 
   const loadData = async () => {
     const [allApps, u, n] = await Promise.all([
-      base44.entities.Application.list('-created_date', 100),
+      base44.entities.Application.list('-created_date'),
       base44.auth.me(),
-      base44.entities.Nofo.list('-created_date', 200),
+      base44.entities.Nofo.list('-created_date'),
     ]);
     // Data isolation by role
     let visibleApps = allApps;
@@ -104,7 +104,7 @@ export default function ApplicationReviewQueue() {
     setNofos(visibleNofos);
     setLoading(false);
     // Load open RFIs for all apps to show badges in list
-    base44.entities.Task.filter({ type: 'RFI' }, '-created_date', 500).then(tasks => {
+    base44.entities.Task.filter({ type: 'RFI' }, '-created_date').then(tasks => {
       const rfiMap = {};
       (tasks || []).filter(t => !['Resolved','Cancelled'].includes(t.status)).forEach(t => {
         if (t.application_id) rfiMap[t.application_id] = (rfiMap[t.application_id] || 0) + 1;
@@ -133,10 +133,10 @@ export default function ApplicationReviewQueue() {
   const openReview = async (app) => {
     const [b, t, p, n, programs, coreSettings, d] = await Promise.all([
       base44.entities.ApplicationBudget.filter({ application_id: app.id }),
-      base44.entities.Task.filter({ application_id: app.id }, '-created_date', 50),
-      base44.entities.Project.filter({ application_id: app.id }, 'created_date', 100),
+      base44.entities.Task.filter({ application_id: app.id }, '-created_date'),
+      base44.entities.Project.filter({ application_id: app.id }, 'created_date'),
       base44.entities.Nofo.filter({id:app.nofo_id}),
-      base44.entities.GrantProgram.list('-name',500),
+      base44.entities.GrantProgram.list('-name'),
       base44.entities.AppSettings.filter({key:'project_ij_core_capabilities'}).catch(()=>[]),
       base44.entities.Document.filter({application_id:app.id}).catch(()=>[]),
     ]);
@@ -155,7 +155,7 @@ export default function ApplicationReviewQueue() {
 setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '');
     // Load reviewer users if not loaded
     if (reviewerUsers.length === 0) {
-      base44.entities.User.list('-created_date', 200).then(users => {
+      base44.entities.User.list('-created_date').then(users => {
         setReviewerUsers((users || []).filter(u => ['admin','reviewer','isc_admin'].includes(u.role)));
       }).catch(() => {});
     }
@@ -164,8 +164,8 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
   const openView = async app => {
     const [b,p,d] = await Promise.all([
       base44.entities.ApplicationBudget.filter({application_id:app.id}).catch(()=>[]),
-      base44.entities.Project.filter({application_id:app.id},'created_date',100).catch(()=>[]),
-      base44.entities.Document.filter({application_id:app.id},'-created_date',100).catch(()=>[]),
+      base44.entities.Project.filter({application_id:app.id},'created_date').catch(()=>[]),
+      base44.entities.Document.filter({application_id:app.id},'-created_date').catch(()=>[]),
     ]);
     setViewBudgets(b||[]);setViewProjects(p||[]);setViewDocuments(d||[]);setViewApp(app);
   };
@@ -225,7 +225,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
     }
     // Create report schedules - DEDUPLICATION: only if none exist yet for this application
     if (selected.performance_start && selected.performance_end) {
-      const existingSchedules = await base44.entities.ReportSchedule.filter({ application_id: selected.id }, '-due_date', 100).catch(() => []);
+      const existingSchedules = await base44.entities.ReportSchedule.filter({ application_id: selected.id }, '-due_date').catch(() => []);
       if (!existingSchedules || existingSchedules.length === 0) {
         const start = moment(selected.performance_start);
         const end = moment(selected.performance_end);
@@ -741,7 +741,7 @@ setAwardAmount(Number(app.awarded_amount) || Number(app.requested_amount) || '')
                   user={user}
                   isAdmin={true}
                   onRefresh={async () => {
-                    const t = await base44.entities.Task.filter({ application_id: selected.id }, '-created_date', 50).catch(() => []);
+                    const t = await base44.entities.Task.filter({ application_id: selected.id }, '-created_date').catch(() => []);
                     setAppTasks(t);
                   }}
                 />

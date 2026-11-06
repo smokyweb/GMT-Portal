@@ -56,9 +56,9 @@ export default function ComplianceFlags() {
   useEffect(() => {
     const loadData = async () => {
       const [allFlags, u, apps, orgs] = await Promise.all([
-        base44.entities.ComplianceFlag.list('-created_date', 200),
+        base44.entities.ComplianceFlag.list('-created_date'),
         base44.auth.me(),
-        base44.entities.Application.list('-created_date', 500),
+        base44.entities.Application.list('-created_date'),
         base44.entities.Organization.list(),
       ]);
       setUser(u);

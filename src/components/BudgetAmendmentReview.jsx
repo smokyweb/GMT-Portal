@@ -159,7 +159,7 @@ export function BudgetAmendmentReviewDialog({ amendment, open, onClose, onAction
             } catch {}
             if (!targetApp) {
               // Fallback: list and find
-              const allApps = await base44.entities.Application.list('-created_date', 1000).catch(() => []);
+              const allApps = await base44.entities.Application.list('-created_date').catch(() => []);
               targetApp = (Array.isArray(allApps) ? allApps : []).find(a => a.id === amendment.application_id);
             }
             if (targetApp) {
@@ -387,7 +387,7 @@ export default function BudgetAmendmentReview({ applicationId, isAdmin = false, 
   const [loading, setLoading] = useState(true);
 
   const load = () => {
-    base44.entities.BudgetAmendment.filter({ application_id: applicationId }, '-created_date', 20)
+    base44.entities.BudgetAmendment.filter({ application_id: applicationId }, '-created_date')
       .then(a => { setAmendments(a); setLoading(false); });
   };
 

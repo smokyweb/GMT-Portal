@@ -54,18 +54,10 @@ export default function BudgetTracker() {
       let appList = [];
       if (u?.organization_id) {
         // Subrecipient: filter to their org
-        appList = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date', 50);
+        appList = await base44.entities.Application.filter({ organization_id: u.organization_id }, '-created_date');
       } else if (['admin','reviewer','isc_admin','federal_admin'].includes(u?.role)) {
-        // State admin: filter to their scope_state orgs, or all for isc/federal
-        if (u?.scope_state && ['admin','reviewer'].includes(u.role)) {
-          const orgs = await base44.entities.Organization.filter({ state: u.scope_state }).catch(() => []);
-          const orgIds = (orgs || []).map(o => o.id);
-          const all = await base44.entities.Application.list('-created_date', 200);
-          appList = (all || []).filter(a => orgIds.includes(a.organization_id) && a.status === 'Approved');
-        } else {
-          appList = await base44.entities.Application.list('-created_date', 200);
-          appList = appList.filter(a => a.status === 'Approved');
-        }
+        // The entity API applies state scope before limiting approved grants.
+        appList = await base44.entities.Application.filter({ status: 'Approved' }, '-created_date');
       }
       setApps(appList);
       if (appList.length > 0) setSelectedAppId(appList[0].id);
@@ -75,21 +67,23 @@ export default function BudgetTracker() {
 
   useEffect(() => {
     if (!selectedAppId) return;
-    loadLineData(selectedAppId);
+    let active = true;
+    loadLineData(selectedAppId, () => active);
+    return () => { active = false; };
   }, [selectedAppId]);
 
-  const loadLineData = async (appId) => {
+  const loadLineData = async (appId, isActive) => {
     setLineLoading(true);
-    const [budgets, frLines, fundingRequests] = await Promise.all([
+    const [budgets, fundingRequests] = await Promise.all([
       base44.entities.ApplicationBudget.filter({ application_id: appId }),
-      base44.entities.FundingRequestLineItem.list('-created_date', 500),
-      base44.entities.FundingRequest.filter({ application_id: appId }),
+      base44.entities.FundingRequest.filter({ application_id: appId, payment_status: 'Paid' }),
     ]);
 
-    // Actual expenditure is money paid, not every submitted/approved line.
-    // De-duplicate by request/line ID so reselecting Paid cannot double count.
-    const relevantRequestIds = new Set(fundingRequests.filter(fr => fr.payment_status === 'Paid').map(fr => fr.id));
-    const relevantLines = frLines.filter(l => relevantRequestIds.has(l.funding_request_id));
+    const paidRequestIds = fundingRequests.map(request => request.id);
+    const relevantLines = paidRequestIds.length
+      ? await base44.entities.FundingRequestLineItem.filter({ funding_request_id: paidRequestIds })
+      : [];
+    if (!isActive()) return;
     setExpenditures(relevantLines);
     setFundingRequests(fundingRequests);
     setPaidActualsByLine(paidLineActuals(fundingRequests, relevantLines));

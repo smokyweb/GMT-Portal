@@ -36,7 +36,7 @@ export default function RfiPanel({ applicationId, applicationNumber, organizatio
 
   useEffect(() => {
     if (!applicationId) return;
-    base44.entities.Task.filter({ application_id: applicationId }, '-created_date', 50)
+    base44.entities.Task.filter({ application_id: applicationId }, '-created_date')
       .then(t => { setTasks(t); setLoading(false); });
   }, [applicationId]);
 

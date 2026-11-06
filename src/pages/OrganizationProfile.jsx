@@ -29,11 +29,11 @@ export default function OrganizationProfile() {
   useEffect(() => {
     Promise.all([
       base44.entities.Organization.filter({ id }),
-      base44.entities.Application.filter({ organization_id: id }, '-created_date', 50),
-      base44.entities.ReportSchedule.list('-due_date', 200),
-      base44.entities.ComplianceFlag.list('-created_date', 200),
-      base44.entities.Milestone.filter({ organization_id: id }, '-due_date', 100),
-      base44.entities.User.list('-created_date', 500),
+      base44.entities.Application.filter({ organization_id: id }, '-created_date'),
+      base44.entities.ReportSchedule.list('-due_date'),
+      base44.entities.ComplianceFlag.list('-created_date'),
+      base44.entities.Milestone.filter({ organization_id: id }, '-due_date'),
+      base44.entities.User.list('-created_date'),
     ]).then(([orgs, apps, allReports, allFlags, miles, allUsers]) => {
       setOrg(orgs[0] || null);
       const foundContact = (allUsers || []).find(u => String(u.id) === String(orgs[0]?.primary_contact_user_id) && String(u.organization_id) === String(id) && !['inactive', 'deactivated', 'invited'].includes(u.active_status || 'active'));

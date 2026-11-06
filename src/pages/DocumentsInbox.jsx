@@ -39,7 +39,7 @@ export default function DocumentsInbox() {
     base44.auth.me().then(async (u) => {
       setUser(u);
       if (u.organization_id) {
-        const d = await base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at', 100);
+        const d = await base44.entities.GeneratedDocument.filter({ organization_id: u.organization_id }, '-sent_at');
         setDocs(d);
       }
       setLoading(false);

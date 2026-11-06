@@ -225,9 +225,9 @@ export default function GrantTimeline() {
     Promise.all([
       base44.auth.me(),
       base44.entities.Application.filter({ status: 'Approved' }),
-      base44.entities.ReportSchedule.list('-due_date', 200),
-      base44.entities.FundingRequest.list('-created_date', 200),
-      base44.entities.Milestone.list('-due_date', 200),
+      base44.entities.ReportSchedule.list('-due_date'),
+      base44.entities.FundingRequest.list('-created_date'),
+      base44.entities.Milestone.list('-due_date'),
       base44.entities.Organization.list(),
     ]).then(async ([u, apps, reports, frs, milests, orgs]) => {
       setUser(u);

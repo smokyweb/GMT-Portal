@@ -53,7 +53,7 @@ export default function TemplateVersionDialog({ template, onRevert, onClose }) {
 
   useEffect(() => {
     if (!template) return;
-    base44.entities.TemplateVersion.filter({ template_id: template.id }, '-version_number', 50)
+    base44.entities.TemplateVersion.filter({ template_id: template.id }, '-version_number')
       .then(v => { setVersions(v); setLoading(false); });
   }, [template]);
 

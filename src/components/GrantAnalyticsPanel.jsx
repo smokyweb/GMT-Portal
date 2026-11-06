@@ -137,12 +137,12 @@ export default function GrantAnalyticsPanel({ organizationId, filteredAppIds, ex
   useEffect(() => {
     Promise.all([
       organizationId
-        ? base44.entities.Application.filter({ organization_id: organizationId }, '-created_date', 100)
-        : base44.entities.Application.list('-created_date', 200),
+        ? base44.entities.Application.filter({ organization_id: organizationId }, '-created_date')
+        : base44.entities.Application.list('-created_date'),
       organizationId
-        ? base44.entities.FundingRequest.filter({ organization_id: organizationId }, '-created_date', 200)
-        : base44.entities.FundingRequest.list('-created_date', 200),
-      base44.entities.ApplicationBudget.list('-created_date', 500),
+        ? base44.entities.FundingRequest.filter({ organization_id: organizationId }, '-created_date')
+        : base44.entities.FundingRequest.list('-created_date'),
+      base44.entities.ApplicationBudget.list('-created_date'),
     ]).then(([a, fr, b]) => {
       setApps(a);
       setFundingReqs(fr);

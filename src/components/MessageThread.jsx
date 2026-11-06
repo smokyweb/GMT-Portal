@@ -182,7 +182,7 @@ export default function MessageThread({ app, user, rootMessages, getReplies, top
         }
       } else {
         // Subrecipient sent message -> notify all state admins/reviewers
-        const allUsers = await base44.entities.User.list('-created_date', 200).catch(() => []);
+        const allUsers = await base44.entities.User.list('-created_date').catch(() => []);
         const stateUsers = (allUsers || []).filter(u => ['admin', 'reviewer', 'isc_admin'].includes(u.role));
         for (const su of stateUsers) {
           createNotification(base44, su.email,

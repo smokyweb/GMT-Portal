@@ -38,9 +38,10 @@ export default function DashboardExportButton({ filteredApps }) {
   const [loading, setLoading] = useState(false);
 
   const getFundingRequests = async () => {
-    const appIds = new Set(filteredApps.map(a => a.id));
-    const allFRs = await base44.entities.FundingRequest.list('-created_date', 500);
-    return allFRs.filter(r => appIds.has(r.application_id));
+    const applicationIds = filteredApps.map(app => app.id);
+    return applicationIds.length
+      ? base44.entities.FundingRequest.filter({ application_id: applicationIds }, '-created_date')
+      : [];
   };
 
   const exportCsv = async () => {

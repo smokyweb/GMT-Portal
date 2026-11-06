@@ -14,7 +14,7 @@ export function useAdminAccounts() {
     (async()=>{
       try {
         const [context,people,orgs,states]=await Promise.all([base44.accounts.context(),base44.accounts.list(),
-          base44.entities.Organization.filter({is_active:true}),base44.entities.Grantee.list('-created_date',200)]);
+          base44.entities.Organization.filter({is_active:true}),base44.entities.Grantee.list('-created_date')]);
         if(!active)return;
         setUser(context);setUsers(people);setOrganizations(availableOrganizations(orgs,context));setGrantees(states);
       }catch(err){if(active)setError(err.message);}

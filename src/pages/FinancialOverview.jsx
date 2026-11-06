@@ -41,7 +41,7 @@ export default function FinancialOverview() {
   useEffect(() => {
     const loadData = async () => {
       const [approvedApps, me] = await Promise.all([
-        base44.entities.Application.filter({ status: 'Approved' }, '-created_date', 500),
+        base44.entities.Application.filter({ status: 'Approved' }, '-created_date'),
         base44.auth.me(),
       ]);
       setUser(me);

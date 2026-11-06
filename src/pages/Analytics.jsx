@@ -36,11 +36,11 @@ export default function Analytics() {
     setScanStatus(result);
     // Reload compliance flags after scan
     // Re-apply scope filtering after scan
-    const allFlags = await base44.entities.ComplianceFlag.list('-created_date', 200);
+    const allFlags = await base44.entities.ComplianceFlag.list('-created_date');
     if (user?.scope_state) {
       const orgsForScope = await base44.entities.Organization.filter({ state: user.scope_state }).catch(() => []);
       const scopedOrgIds = new Set((orgsForScope || []).map(o => o.id));
-      const scopedApps = await base44.entities.Application.list('-submitted_at', 200).catch(() => []);
+      const scopedApps = await base44.entities.Application.list('-submitted_at').catch(() => []);
       const scopedAppIds = new Set((scopedApps || []).filter(a => scopedOrgIds.has(a.organization_id)).map(a => a.id));
       setComplianceFlags((allFlags || []).filter(f => scopedAppIds.has(f.application_id)));
     } else {
@@ -51,9 +51,9 @@ export default function Analytics() {
 
   useEffect(() => {
     Promise.all([
-      base44.entities.Application.list('-submitted_at', 200),
-      base44.entities.FundingRequest.list('-created_date', 200),
-      base44.entities.ComplianceFlag.list('-created_date', 200),
+      base44.entities.Application.list('-submitted_at'),
+      base44.entities.FundingRequest.list('-created_date'),
+      base44.entities.ComplianceFlag.list('-created_date'),
       base44.entities.Organization.list(),
       base44.auth.me(),
     ]).then(async ([apps, reqs, flags, orgs, me]) => {
