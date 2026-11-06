@@ -4,6 +4,7 @@ import pool from '../db/connection.js';
 import {authRequired} from '../middleware/auth.js';
 import {applicationFormContext} from '../services/forms/applicationFormSave.js';
 import {applicationForFormExport} from '../services/forms/formAuditExport.js';
+const money=value=>{const amount=Number(value);return Number.isFinite(amount)?new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',minimumFractionDigits:2,maximumFractionDigits:2}).format(amount):'$0.00';};
 export function createAuditPackageRouter(db=pool,authenticate=authRequired){
 const router=Router();
 // Audit Package export
@@ -47,21 +48,21 @@ router.post('/exportAuditPackage',authenticate,async(req,res)=>{
       `Organization: ${application.organization_name}`,
       `Program: ${application.program_name} (${application.program_code})`,
       `Project: ${application.project_title}`,
-      `Requested: $${application.requested_amount || 0}`,
-      `Awarded: $${application.awarded_amount || 0}`,
-      `Total Expended: $${application.total_expended || 0}`,
+      `Requested: ${money(application.requested_amount)}`,
+      `Awarded: ${money(application.awarded_amount)}`,
+      `Total Expended: ${money(application.total_expended)}`,
       `Performance: ${application.performance_start || 'N/A'} to ${application.performance_end || 'N/A'}`,
       `Submitted By: ${application.submitted_by}`,
       `Submitted At: ${application.submitted_at || 'N/A'}`,
       ``,
       `BUDGET (${budgets.rows.length} line items)`,
-      ...budgets.rows.map(b => `  ${b.budget_category}: $${b.amount_requested} requested, $${b.amount_match} match — ${b.line_description}`),
+      ...budgets.rows.map(b => `  ${b.budget_category}: ${money(b.amount_requested)} requested, ${money(b.amount_match)} match — ${b.line_description}`),
       ``,
       `REVIEWS (${reviews.rows.length})`,
       ...reviews.rows.map(r => `  ${r.created_date?.toISOString?.().slice(0,10) || ''} — ${r.action} by ${r.reviewer_name} (Score: ${r.score || 'N/A'}) — ${r.notes || ''}`),
       ``,
       `FUNDING REQUESTS (${fundingReqs.rows.length})`,
-      ...fundingReqs.rows.map(f => `  ${f.request_number} — $${f.amount_requested} — ${f.status}`),
+      ...fundingReqs.rows.map(f => `  ${f.request_number} — ${money(f.amount_requested)} — ${f.status}`),
       ``,
       `DOCUMENTS (${documents.rows.length})`,
       ...documents.rows.map(d => `  ${d.name} (${d.doc_type}) — ${d.review_status || 'Pending'} — ${d.file_url || 'No file'}`),

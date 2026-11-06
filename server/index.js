@@ -129,7 +129,8 @@ try {
   await pool.query('ALTER TABLE organizations ALTER COLUMN ein TYPE TEXT USING ein::text');
   await pool.query('ALTER TABLE organizations ALTER COLUMN sam_uei TYPE TEXT USING sam_uei::text');
   await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS organizations_legacy_spars_id_unique ON organizations (legacy_spars_id) WHERE legacy_spars_id IS NOT NULL AND btrim(legacy_spars_id) <> \'\'');
-  await pool.query('CREATE UNIQUE INDEX IF NOT EXISTS organizations_vendor_number_unique ON organizations (vendor_number) WHERE vendor_number IS NOT NULL AND btrim(vendor_number) <> \'\'');
+  await pool.query('DROP INDEX IF EXISTS organizations_vendor_number_unique');
+  await pool.query("CREATE INDEX IF NOT EXISTS organizations_vendor_number_idx ON organizations (vendor_number) WHERE vendor_number IS NOT NULL AND btrim(vendor_number) <> ''");
   await pool.query("CREATE OR REPLACE FUNCTION clear_invalid_primary_contact() RETURNS trigger LANGUAGE plpgsql AS $fn$ BEGIN UPDATE organizations o SET primary_contact_user_id=NULL,updated_date=NOW() WHERE o.primary_contact_user_id=OLD.id::text AND NOT EXISTS (SELECT 1 FROM users u WHERE u.id=OLD.id AND u.organization_id=o.id::text AND COALESCE(u.active_status,'active') NOT IN ('inactive','deactivated','invited')); IF TG_OP='DELETE' THEN RETURN OLD; ELSE RETURN NEW; END IF; END; $fn$");
   await pool.query('DROP TRIGGER IF EXISTS users_clear_invalid_primary_contact ON users');
   await pool.query('CREATE TRIGGER users_clear_invalid_primary_contact AFTER UPDATE OF organization_id,active_status OR DELETE ON users FOR EACH ROW EXECUTE FUNCTION clear_invalid_primary_contact()');

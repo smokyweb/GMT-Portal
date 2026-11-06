@@ -188,6 +188,15 @@ router.get('/:entity', authRequired, async (req, res) => {
       conditions.push(`upper(organizations.state)=upper($${values.length + 1})`);
       values.push(grantee.state_code);
     }
+    if (table === 'funding_requests' && req.query.payment_status) {
+      const paymentStatus = String(req.query.payment_status);
+      if (paymentStatus === '__not_submitted__') {
+        conditions.push(`(funding_requests.payment_status IS NULL OR btrim(funding_requests.payment_status)='')`);
+      } else {
+        conditions.push(`funding_requests.payment_status=$${values.length + 1}`);
+        values.push(paymentStatus);
+      }
+    }
     const scope = stateScope(table, req.user, values.length);
     if (scope) { conditions.push(scope.sql); values.push(scope.value); }
     values.push(limit);

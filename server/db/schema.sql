@@ -632,6 +632,7 @@ $$;
 CREATE UNIQUE INDEX IF NOT EXISTS nofos_legacy_grant_id_unique ON nofos(legacy_grant_id) WHERE legacy_grant_id IS NOT NULL AND btrim(legacy_grant_id) <> '';
 CREATE UNIQUE INDEX IF NOT EXISTS funding_requests_legacy_reimbursement_id_unique ON funding_requests(legacy_reimbursement_id) WHERE legacy_reimbursement_id IS NOT NULL AND btrim(legacy_reimbursement_id) <> '';
 CREATE UNIQUE INDEX IF NOT EXISTS application_budgets_legacy_line_id_unique ON application_budgets(legacy_budget_line_id) WHERE legacy_budget_line_id IS NOT NULL AND btrim(legacy_budget_line_id) <> '';
+CREATE INDEX IF NOT EXISTS organizations_vendor_number_idx ON organizations(vendor_number) WHERE vendor_number IS NOT NULL AND btrim(vendor_number) <> '';
 
 CREATE INDEX IF NOT EXISTS idx_applications_org     ON applications(organization_id);
 CREATE INDEX IF NOT EXISTS idx_applications_status  ON applications(status);
